@@ -1,0 +1,16 @@
+{
+  "name": "core-api",
+  "version": "1.0.0",
+  "description": "An API which act as a core interface between the UI and the microservices",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://niyas-beldex@bitbucket.org/beldex/core-api.git"
+  },
+  "author": "Mohammed Niyas <mohammed.niyas@beldex.org>",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/beldex/core-api#readme"
+}
