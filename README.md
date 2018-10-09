@@ -126,3 +126,7 @@ Use comments if it really needs to be explained
 }
 ```
 
+
+## Run test
+`> npm test`
+
