@@ -126,6 +126,10 @@ Use comments if it really needs to be explained
 }
 ```
 
+## Setup Docker
+*Step1:* Navigate to the application folder
+*Step2:* run `docker-compose up -d`
+
 ## Run test
 `> npm test`
 
