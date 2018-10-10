@@ -9,5 +9,5 @@ const auditLogSchema = mongoose.Schema({
     create_date_time: { type: Date, default: Date.now }
 });
 
-AuditLog = mongoose.model('auditLog', auditLogSchema); 
+AuditLog = mongoose.model('auditlog-history', auditLogSchema); 
 module.exports = AuditLog;

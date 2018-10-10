@@ -8,5 +8,5 @@ const otpTypesSchema = mongoose.Schema({
     modified_date: Date
 });
 
-OtpTypes = mongoose.model('otpTypes', otpTypesSchema); 
+OtpTypes = mongoose.model('otp-types', otpTypesSchema);
 module.exports = OtpTypes;

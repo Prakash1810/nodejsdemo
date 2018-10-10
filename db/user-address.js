@@ -7,5 +7,5 @@ const userAddressSchema = mongoose.Schema({
     created_date: { type: Date, default: Date.now }
 });
 
-UserAddress = mongoose.model('userAddress', userAddressSchema); 
+UserAddress = mongoose.model('user-address', userAddressSchema); 
 module.exports = UserAddress;

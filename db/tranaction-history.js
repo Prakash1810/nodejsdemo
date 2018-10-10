@@ -9,5 +9,5 @@ const transHistorySchema = mongoose.Schema({
     created_date: { type: Date, default: Date.now }
 });
 
-TransactionHistory = mongoose.model('transHistory', transHistorySchema); 
+TransactionHistory = mongoose.model('transaction-history', transHistorySchema); 
 module.exports = TransactionHistory;

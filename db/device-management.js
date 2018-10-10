@@ -11,5 +11,5 @@ const deviceSchema = mongoose.Schema({
     is_deleted: Boolean
 });
 
-DeviceMangement = mongoose.model('device', deviceSchema); 
+DeviceMangement = mongoose.model('device-management', deviceSchema); 
 module.exports = DeviceMangement;

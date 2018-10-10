@@ -9,5 +9,5 @@ const userAssetsSchema = mongoose.Schema({
     is_deleted: Boolean
 });
 
-UserAssets = mongoose.model('userAssets', userAssetsSchema); 
+UserAssets = mongoose.model('user-assets', userAssetsSchema); 
 module.exports = UserAssets;

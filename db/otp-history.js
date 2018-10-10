@@ -8,5 +8,5 @@ const otpHistorySchema = mongoose.Schema({
     create_date_time: { type: Date, default: Date.now }
 });
 
-OtpHistory = mongoose.model('otpHistory', otpHistorySchema); 
+OtpHistory = mongoose.model('otp-history', otpHistorySchema); 
 module.exports = OtpHistory;

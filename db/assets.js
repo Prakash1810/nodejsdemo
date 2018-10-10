@@ -25,5 +25,5 @@ const assetsSchema = mongoose.Schema({
     is_deleted: Boolean
 });
 
-Assets = mongoose.model('Assets', assetsSchema); 
+Assets = mongoose.model('assets', assetsSchema); 
 module.exports = Assets;

@@ -9,5 +9,5 @@ const loginHistorySchema = mongoose.Schema({
     login_date_time: { type: Date, default: Date.now }
 });
 
-LoginHistory = mongoose.model('loginHistory', loginHistorySchema); 
+LoginHistory = mongoose.model('login-history', loginHistorySchema); 
 module.exports = LoginHistory;
