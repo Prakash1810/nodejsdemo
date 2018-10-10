@@ -12,7 +12,7 @@ app.listen(3000, () => {
     console.log('listening on port 3000!!')
 });
 
-mongoose.connect('mongodb://localhost:27017/core-api', { useNewUrlParser: true }).then( () => {
+mongoose.connect('mongodb://root:beldex123@database:27017/admin', { useNewUrlParser: true }).then( () => {
     console.log("DB connection successful");
 },
 (err) => {
