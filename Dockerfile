@@ -9,6 +9,9 @@ RUN mkdir -p /usr/src/app
 # Switch to working directory
 WORKDIR /usr/src/app
 
+# Copy package.json file
+COPY package.json .
+
 # Copy contents of local folder to `WORKDIR`
 # You can pick individual files based on your need
 COPY . .

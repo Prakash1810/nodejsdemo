@@ -4,7 +4,8 @@
   "description": "An API which act as a core interface between the UI and the microservices",
   "main": "app.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "nodemon app.js"
   },
   "repository": {
     "type": "git",
