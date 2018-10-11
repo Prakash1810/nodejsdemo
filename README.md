@@ -135,7 +135,7 @@ Once the docker is up and running you can check the running containers using `do
 
 You can see three containers running, one for the core-api application, one for mongodb and the third one is for mongo-express(a web ui yoou can see the mongodb collections).
 
-The mongo-express can be accessed using the url `http://localhost:8001`
+The mongo-express can be accessed using the url `http://localhost:8081`
 
 ## Run test
 `> npm test`
