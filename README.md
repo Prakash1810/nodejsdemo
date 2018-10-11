@@ -128,7 +128,14 @@ Use comments if it really needs to be explained
 
 ## Setup Docker
 *Step1:* Navigate to the application folder
+
 *Step2:* run `docker-compose up -d`
+
+Once the docker is up and running you can check the running containers using `docker ps` command
+
+You can see three containers running, one for the core-api application, one for mongodb and the third one is for mongo-express(a web ui yoou can see the mongodb collections).
+
+The mongo-express can be accessed using the url `http://localhost:8001`
 
 ## Run test
 `> npm test`
