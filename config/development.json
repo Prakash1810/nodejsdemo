@@ -1,0 +1,7 @@
+{
+	"database": {
+		"host": "database",
+		"port": "27017",
+		"password": "beldex123"
+	}
+}
