@@ -4,6 +4,11 @@ const config = require('config');
 const UserTemp = require('./db/user-temp');
 const app = express();
 
+let host = config.get('database.host'),
+    port = config.get('database.port'),
+    user = config.get('database.user'),
+    password = config.get('database.password');
+
 app.get('/', (req, res) => {
     res.send('App Works!!!!');
 });
@@ -12,7 +17,7 @@ app.listen(3000, () => {
     console.log('listening on port 3000!!')
 });
 
-mongoose.connect(`mongodb://root:beldex123@database:27017/admin`, { useNewUrlParser: true }).then( () => {
+mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/admin`, { useNewUrlParser: true }).then( () => {
     console.log("DB connection successful");
 },
 (err) => {
