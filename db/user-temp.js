@@ -1,14 +1,8 @@
 const mongoose = require('mongoose');
 
 const userTempSchema = mongoose.Schema({
-    email:{ 
-        type:String,
-        required:[ true, 'Your email cannot be blank.' ]		
-    },
-    password: { 
-        type:String,
-        required:[ true, 'Your password cannot be blank.' ]		
-    },
+    email: String,
+    password: String,
     referral_code: { type: String, default: null },
     created_date: { type: Date, default: Date.now },
     modified_date: { type: Date, default: null },
