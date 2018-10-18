@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 const userTempSchema = mongoose.Schema({
     email: String,
@@ -9,5 +11,26 @@ const userTempSchema = mongoose.Schema({
     is_deleted: { type: Boolean, default: false },
 });
 
-UserTemp = mongoose.model('user-temp', userTempSchema); 
+userTempSchema.pre('save', function(next) {
+    var userTemp = this;
+
+    // only hash the password if it has been modified (or is new)
+    if (!userTemp.isModified('password')) return next();
+
+    // generate a salt
+    bcrypt.genSalt(saltRounds, (err, salt) => {
+        if (err) return next(err);
+
+        // hash the password using our new salt
+        bcrypt.hash(userTemp.password, salt, (err, hash) => {
+            if (err) return next(err);
+
+            userTemp.password = hash;
+            next();
+        });
+    });
+});
+
+UserTemp = mongoose.model('user-temp', userTempSchema);
+
 module.exports = UserTemp;

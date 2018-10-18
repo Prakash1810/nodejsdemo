@@ -8,17 +8,22 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res, next) => {
-      let result  = registration.validate(req.body, {abortEarly: false});
-      if( result) {
-        let errors = [];
-        // result.error.details.forEach((detail) => {
-        //     errors.push({
-        //         key: detail.path,
-        //         message: detail.message
-        //     });
-        // });
-        res.status(400).send(result.error.details);
-      } 
+    let { error }  = registration.validate(req.body);
+    if (error) {
+        let errors = {};
+        error.details.forEach((detail) => {
+            errors[detail.path] = detail.message;
+        });
+        res.status(400).send(errors);
+    } else {
+        if (registration.checkEmailiCount(req.body.email)) {
+            res.status(400).send({email: 'This email address already registred.'});
+        } else {
+            let post = registration.post(req)
+            res.status(200).send(post)
+            next()
+        }
+    }
 });
 
 module.exports = router;

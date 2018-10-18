@@ -7,9 +7,17 @@ let data = {
 }
 
 describe('POST /api/registraton user registration API', () => {
+    let requestRegistration =  request(app).post('/api/registration');
     describe("Validate the registration process", () => {
         it( 'Validate email , password and confirm password is required' , () => {
-            
+            return requestRegistration
+                .send({})
+                .expect(200)
+                .then((res) => {
+                    expect(res.body).toEqual({
+                        msg: 'registration posts'
+                    });
+                });
         })
     
         it('Validate email format', () => {
