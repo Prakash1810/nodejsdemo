@@ -1,5 +1,6 @@
 const express   = require('express');
 const registration = require('../core/registration');
+const helpers = require('../helpers/helper.functions');
 
 const router    = express.Router();
 
@@ -10,17 +11,12 @@ router.get('/', (req, res) => {
 router.post('/', (req, res, next) => {
     let { error }  = registration.validate(req.body);
     if (error) {
-        let errors = {};
-        error.details.forEach((detail) => {
-            errors[detail.path] = detail.message;
-        });
-        res.status(400).send(errors);
+        res.status(400).send(helpers.errorFormat(error));
     } else {
         if (registration.checkEmailiCount(req.body.email)) {
             res.status(400).send({email: 'This email address already registred.'});
         } else {
-            let post = registration.post(req)
-            res.status(200).send(post)
+            registration.post(req, res);
             next()
         }
     }
