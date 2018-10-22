@@ -4,34 +4,36 @@ const helpers = require('../helpers/helper.functions');
 
 let registration = {};
 
-registration.post = (req, res) => {
+registration.post = (req, res, next) => {
     if( req ) {
-        UserTemp.create({
-            email: req.body.email,
-            password: req.body.password,
-            referral_code: req.body.referral_code ? req.body.referral_code : null
-        }, (err, user) => {
-            if (err) {
-                res.status(400).send(err);
-            } else {
-                res.status(200).send(
-                        helpers.successFormat({
-                            "message": 'We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.'
-                        })
-                    );
+        UserTemp.find({ email: req.body.email })
+        .exec()
+        .then(user =>{
+            if(user.length){
+                res.status(400).send(helpers.errorFormat({ 'email': 'This email address already registred.'}))
+            }else{
+                UserTemp.create({
+                    email: req.body.email,
+                    password: req.body.password,
+                    referral_code: req.body.referral_code ? req.body.referral_code : null
+                }, (err, user) => {
+                    if (err) {
+                        res.status(200).send(helpers.errorFormat(err))
+                        next()
+                    } else {
+                        res.status(200).send(helpers.successFormat({
+                                    "message": `We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.`
+                                }));
+                        next()
+                    }
+                });
             }
+        })
+        .catch(err => {
+            res.status(500).send(helpers.errorFormat(err))
         });
     }
 };
-
-registration.checkEmailiCount = (email) => {
-    let retrunCount = 0;
-    UserTemp
-        .countDocuments({ email: email }, (count) => {
-            retrunCount = count
-        });
-    return retrunCount;
-}
 
 registration.validate = (req) => {
     let schema = Joi.object().keys({

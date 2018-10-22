@@ -14,7 +14,7 @@ helpers.errorMsgFormat = (error) => {
 helpers.errorFormat = (error) => {
     let errors = {};
 
-    if (error.length) {
+    if (error.details) {
         error.details.forEach((detail) => {
             errors[detail.path] = detail.message;
         });

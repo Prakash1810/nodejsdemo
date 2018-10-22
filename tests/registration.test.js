@@ -1,11 +1,5 @@
 const request = require('supertest');
 const app     = require('../app');
-let data = {
-    email: "satzmail.com",
-    password: "123456",
-    password_conirmation: "123456",
-    refferal_code: null
-};
 
 let requestRegistration =  request(app).post('/api/registration').set('Accept', 'application/json').set('Accept', 'application/json');
 
@@ -13,21 +7,34 @@ describe('POST /api/registraton user registration API', () => {
     describe("Validate the registration process", () => {
         it( 'Validate email , password and confirm password is required' , () => {
             return requestRegistration
-                    .send(data)
+                    .send({
+                        email: "",
+                        password: "",
+                        password_conirmation: "",
+                        refferal_code: null
+                    })
                     .expect(400)
                     .then((res) => {
-                        expect(res.body).toEqual({
-                            msg: 'registration posts'
+                        expect(res.body).toMatchObject({
+                            data: {
+                                attributes: {
+                                    email: 'Invalid email address.',
+                                    password: 'password must be at least 8 characters with uppercase letters and numbers.',
+                                    password_confirmation: '\"password confirmation\" is required'
+                                }
+                            }
                         });
-                    })
-                    .end(function(err, res) {
-                        if (err) throw err;
                     });
         })
     
         it('Validate email format', () => {
             return requestRegistration
-                .send(data)
+                .send({
+                    email: "satzmail.com",
+                    password: "123456",
+                    password_conirmation: "123456",
+                    refferal_code: null
+                })
                 .expect(400)
                 .then((res) => {
                     expect(res.body).toEqual({

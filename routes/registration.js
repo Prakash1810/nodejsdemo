@@ -13,12 +13,7 @@ router.post('/', (req, res, next) => {
     if (error) {
         res.status(400).send(helpers.errorFormat(error));
     } else {
-        if (registration.checkEmailiCount(req.body.email)) {
-            res.status(400).send({email: 'This email address already registred.'});
-        } else {
-            registration.post(req, res);
-            next()
-        }
+        registration.post(req, res, next);
     }
 });
 
