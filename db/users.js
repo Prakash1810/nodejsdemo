@@ -6,7 +6,7 @@ const usersSchema = mongoose.Schema({
         type:String,
         required:[ true, 'Your email cannot be blank.' ]	
     },
-    role: { type: Schema.Types.ObjectId, ref: 'Roles' },
+    role: { type: mongoose.Schema.Types.ObjectId, ref: 'roles' },
     mobile: { type: String, default: null },
     password: { 
         type:String,
@@ -22,7 +22,7 @@ const usersSchema = mongoose.Schema({
     is_blocked: { type: Boolean, default: false },
     beldex_discount: { type: Boolean, default: false },
     level: Number, 
-    created_date: { type: Date, default: Date.now },
+    created_date: { type: Date },
     created_by: Number,
     modified_date: Date,
     modified_by: Number,

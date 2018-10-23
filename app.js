@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 
 // routes
 const registrationRoutes = require('./routes/registration');
+const userRoutes = require('./routes/user');
 
 let host = config.get('database.host'),
     port = config.get('database.port'),
@@ -18,6 +19,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 
 app.use('/api/registration',registrationRoutes);
+app.use('/api/user',userRoutes);
 
 app.get('/', (req, res) => {
     res.send('App Works!!!!');

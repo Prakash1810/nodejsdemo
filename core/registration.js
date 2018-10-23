@@ -1,6 +1,6 @@
 const Joi       = require('Joi');
 const UserTemp  = require('../db/user-temp');
-const helpers = require('../helpers/helper.functions');
+const helpers   = require('../helpers/helper.functions');
 
 let registration = {};
 
@@ -21,8 +21,16 @@ registration.post = (req, res, next) => {
                         res.status(200).send(helpers.errorFormat(err))
                         next()
                     } else {
+                        let encryptedHash = helpers.encrypt(
+                                            JSON.stringify({
+                                                'id': user.id,
+                                                'email':  req.body.email
+                                            })
+                                        );
+
                         res.status(200).send(helpers.successFormat({
-                                    "message": `We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.`
+                                    'message': `We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.`,
+                                    'activation_link' : `http://localhost:3000/api/user/activation/${encryptedHash}`
                                 }));
                         next()
                     }

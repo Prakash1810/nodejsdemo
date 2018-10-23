@@ -4,5 +4,8 @@
         "port": "27017",
         "user": "root",
 		"password": "beldex123"
+	},
+	"encryption": {
+		"key": "encryptionKey"
 	}
 }

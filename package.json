@@ -15,11 +15,15 @@
   "license": "ISC",
   "homepage": "https://bitbucket.org/beldex/core-api#readme",
   "devDependencies": {
-    "jest": "^23.6.0"
+    "jest": "^23.6.0",
+    "supertest": "^3.3.0"
   },
   "dependencies": {
+    "bcrypt": "^3.0.2",
     "config": "^2.0.1",
     "express": "^4.16.3",
-    "mongoose": "^5.3.2"
+    "joi": "^14.0.0",
+    "mongoose": "^5.3.2",
+    "nodemon": "^1.18.4"
   }
 }

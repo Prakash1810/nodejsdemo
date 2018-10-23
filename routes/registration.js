@@ -4,10 +4,6 @@ const helpers = require('../helpers/helper.functions');
 
 const router    = express.Router();
 
-router.get('/', (req, res) => {
-    res.status(200).send({msg:'registration page'});
-});
-
 router.post('/', (req, res, next) => {
     let { error }  = registration.validate(req.body);
     if (error) {

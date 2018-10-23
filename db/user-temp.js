@@ -31,6 +31,16 @@ userTempSchema.pre('save', function(next) {
     });
 });
 
+userTempSchema.methods.removeUserTemp = async (id) => {
+    await this.remove({_id:id })
+	 .then(result => {
+	 	return true;
+	 })
+	 .catch(err => {
+	 	return false;
+	 });
+}
+
 UserTemp = mongoose.model('user-temp', userTempSchema);
 
 module.exports = UserTemp;
