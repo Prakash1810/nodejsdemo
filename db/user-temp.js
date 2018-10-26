@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const helpers   = require('../helpers/helper.functions');
+
 const saltRounds = 10;
 
 const userTempSchema = mongoose.Schema({
@@ -12,7 +14,7 @@ const userTempSchema = mongoose.Schema({
 });
 
 userTempSchema.pre('save', function(next) {
-    var userTemp = this;
+    const userTemp = this;
 
     // only hash the password if it has been modified (or is new)
     if (!userTemp.isModified('password')) return next();
@@ -31,16 +33,21 @@ userTempSchema.pre('save', function(next) {
     });
 });
 
-userTempSchema.methods.removeUserTemp = async (id) => {
-    await this.remove({_id:id })
-	 .then(result => {
-	 	return true;
-	 })
-	 .catch(err => {
-	 	return false;
-	 });
-}
 
-UserTemp = mongoose.model('user-temp', userTempSchema);
+const UserTemp = module.exports =  mongoose.model('user-temp', userTempSchema);
 
-module.exports = UserTemp;
+module.exports.removeUserTemp = async (id) => {
+    return await UserTemp.deleteOne({ _id: id })
+                .then(result => {
+                    return true;
+                })
+                .catch(err => {
+                    return false;
+                });
+};
+
+module.exports.checkEmail = async (email, res) => {
+    UserTemp.find({ email: email }).exec((err, user) => {
+       if(user.length) res.status(400).send(helpers.errorFormat({ 'email': 'This email address already exits.'}));
+    });
+};
