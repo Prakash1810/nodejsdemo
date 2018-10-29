@@ -1,7 +1,18 @@
 const mongoose = require('mongoose');
+const helpers   = require('../helpers/helper.functions');
+const autoIncrement = require('mongoose-auto-increment');
+const config     = require('config');
+
+let host = config.get('database.host'),
+    port = config.get('database.port'),
+    user = config.get('database.user'),
+    password = config.get('database.password'),
+    database = config.get('database.database');
+
+var connection = mongoose.createConnection(`mongodb://${host}:${port}/${database}`);
 
 const usersSchema = mongoose.Schema({
-    user_id: Number,
+    user_id: { type: Number, default: 0 },
     email:{ 
         type:String,
         required:[ true, 'Your email cannot be blank.' ]	
@@ -28,6 +39,9 @@ const usersSchema = mongoose.Schema({
     modified_by: Number,
     is_deleted: { type: Boolean, default: false }
 });
+
+autoIncrement.initialize(connection);
+usersSchema.plugin(autoIncrement.plugin, { model: 'users', field: 'user_id', startAt: 1 });
 
 const Users = module.exports = mongoose.model('users', usersSchema); 
 

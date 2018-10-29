@@ -26,11 +26,12 @@ helpers.errorFormat = (error) => {
     return helpers.errorMsgFormat(errors);
 }
 
-helpers.successFormat = (res) => {
+helpers.successFormat = ( res, id = false ) => {
     return { 
         "code": 200,
         "errors": false,
-        "data": { 
+        "data": {
+            "id": id,
             "type": "users",
             "attributes": res
         }

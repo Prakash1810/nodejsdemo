@@ -7,5 +7,9 @@
 	},
 	"encryption": {
 		"key": "encryptionKey"
+	},
+	"secrete": {
+		"key": "privateKey",
+		"expiry": 600
 	}
 }
