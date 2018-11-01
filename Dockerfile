@@ -1,10 +1,9 @@
 FROM node:8.12.0-alpine
 
-MAINTAINER mohammed.niyas@beldex.org
+LABEL user = "mohammed.niyas@beldex.org"
 
 # Create a working directory 
 RUN mkdir -p /usr/src/app
-
 
 # Switch to working directory
 WORKDIR /usr/src/app
@@ -15,6 +14,9 @@ COPY package.json .
 # Copy contents of local folder to `WORKDIR`
 # You can pick individual files based on your need
 COPY . .
+
+RUN apk --no-cache add --virtual builds-deps build-base python
+RUN npm config set python /usr/bin/python
 
 # Install nodemon globally
 RUN npm install -g nodemon

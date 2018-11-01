@@ -19,7 +19,8 @@ registration.post = (req, res, next) => {
             referral_code: req.body.referral_code ? req.body.referral_code : null
         }, (err, user) => {
             if (err) {
-                res.status(500).send(err)
+                res.status(500).send(helpers.errorFormat({ message: err.message}))
+                next()
             } else {
                 let encryptedHash = helpers.encrypt(
                                     JSON.stringify({
@@ -32,8 +33,8 @@ registration.post = (req, res, next) => {
                             'message': `We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.`,
                             'activation_link' : `http://localhost:3000/api/user/activation/${encryptedHash}`
                         }));
+                next()
             }
-            next()
         });
     }
 };
