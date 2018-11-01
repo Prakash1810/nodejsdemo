@@ -9,7 +9,9 @@
 		"key": "encryptionKey"
 	},
 	"secrete": {
+		"issuer": "test",
+		"domain": "www.test.com",
 		"key": "privateKey",
-		"expiry": 600
+		"expiry": "12h"
 	}
 }

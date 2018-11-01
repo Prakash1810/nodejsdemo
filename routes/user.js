@@ -6,8 +6,7 @@ const router    = express.Router();
 
 router.get('/activation/:hash', (req, res, next) => {
     try {
-        user.activate(req, res);
-        next()
+        user.activate(req, res, next);
     }
     catch (err) {
         return res.status(500).send(helpers.errorFormat({'message': err.message }));
@@ -16,8 +15,13 @@ router.get('/activation/:hash', (req, res, next) => {
 
 router.post('/login', (req, res, next) => {
     try {
-        user.login(req, res);
-        next()
+        let { error }  = user.validate(req.body);
+        if (error) {
+            res.status(400).send(helpers.errorFormat(error));
+            next()
+        } else {
+            user.login(req, res, next);
+        }
     }
     catch (err) {
         return res.status(500).send(helpers.errorFormat({'message': err.message }));

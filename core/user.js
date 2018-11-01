@@ -3,10 +3,13 @@ const UserTemp  = require('../db/user-temp');
 const helpers   = require('../helpers/helper.functions');
 const config    = require('config');
 const jwt       = require('jsonwebtoken');
+const Joi       = require('Joi');
+const bcrypt    = require('bcrypt');
+
 
 let user = {};
 
-user.activate = (req, res) => {
+user.activate = (req, res, next) => {
     try {
         const userHash = JSON.parse(helpers.decrypt(req.params.hash));
         UserTemp.findById(userHash.id)
@@ -20,58 +23,91 @@ user.activate = (req, res) => {
                     created_date: result.created_date
                 }, (err) => {
                     if (err) {
-                        return res.status(500).send(helpers.errorFormat(err.message))
+                        res.status(500).send(helpers.errorFormat(err.message))
+                        next()
                     } else {
                         if(UserTemp.removeUserTemp(result.id)) {
-                            return res.status(200).send(helpers.successFormat({
+                            res.status(200).send(helpers.successFormat({
                                 'message': `Congratulation!, Your account has been activated.`
                             }));
+                            next()
                         } else {
-                            return res.status(400).json(helpers.errorFormat({'message': 'Invalid token. may be sdasdtoken as expired!'}));
+                            res.status(400).send(helpers.errorFormat({'message': 'Invalid token. may be sdasdtoken as expired!'}));
+                            next()
                         }
                     }
                 });
             } else {
-                return res.status(400).json(helpers.errorFormat({'message': 'Invalid token. may be token as expired!'}));
+                res.status(400).send(helpers.errorFormat({'message': 'Invalid token. may be token as expired!'}));
+                next()
             }            
-        })
-        .catch((err) => {
-            return res.status(500).json(helpers.errorFormat({ 'message': err.message}));
-        })
+        });
     }
     catch (err) {
-        return res.status(500).json(helpers.errorFormat({'message': 'invalid token.'}));
+        res.status(500).send(helpers.errorFormat({'message': 'invalid token.'}));
+        next()
     }
 }
 
-user.login = (req, res) => {
-	Users.findOne({ email:req.body.email })
-    .exec()
-    .then(user => {
-        if (!user.length) {
-            return res.status(400).json(helpers.errorFormat({ 'message': 'Invalid credentials' }));
-        } else {
-            bcrypt.compare(req.body.password, user.password, function(err, result) {
+user.createToken = (user) => {
+    let jwtOptions = {
+        issuer:  config.get('secrete.issuer'),
+        subject:  'Authentication',
+        audience:  config.get('secrete.domain'),
+        expiresIn:  config.get('secrete.expiry'),
+    };
+
+    return jwt.sign({ user: user._id }, config.get('secrete.key'), jwtOptions );
+};
+
+user.login = (req, res, next) => {
+    try {
+        Users.findOne({ email: req.body.email })
+        .exec((err, result) => {
+            if (err || result === null ) {
+                res.status(400).send(helpers.errorFormat({ 'message': 'Invalid credentials' }));
+                next()
+            }
+
+            bcrypt.compare(req.body.password, result.password, function(err) {
                 if (err) {
-                    return res.status(400).json(helpers.errorFormat({ 'message': err.message }));
+                    res.status(400).send(helpers.errorFormat({ 'message': err.message }));
+                    next()
                 }
-
-                if (result) {
-                    let expiry = config.get('secrete.exipiry')
-                    let token = jwt.sign({ user: user._id }, config.get('secrete.key'), { expiresIn: expiry });
-                    return res.status(200).json(helpers.successFormat({
-                        "token": token,
-                        "expiry": expiry,
-                        "created_at": Date.now() 
-                    }, user._id ));
-                }
-            });
-        }
-
-    })
-    .catch(err => {
-        return res.status(500).json({ "message":err.message });
-    });
+                res.status(200).send(helpers.successFormat({
+                    "token": user.createToken(user),
+                    "created_at": Date.now() 
+                }, result._id ));
+                next()
+            })
+        });
+    }
+    catch (err) {
+        res.status(500).send(helpers.errorFormat({ 'message': err.message }));
+        next()
+    }	
 }
+
+user.validate = (req) => {
+    let schema = Joi.object().keys({
+        email: Joi.string().required().email().options({
+            language:{
+                string:{
+                    required: '{{label}} field is required',
+                    email: 'Invalid {{label}} address.'
+                }
+            }
+        }).label('email'),
+        password: Joi.string().required().options({
+            language:{
+                string:{
+                    required: '{{label}} field is required',
+                }
+            }
+        }).label('password')
+    });
+
+    return Joi.validate(req, schema, { abortEarly: false })
+};
 
 module.exports = user;
