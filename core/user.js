@@ -9,7 +9,7 @@ const bcrypt    = require('bcrypt');
 
 let user = {};
 
-user.activate = (req, res, next) => {
+user.activate = (req, res) => {
     try {
         const userHash = JSON.parse(helpers.decrypt(req.params.hash));
         UserTemp.findById(userHash.id)
@@ -23,29 +23,24 @@ user.activate = (req, res, next) => {
                     created_date: result.created_date
                 }, (err) => {
                     if (err) {
-                        res.status(500).send(helpers.errorFormat(err.message))
-                        next()
+                        return res.status(500).send(helpers.errorFormat(err.message))
                     } else {
                         if(UserTemp.removeUserTemp(result.id)) {
-                            res.status(200).send(helpers.successFormat({
+                            return res.status(200).send(helpers.successFormat({
                                 'message': `Congratulation!, Your account has been activated.`
                             }));
-                            next()
                         } else {
-                            res.status(400).send(helpers.errorFormat({'message': 'Invalid token. may be sdasdtoken as expired!'}));
-                            next()
+                            return res.status(400).send(helpers.errorFormat({'message': 'Invalid token. may be sdasdtoken as expired!'}));
                         }
                     }
                 });
             } else {
-                res.status(400).send(helpers.errorFormat({'message': 'Invalid token. may be token as expired!'}));
-                next()
+                return res.status(400).send(helpers.errorFormat({'message': 'Invalid token. may be token as expired!'}));
             }            
         });
     }
     catch (err) {
-        res.status(500).send(helpers.errorFormat({'message': 'invalid token.'}));
-        next()
+        return res.status(500).send(helpers.errorFormat({'message': 'invalid token.'}));
     }
 }
 
@@ -60,31 +55,27 @@ user.createToken = (user) => {
     return jwt.sign({ user: user._id }, config.get('secrete.key'), jwtOptions );
 };
 
-user.login = (req, res, next) => {
+user.login = (req, res) => {
     try {
         Users.findOne({ email: req.body.email })
         .exec((err, result) => {
-            if (err || result === null ) {
-                res.status(400).send(helpers.errorFormat({ 'message': 'Invalid credentials' }));
-                next()
+            if (err || result == null) {
+                return res.status(400).send(helpers.errorFormat({ 'message': 'Invalid credentials' }));
             }
 
             bcrypt.compare(req.body.password, result.password, function(err) {
                 if (err) {
-                    res.status(400).send(helpers.errorFormat({ 'message': err.message }));
-                    next()
+                    return res.status(400).send(helpers.errorFormat({ 'message': err.message }));
                 }
-                res.status(200).send(helpers.successFormat({
+                return res.status(200).send(helpers.successFormat({
                     "token": user.createToken(user),
                     "created_at": Date.now() 
                 }, result._id ));
-                next()
             })
         });
     }
     catch (err) {
-        res.status(500).send(helpers.errorFormat({ 'message': err.message }));
-        next()
+        return res.status(500).send(helpers.errorFormat({ 'message': err.message }));
     }	
 }
 

@@ -8,8 +8,9 @@ router.post('/', (req, res, next) => {
     let { error }  = registration.validate(req.body);
     if (error) {
         res.status(400).send(helpers.errorFormat(error));
+        return next()
     } else {
-        registration.post(req, res, next);
+        registration.post(req, res);
     }
 });
 

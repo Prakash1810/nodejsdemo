@@ -3,8 +3,8 @@ const express    = require('express');
 const config     = require('config');
 const bodyParser = require('body-parser');
 
+// middleware
 const auth = require("./middleware/authentication");
-
 
 // routes
 const registrationRoutes = require('./routes/registration');

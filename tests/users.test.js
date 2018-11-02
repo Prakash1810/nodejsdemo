@@ -1,11 +1,11 @@
 const request = require('supertest');
-const app     = require('../app');
 
+let baseUrl     = 'http://localhost:3000';
 let route = '/api/user/login';
 
-describe('POST /api/user login API', () => {
-    it( 'Validate email and password is required' , () => {
-        return request(app)
+describe('Intergration testing for POST:- /api/user/login', () => {
+    it( 'Validate email and password is required' , (done) => {
+        request(baseUrl)
                 .post(route)
                 .set('Accept', 'application/json')
                 .send({})
@@ -20,10 +20,11 @@ describe('POST /api/user login API', () => {
                         }
                     });
                 });
-    })
+        done()
+    });
 
-    it('Validate invalid credentials', () => {
-        return request(app)
+    it('Validate invalid credentials', (done) => {
+        request(baseUrl)
                 .post(route)
                 .set('Accept', 'application/json')
                 .send({
@@ -40,10 +41,11 @@ describe('POST /api/user login API', () => {
                         }
                     });
                 });
+        done()
     });
 
-    it('Validate login credentials', () => {
-        return request(app)
+    it('Validate login credentials', (done) => {
+        request(baseUrl)
                 .post(route)
                 .set('Accept', 'application/json')
                 .send({
@@ -52,7 +54,9 @@ describe('POST /api/user login API', () => {
                 })
                 .expect(200)
                 .then((res) => {
-                    expect(res.body).toHaveProperty('id', 'attributes.token', 'attributes.created_at');
+                    expect(res.body).toHaveProperty('errors', false);
+                    expect(res.body).toHaveProperty('data.attributes.token');
+                    done()
                 });
     });
 });

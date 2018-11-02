@@ -1,10 +1,12 @@
-const request = require('supertest');
-const app     = require('../app');
+const request  = require('supertest');
 
-describe('POST /api/registraton user registration API', () => {
-    it( 'Validate email , password and confirm password is required' , () => {
-        return request(app)
-                .post('/api/registration')
+let baseUrl = 'http://localhost:3000';
+let route = '/api/registration';
+
+describe('Intergration testing for POST:- /api/registraton', () => {
+    it( 'Validate email , password and confirm password is required' , (done) => {
+        request(baseUrl)
+                .post(route)
                 .set('Accept', 'application/json')
                 .send({})
                 .expect(400)
@@ -18,12 +20,13 @@ describe('POST /api/registraton user registration API', () => {
                             }
                         }
                     });
+                    done();
                 });
-    })
+    });
 
-    it('Validate email format', () => {
-        return request(app)
-                .post('/api/registration')
+    it('Validate email format', (done) => {
+        request(baseUrl)
+                .post(route)
                 .set('Accept', 'application/json')
                 .send({
                     email: "satzmail.com",
@@ -40,12 +43,13 @@ describe('POST /api/registraton user registration API', () => {
                             }
                         }
                     });
+                    done();
                 });
-            })
+    });
 
-    it('Validate pasword match with regx', () => {
-        return request(app)
-                .post('/api/registration')
+    it('Validate pasword match with regx', (done) => {
+        request(baseUrl)
+                .post(route)
                 .set('Accept', 'application/json')
                 .send({
                     email: "satz@mail.com",
@@ -61,11 +65,12 @@ describe('POST /api/registraton user registration API', () => {
                             }
                         }
                     });
+                    done();
                 });
-    })
+    });
 
-    it('Validate password & confirm password match', () => {
-        return request(app)
+    it('Validate password & confirm password match', (done) => {
+        request(baseUrl)
                 .post('/api/registration')
                 .set('Accept', 'application/json')
                 .send({
@@ -82,11 +87,12 @@ describe('POST /api/registraton user registration API', () => {
                             }
                         }
                     });
+                    done();
                 });
     });
 
-    it('Validate email address already registred', () => {
-        return request(app)
+    it('Validate email address already registred', (done) => {
+        request(baseUrl)
                 .post('/api/registration')
                 .set('Accept', 'application/json')
                 .send({
@@ -99,10 +105,11 @@ describe('POST /api/registraton user registration API', () => {
                     expect(res.body).toMatchObject({
                         data: {
                             attributes: {
-                                email: "This email address already registred."
+                                email: "This email address already exits."
                             }
                         }
                     });
+                    done();
                 });
     });
 });

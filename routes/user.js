@@ -4,23 +4,22 @@ const helpers = require('../helpers/helper.functions');
 
 const router    = express.Router();
 
-router.get('/activation/:hash', (req, res, next) => {
+router.get('/activation/:hash', (req, res) => {
     try {
-        user.activate(req, res, next);
+        user.activate(req, res);
     }
     catch (err) {
         return res.status(500).send(helpers.errorFormat({'message': err.message }));
     }
 });
 
-router.post('/login', (req, res, next) => {
+router.post('/login', (req, res) => {
     try {
         let { error }  = user.validate(req.body);
         if (error) {
-            res.status(400).send(helpers.errorFormat(error));
-            next()
+            return res.status(400).send(helpers.errorFormat(error));
         } else {
-            user.login(req, res, next);
+            user.login(req, res);
         }
     }
     catch (err) {

@@ -1,17 +1,17 @@
-const Joi       = require('Joi');
+const Joi       = require('joi');
 const UserTemp  = require('../db/user-temp');
 const Users     = require('../db/users');
 const helpers   = require('../helpers/helper.functions');
 
 let registration = {};
 
-registration.post = (req, res, next) => {
+registration.post = (req, res) => {
     if( req ) {
         // check email address already exits in user temp collections
-        UserTemp.checkEmail(req.body.email,res);
+        UserTemp.checkEmail(req.body.email, res);
 
         // check email address already exits in user temp collections
-        Users.checkEmail(req.body.email,res);
+        Users.checkEmail(req.body.email, res);
 
         UserTemp.create({
             email: req.body.email,
@@ -19,21 +19,19 @@ registration.post = (req, res, next) => {
             referral_code: req.body.referral_code ? req.body.referral_code : null
         }, (err, user) => {
             if (err) {
-                res.status(500).send(helpers.errorFormat({ message: err.message}))
-                next()
+                return res.status(500).json(helpers.errorFormat({ 'message': err.message }));
             } else {
                 let encryptedHash = helpers.encrypt(
-                                    JSON.stringify({
-                                        'id': user.id,
-                                        'email':  req.body.email
-                                    })
-                                );
+                                        JSON.stringify({
+                                            'id': user.id,
+                                            'email': req.body.email
+                                        })
+                                    );
 
-                res.status(200).send(helpers.successFormat({
+                return res.status(200).json(helpers.successFormat({
                             'message': `We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.`,
                             'activation_link' : `http://localhost:3000/api/user/activation/${encryptedHash}`
                         }));
-                next()
             }
         });
     }

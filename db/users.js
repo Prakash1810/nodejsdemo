@@ -47,6 +47,6 @@ const Users = module.exports = mongoose.model('users', usersSchema);
 
 module.exports.checkEmail = async (email, res) => {
     Users.find({ email: email }).exec((err, user) => {
-       if(user.length) res.status(400).send(helpers.errorFormat({ 'email': 'This email address already exits.'}));
+       if(user.length) return res.status(400).send(helpers.errorFormat({ 'email': 'This email address already exits.'}));
     });
 };
