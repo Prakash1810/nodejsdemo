@@ -3,7 +3,9 @@ const express    = require('express');
 const config     = require('config');
 const bodyParser = require('body-parser');
 
-// middleware
+// set
+process.env['NODE_ENV'] = 'development'
+
 const auth = require("./middleware/authentication");
 
 // routes

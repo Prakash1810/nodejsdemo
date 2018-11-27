@@ -3,7 +3,7 @@ const UserTemp  = require('../db/user-temp');
 const helpers   = require('../helpers/helper.functions');
 const config    = require('config');
 const jwt       = require('jsonwebtoken');
-const Joi       = require('Joi');
+const Joi       = require('joi');
 const bcrypt    = require('bcrypt');
 
 

@@ -1,6 +1,6 @@
-FROM node:8.12.0-alpine
+FROM node:8.13.0-alpine
 
-LABEL user = "mohammed.niyas@beldex.org"
+LABEL user = "sathish.kumar@beldex.org"
 
 # Create a working directory 
 RUN mkdir -p /usr/src/app
@@ -16,6 +16,7 @@ COPY package.json .
 COPY . .
 
 RUN apk --no-cache add --virtual builds-deps build-base python
+RUN npm cache clean --force
 RUN npm config set python /usr/bin/python
 
 # Install nodemon globally
@@ -24,8 +25,12 @@ RUN npm install -g nodemon
 # Install dependencies (if any) in package.json
 RUN npm install --quiet
 
+RUN export NODE_ENV=development
+
+RUN npm update
+
 # Expose port from container so host can access 3000
 EXPOSE 3000
- 
+
 # Start the Node.js app on load
 CMD [ "npm", "start" ]
