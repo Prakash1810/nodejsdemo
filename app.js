@@ -41,5 +41,5 @@ mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, { 
 (err) => {
     console.log("DB connection failed");
 });
-
+console.log("hi");
 module.exports = app;

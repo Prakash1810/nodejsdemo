@@ -1,4 +1,4 @@
-FROM node:8.13.0-alpine
+FROM node:10.15.0-alpine
 
 LABEL user = "sathish.kumar@beldex.org"
 

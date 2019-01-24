@@ -23,14 +23,14 @@ user.activate = (req, res) => {
                     created_date: result.created_date
                 }, (err) => {
                     if (err) {
-                        return res.status(500).send(helpers.errorFormat(err.message))
+                        return res.status(500).send(helpers.errorFormat(err))
                     } else {
                         if(UserTemp.removeUserTemp(result.id)) {
                             return res.status(200).send(helpers.successFormat({
                                 'message': `Congratulation!, Your account has been activated.`
                             }));
                         } else {
-                            return res.status(400).send(helpers.errorFormat({'message': 'Invalid token. may be sdasdtoken as expired!'}));
+                            return res.status(400).send(helpers.errorFormat({'message': 'Invalid token. may be token as expired!'}));
                         }
                     }
                 });
