@@ -27,19 +27,17 @@ app.use('/api/registration',registrationRoutes);
 app.use('/api/user',userRoutes);
 
 app.get('/', auth, (req, res) => {
-    res.send('App Works!!!!');
+    res.send('App Workss!!!!');
 });
 
 app.listen(3000, () => {
     console.log('listening on port 3000!!')
 });
 
-
-mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, { useNewUrlParser: true }).then( () => {
+mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, { autoIndex: false, useNewUrlParser: true }).then( () => {
     console.log("DB connection successful");
 },
 (err) => {
     console.log("DB connection failed");
 });
-console.log("hi");
 module.exports = app;

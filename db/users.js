@@ -9,7 +9,7 @@ let host = config.get('database.host'),
     password = config.get('database.password'),
     database = config.get('database.database');
 
-var connection = mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, { useNewUrlParser: true });
+var connection = mongoose.createConnection(`mongodb://${host}:${port}/${database}`, { useNewUrlParser: true, autoIndex: false });
 
 const usersSchema = mongoose.Schema({
     user_id: { type: Number, default: 0 },

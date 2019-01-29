@@ -1,21 +1,6 @@
 # Use root/example as user/password credentials
 version: '3.1'
-
 services:
-
-  app:
-    container_name: core-api
-    restart: always
-    build: .
-    volumes:
-      - /usr/src/app
-      - /usr/src/app/node_modules
-    ports:
-      - "3000:3000"
-    links:
-      - database  
-    depends_on:
-      - database  
  
   database:
     container_name: mongo
@@ -38,3 +23,17 @@ services:
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: beldex123
+
+  app:
+    container_name: core-api
+    restart: always
+    build: .
+    volumes:
+      - /usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - "3000:3000"
+    links:
+      - database  
+    depends_on:
+      - database    
