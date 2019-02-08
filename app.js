@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 // set
 process.env['NODE_ENV'] = 'development'
 
-const auth = require("./middleware/authentication");
+const auth = require("./src/middleware/authentication");
 
 // routes
 const registrationRoutes = require('./routes/registration');
@@ -23,8 +23,8 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 
-app.use('/api/registration',registrationRoutes);
-app.use('/api/user',userRoutes);
+app.use('registration',registrationRoutes);
+app.use('user',userRoutes);
 
 app.get('/', auth, (req, res) => {
     res.send('App Workss!!!!');
