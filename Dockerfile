@@ -33,4 +33,4 @@ RUN npm update
 EXPOSE 3000
 
 # Start the Node.js app on load
-CMD [ "npm", "start" ]
+CMD [ "nodemon", "app.js" ]

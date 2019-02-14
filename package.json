@@ -7,6 +7,9 @@
     "test": "jest",
     "start": "nodemon -L app.js"
   },
+  "jest": {
+    "setupTestFrameworkScriptFile": "./test/setup.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://niyas-beldex@bitbucket.org/beldex/core-api.git"
@@ -25,7 +28,6 @@
     "joi": "^14.3.0",
     "jsonwebtoken": "^8.4.0",
     "mongoose": "^5.4.4",
-    "mongoose-auto-increment": "^5.0.1",
     "nodemon": "^1.18.9",
     "npm": "^6.6.0"
   }

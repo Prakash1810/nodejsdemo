@@ -1,4 +1,4 @@
-const example = require('../core/example');
+const example = require('../src/core/example');
 
 
 describe('add', () => {

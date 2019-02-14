@@ -8,31 +8,37 @@ let registration = {};
 registration.post = (req, res) => {
     if( req ) {
         // check email address already exits in user temp collections
-        UserTemp.checkEmail(req.body.email, res);
-
-        // check email address already exits in user temp collections
-        Users.checkEmail(req.body.email, res);
-
-        UserTemp.create({
-            email: req.body.email,
-            password: req.body.password,
-            referral_code: req.body.referral_code ? req.body.referral_code : null
-        }, (err, user) => {
-            if (err) {
-                return res.status(500).json(helpers.errorFormat({ 'message': err.message }));
-            } else {
-                let encryptedHash = helpers.encrypt(
-                                        JSON.stringify({
-                                            'id': user.id,
-                                            'email': req.body.email
-                                        })
-                                    );
-
-                return res.status(200).json(helpers.successFormat({
-                            'message': `We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.`,
-                            'activation_link' : `http://localhost:3000/api/user/activation/${encryptedHash}`
-                        }));
-            }
+        UserTemp.find({ email: req.body.email })
+        .exec()
+        .then(result => {
+            if (result.length) return res.status(400).send(helpers.errorFormat({ 'email': 'This email address already exits.'}));
+             // check email address already exits in user temp collections
+            Users.find({email: req.body.email})
+            .exec()
+            .then(result => {
+                if (result.length) return res.status(400).send(helpers.errorFormat({ 'email': 'This email address already exits.'}));
+                UserTemp.create({
+                    email: req.body.email,
+                    password: req.body.password,
+                    referral_code: req.body.referral_code ? req.body.referral_code : null
+                }, (err, user) => {
+                    if (err) {
+                        return res.status(500).json(helpers.errorFormat({ 'message': err.message }));
+                    } else {
+                        let encryptedHash = helpers.encrypt(
+                                                JSON.stringify({
+                                                    'id': user.id,
+                                                    'email': req.body.email
+                                                })
+                                            );
+        
+                        return res.status(200).json(helpers.successFormat({
+                                    'message': `We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.`,
+                                    'activation_link' : `http://localhost:3000/api/user/activation/${encryptedHash}`
+                                }));
+                    }
+                });
+            });
         });
     }
 };

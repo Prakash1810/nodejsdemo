@@ -1,16 +1,6 @@
 const mongoose = require('mongoose');
 const helpers   = require('../helpers/helper.functions');
-const autoIncrement = require('mongoose-auto-increment');
 const config     = require('config');
-
-let host = config.get('database.host'),
-    port = config.get('database.port'),
-    user = config.get('database.user'),
-    password = config.get('database.password'),
-    database = config.get('database.database');
-
-var connection = mongoose.createConnection(`mongodb://${host}:${port}/${database}`, { useNewUrlParser: true, autoIndex: false });
-
 const usersSchema = mongoose.Schema({
     user_id: { type: Number, default: 0 },
     email:{ 
@@ -40,13 +30,13 @@ const usersSchema = mongoose.Schema({
     is_deleted: { type: Boolean, default: false }
 });
 
-autoIncrement.initialize(connection);
-usersSchema.plugin(autoIncrement.plugin, { model: 'users', field: 'user_id', startAt: 1 });
-
 const Users = module.exports = mongoose.model('users', usersSchema); 
 
-module.exports.checkEmail = async (email, res) => {
-    Users.find({ email: email }).exec((err, user) => {
-       if(user.length) return res.status(400).send(helpers.errorFormat({ 'email': 'This email address already exits.'}));
-    });
+module.exports.checkEmail = (email) => {
+    try {
+        return Users.find({ email: email }).exec();
+    } catch (error) {
+        // handle query error
+        // return res.status(500).send(error);
+    }
 };

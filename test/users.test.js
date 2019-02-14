@@ -1,10 +1,20 @@
-const request = require('supertest');
+const request   = require('supertest');
+const baseUrl   = 'http://localhost:3000';
+const route     = '/api/user/login';
+const UserTemp  = require('../src/db/user-temp');
+const helpers = require('../src/helpers/helper.functions');
 
-let baseUrl     = 'http://localhost:3000';
-let route = '/api/user/login';
 
-describe('Intergration testing for POST:- /api/user/login', () => {
-    it( 'Validate email and password is required' , (done) => {
+beforeAll((done) => {
+    done();
+});
+  
+afterAll((done) => {
+    done();
+});
+
+describe('Intergration testing for POST and GET:- /api/user/login', () => {
+    it( 'Validate email and password is required' , () => {
         request(baseUrl)
                 .post(route)
                 .set('Accept', 'application/json')
@@ -20,10 +30,9 @@ describe('Intergration testing for POST:- /api/user/login', () => {
                         }
                     });
                 });
-        done()
     });
 
-    it('Validate invalid credentials', (done) => {
+    it('Validate invalid credentials', () => {
         request(baseUrl)
                 .post(route)
                 .set('Accept', 'application/json')
@@ -41,22 +50,64 @@ describe('Intergration testing for POST:- /api/user/login', () => {
                         }
                     });
                 });
-        done()
     });
 
-    it('Validate login credentials', (done) => {
+    it ('User activation invalid token', () => {
+        var route = `/api/user/activation/dsdsadsadsa`;
         request(baseUrl)
-                .post(route)
+        .get(route)
+        .set('Accept', 'application/json')
+        .expect(400)
+        .then((res) => {
+            expect(res.body).toMatchObject({
+                data: {
+                    attributes: {
+                        message: "Invalid token. may be token as expired!"
+                    }
+                }
+            });
+        });
+    });
+
+    it ('User activation', async () => {
+        await UserTemp.find({ email: 'satz@mail.com' })
+            .exec()
+            .then(result => {
+                let encryptedHash = helpers.encrypt(
+                    JSON.stringify({
+                        'id': result.id,
+                        'email': result.email
+                    })
+                );
+            var route = `/api/user/activation/${encryptedHash}`;
+                request(baseUrl)
+                .get(route)
                 .set('Accept', 'application/json')
-                .send({
-                    email: "satz3@mail.com",
-                    password: "1234567S"
-                })
                 .expect(200)
                 .then((res) => {
-                    expect(res.body).toHaveProperty('errors', false);
-                    expect(res.body).toHaveProperty('data.attributes.token');
-                    done()
+                    expect(res.body).toMatchObject({
+                        data: {
+                            attributes: {
+                                message: "Congratulation!, Your account has been activated."
+                            }
+                        }
+                    });
                 });
+            });
+    });
+
+    it('Validate login credentials', () => {
+        request(baseUrl)
+        .post(route)
+        .set('Accept', 'application/json')
+        .send({
+            email: "satz@mail.com",
+            password: "1234567S"
+        })
+        .expect(200)
+        .then((res) => {
+            expect(res.body).toHaveProperty('errors', false);
+            expect(res.body).toHaveProperty('data.attributes.token');
+        });
     });
 });

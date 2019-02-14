@@ -46,8 +46,11 @@ module.exports.removeUserTemp = async (id) => {
                 });
 };
 
-module.exports.checkEmail = async (email, res) => {
-    UserTemp.find({ email: email }).exec((err, user) => {
-       if(user.length) return res.status(400).send(helpers.errorFormat({ 'email': 'This email address already exits.'}));
-    });
+module.exports.checkEmail = (email) => {
+    try {
+        return UserTemp.find({ email: email }).exec();
+    } catch (error) {
+        // handle query error
+        // return res.status(500).send(error);
+    }
 };

@@ -63,11 +63,12 @@ user.createToken = (user) => {
 
 user.login = (req, res) => {
     try {
-        Users.findOne({
+        Users.find({
                 email: req.body.email
             })
-            .exec((err, result) => {
-                if (err || result == null) {
+            .exec()
+            .then(result => {
+                if (!result.length) {
                     return res.status(400).send(helpers.errorFormat({
                         'message': 'Invalid credentials'
                     }));

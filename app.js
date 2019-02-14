@@ -9,8 +9,8 @@ process.env['NODE_ENV'] = 'development'
 const auth = require("./src/middleware/authentication");
 
 // routes
-const registrationRoutes = require('./routes/registration');
-const userRoutes = require('./routes/user');
+const registrationRoutes = require('./src/routes/registration');
+const userRoutes = require('./src/routes/user');
 
 let host = config.get('database.host'),
     port = config.get('database.port'),
@@ -23,11 +23,15 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 
-app.use('registration',registrationRoutes);
-app.use('user',userRoutes);
+app.use('/api/registration',registrationRoutes);
+app.use('/api/user',userRoutes);
 
 app.get('/', auth, (req, res) => {
     res.send('App Workss!!!!');
+});
+
+app.get('*', auth, (req, res) => {
+    res.status(404).send({ msg: 'not found'});
 });
 
 app.listen(3000, () => {
@@ -40,4 +44,5 @@ mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, { 
 (err) => {
     console.log("DB connection failed");
 });
+
 module.exports = app;
