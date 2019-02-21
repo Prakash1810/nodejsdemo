@@ -4,11 +4,8 @@
   "description": "An API which act as a core interface between the UI and the microservices",
   "main": "app.js",
   "scripts": {
-    "test": "jest",
+    "test": "mocha",
     "start": "nodemon -L app.js"
-  },
-  "jest": {
-    "setupTestFrameworkScriptFile": "./test/setup.js"
   },
   "repository": {
     "type": "git",
@@ -23,10 +20,12 @@
   },
   "dependencies": {
     "bcrypt": "^3.0.3",
+    "chai": "^4.2.0",
     "config": "^3.0.1",
     "express": "^4.16.4",
     "joi": "^14.3.0",
     "jsonwebtoken": "^8.4.0",
+    "mocha": "^5.2.0",
     "mongoose": "^5.4.4",
     "nodemon": "^1.18.9",
     "npm": "^6.6.0"

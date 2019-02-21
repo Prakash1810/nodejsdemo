@@ -34,7 +34,7 @@ userTempSchema.pre('save', function(next) {
 });
 
 
-const UserTemp = module.exports =  mongoose.model('user-temp', userTempSchema);
+const UserTemp = module.exports =  mongoose.model('user-temps', userTempSchema);
 
 module.exports.removeUserTemp = async (id) => {
     return await UserTemp.deleteOne({ _id: id })
