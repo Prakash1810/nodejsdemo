@@ -1,5 +1,7 @@
-class Controller {
+const UserTemp      = require('../db/user-temp');
+const Users         = require('../db/users');
 
+class Controller {
     errorMsgFormat (error) {
         return { 
             "code": 400,
@@ -34,7 +36,28 @@ class Controller {
             }
         }; 
     }
-    
+
+    // checkEmailisUnique (email) {
+    //     // check email address already exits in user temp collections
+    //     UserTemp.find({ email: email })
+    //     .exec()
+    //     .then(result => {
+    //          if (result.length) {
+    //             return false;
+    //          } else {
+    //             Users.find({email: email})
+    //             .exec()
+    //             .then(result => {
+    //                 if (result.length) {
+    //                     return false;
+    //                 } else {
+    //                     return true;
+    //                 }
+    //             });
+    //          }
+    //     });
+    // }
+     
 }
 
 module.exports = Controller;

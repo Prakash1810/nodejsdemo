@@ -63,19 +63,17 @@ user.createToken = (user) => {
 
 user.login = (req, res) => {
     try {
-        Users.find({
+        Users.findOne({
                 email: req.body.email
             })
-            .exec()
-            .then(result => {
-                if (!result.length) {
+            .then((result) => {
+                if (!result) {
                     return res.status(400).send(helpers.errorFormat({
                         'message': 'Invalid credentials'
                     }));
                 }
-
-                bcrypt.compare(req.body.password, result.password, function (err) {
-                    if (err) {
+                bcrypt.compare(req.body.password, result.password).then(function (response) {
+                    if (response == false) {
                         return res.status(400).send(helpers.errorFormat({
                             'message': err.message
                         }));

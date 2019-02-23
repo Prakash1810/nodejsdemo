@@ -1,10 +1,11 @@
 const Joi           = require('joi');
 const UserTemp      = require('../db/user-temp');
 const Users         = require('../db/users');
-const Controller    = require('../core/controller')
+const Controller    = require('../core/controller');
+const helpers = require('../helpers/helper.functions');
+
 
 class Registration extends Controller {
-    
     validate (req) {
         let schema = Joi.object().keys({
                         email: Joi.string().required().email().options({
@@ -50,7 +51,7 @@ class Registration extends Controller {
                         return res.status(400).send(this.errorFormat({ 'email': 'This email address already exits.' }));
                     }
                     
-                    this.insertUser(req);
+                    this.insertUser(req, res);
                 });
             }
         });
@@ -58,7 +59,7 @@ class Registration extends Controller {
         return false;
     }
 
-    insertUser (req) {
+    insertUser (req, res) {
         UserTemp.create({
             email: req.body.email,
             password: req.body.password,
@@ -67,7 +68,7 @@ class Registration extends Controller {
             if (err) {
                 return res.status(500).json(this.errorFormat({ 'message': err.message }));
             } else {
-                let encryptedHash = this.encrypt(
+                let encryptedHash = helpers.encrypt(
                                         JSON.stringify({
                                             'id': user.id,
                                             'email': req.body.email
@@ -83,4 +84,4 @@ class Registration extends Controller {
     }
 }
 
-module.exports = new Registration();
+module.exports = new Registration;
