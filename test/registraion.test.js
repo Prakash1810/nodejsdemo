@@ -148,7 +148,7 @@ describe('Registration module intergration test case:- /api/registraton', () => 
     });
 
     it('Successfully user registred', async (done) => {
-        await request(baseUrl)
+        request(baseUrl)
         .post('/api/registration')
         .set('Accept', 'application/json')
         .send({
@@ -166,7 +166,7 @@ describe('Registration module intergration test case:- /api/registraton', () => 
     });
 
     it('Validate email address already registred', async (done) => {
-        await request(baseUrl)
+        request(baseUrl)
         .post('/api/registration')
         .set('Accept', 'application/json')
         .send({
