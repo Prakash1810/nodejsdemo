@@ -1,31 +1,26 @@
-const { assert , expect, should } = require('chai');
+const { expect }    = require('chai');
 const registration  = require('../src/core/registration');
 const request       = require('supertest');
-const UserTemp       = require('../src/db/user-temp');
-const config     = require('config');
-
-let baseUrl = config.get('site_info.url');
-let route = '/api/registration';
-
-before((done) => {
-    done();
-});
-  
-after((done) => {
-    UserTemp.deleteOne({ email: 'satz@mail.com' } , function (err) {
-                    expect(err).to.equal(null);
-                    done();
-                });
-});
-
-var isValidRequest = {
+const UserTemp      = require('../src/db/user-temp');
+const config        = require('config');
+const baseUrl       = config.get('site_info.url');
+const route         = '/api/registration';
+var isValidRequest  = {
                         'email' : 'satz@mail.com',
                         'password'  : '1234567S',
                         'password_confirmation' : '1234567S'
                     };
-var errors = {};
+var errors          = {};
 
-describe('Registration :-', () => {
+after((done) => {
+    UserTemp.deleteOne({ email: 'satz@mail.com' } 
+                        , function (err) {
+                            expect(err).to.equal(null);
+                            done();
+                        });
+});
+
+describe('Registration module unit test case :-', () => {
     it ('should check all the fields are required', (done) => {
         let { error } = registration.validate({});
         error.details.forEach((detail) => {
@@ -88,7 +83,7 @@ describe('Registration :-', () => {
     });
 });
 
-describe('Intergration testing for POST:- /api/registraton', () => {
+describe('Registration module intergration test case:- /api/registraton', () => {
     it( 'Validate email , password and confirm password is required' , (done) => {
         request(baseUrl)
         .post(route)
