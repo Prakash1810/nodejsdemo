@@ -4,7 +4,7 @@ const request       = require('supertest');
 const UserTemp      = require('../src/db/user-temp');
 const config        = require('config');
 const baseUrl       = config.get('site_info.url');
-const route         = '/api/registration';
+const route         = 'v1/user/registration';
 var isValidRequest  = {
                         'email' : 'satz@mail.com',
                         'password'  : '1234567S',
@@ -133,7 +133,7 @@ describe('Registration module intergration test case:- /api/registraton', () => 
 
     it('Validate password & confirm password match', (done) => {
         request(baseUrl)
-        .post('/api/registration')
+        .post(route)
         .set('Accept', 'application/json')
         .send({
             email: "satz@mail.com",
@@ -147,9 +147,9 @@ describe('Registration module intergration test case:- /api/registraton', () => 
         });
     });
 
-    it('Successfully user registred', async (done) => {
+    it('Successfully user registred', (done) => {
         request(baseUrl)
-        .post('/api/registration')
+        .post(route)
         .set('Accept', 'application/json')
         .send({
             email: "satz@mail.com",
@@ -165,9 +165,9 @@ describe('Registration module intergration test case:- /api/registraton', () => 
         });
     });
 
-    it('Validate email address already registred', async (done) => {
+    it('Validate email address already registred', (done) => {
         request(baseUrl)
-        .post('/api/registration')
+        .post(route)
         .set('Accept', 'application/json')
         .send({
             email: "satz@mail.com",

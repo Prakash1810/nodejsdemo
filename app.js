@@ -23,8 +23,8 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 
-app.use('/api/registration',registrationRoutes);
-app.use('/api/user',userRoutes);
+app.use('/api/v1/user/registration',registrationRoutes);
+app.use('/api/v1/user',userRoutes);
 
 app.get('/', auth, (req, res) => {
     res.send('App Workss!!!!');
