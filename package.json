@@ -4,7 +4,7 @@
   "description": "An API which act as a core interface between the UI and the microservices",
   "main": "app.js",
   "scripts": {
-    "test": "mocha",
+    "test": "mocha --timeout 10000",
     "start": "nodemon -L app.js"
   },
   "repository": {
