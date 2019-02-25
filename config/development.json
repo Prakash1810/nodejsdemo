@@ -14,5 +14,8 @@
 		"domain": "www.test.com",
 		"key": "privateKey",
 		"expiry": "12h"
+	},
+	"site_info": {
+		"url": "http://35.206.64.161:3000" 
 	}
 }

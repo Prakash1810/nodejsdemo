@@ -2,8 +2,9 @@ const { assert , expect, should } = require('chai');
 const registration  = require('../src/core/registration');
 const request       = require('supertest');
 const UserTemp       = require('../src/db/user-temp');
+const config     = require('config');
 
-let baseUrl = 'http://localhost:3000';
+let baseUrl = config.get('site_info.url');
 let route = '/api/registration';
 
 before((done) => {
