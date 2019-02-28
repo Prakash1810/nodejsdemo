@@ -2,9 +2,11 @@ const mongoose   = require('mongoose');
 const express    = require('express');
 const config     = require('config');
 const bodyParser = require('body-parser');
+const UserTemp      = require('./src/db/user-temp');
+
 
 // set
-process.env['NODE_ENV'] = 'development'
+process.env['NODE_ENV'] = 'testing'
 
 const auth = require("./src/middleware/authentication");
 
@@ -23,10 +25,21 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 
-app.use('/api/v1/user/registration',registrationRoutes);
-app.use('/api/v1/user',userRoutes);
+app.use(`/api/${config.get('site.version')}/user/registration`,registrationRoutes);
+app.use(`/api/${config.get('site.version')}/user`,userRoutes);
 
-app.get('/', auth, (req, res) => {
+app.get('/', (req, res) => {
+    UserTemp.findOne({ email: 'satz@mail.com' })
+        .exec(function (err, adventure) {
+                console.log('test')
+                console.log(adventure.id)
+                // let encryptedHash = helpers.encrypt(
+                //     JSON.stringify({
+                //         'id': adventure.id,
+                //         'email': adventure.email
+                //     })
+                // );
+                });
     res.send('App Workss!!!!');
 });
 
@@ -35,6 +48,7 @@ app.get('*', auth, (req, res) => {
 });
 
 app.listen(3000, () => {
+    
     console.log('listening on port 3000!!')
 });
 

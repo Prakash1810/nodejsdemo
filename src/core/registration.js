@@ -2,17 +2,20 @@ const Joi           = require('joi');
 const UserTemp      = require('../db/user-temp');
 const Users         = require('../db/users');
 const Controller    = require('../core/controller');
-const helpers = require('../helpers/helper.functions');
-
+const config        = require('config');
+const helpers       = require('../helpers/helper.functions');
 
 class Registration extends Controller {
     validate (req) {
+        let emailReg = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
         let schema = Joi.object().keys({
-                        email: Joi.string().required().email().options({
+                        email: Joi.string().required().regex(emailReg).options({
                             language:{
                                 string:{
                                     required: '{{label}} field is required',
-                                    email: 'Invalid {{label}} address.'
+                                    regex: {
+                                        base: 'Invalid {{label}} address.'
+                                    }
                                 }
                             }
                         }).label('email'),
@@ -77,7 +80,7 @@ class Registration extends Controller {
 
                 return res.status(200).json(this.successFormat({
                             'message': `We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.`,
-                            'activation_link' : `http://localhost:3000/api/user/activation/${encryptedHash}`
+                            'activation_link' : `${config.get('site.url')}/api/${config.get('site.version')}/user/activation/${encryptedHash}`
                         }));
             }
         });

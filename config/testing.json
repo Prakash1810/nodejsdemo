@@ -1,7 +1,7 @@
 {
 	"database": {
-		"database": "admin",
-		"host": "database",
+		"database": "exchange-testing",
+		"host": "localhost",
 		"port": "27017",
 		"user": "root",
 		"password": "beldex123"
@@ -10,8 +10,8 @@
 		"key": "encryptionKey"
 	},
 	"secrete": {
-		"issuer": "test",
-		"domain": "www.test.com",
+		"issuer": "beldex",
+		"domain": "www.beldex.com",
 		"key": "privateKey",
 		"expiry": "12h"
 	},

@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const helpers   = require('../helpers/helper.functions');
-
 const saltRounds = 10;
 
 const userTempSchema = mongoose.Schema({
