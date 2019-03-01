@@ -76,13 +76,23 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
         .set('Accept', 'application/json')
         .expect(400)
         .then((res) => {
-            console.log(res.body.data)
             expect(res.body).to.have.property('errors', true);
             expect(res.body).to.have.property('data.attributes.token');
         });
     });
 
     it ('Delete login credentials', async () => {
-        removeUser
+        await request(baseUrl)
+        .post(route)
+        .send({
+            email: "satz@mail.com",
+            password: "1234567S"
+        })
+        .set('Accept', 'application/json')
+        .expect(400)
+        .then((res) => {
+            expect(res.body).to.have.property('errors', true);
+            expect(res.body).to.have.property('data.attributes.token');
+        });
     });
 });

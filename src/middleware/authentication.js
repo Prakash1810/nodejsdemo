@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const helpers   = require('../helpers/helper.functions');
 const config    = require('config');
+const Controller    = require('../core/controller');
+const controller    = new Controller;
 
 let verifyOptions = {
     issuer:  config.get('secrete.issuer'),
@@ -16,7 +18,7 @@ module.exports = (req, res, next) => {
         next();
     }
     catch (error) {
-        return res.status(401).json(helpers.errorFormat({
+        return res.status(401).json(controller.errorFormat({
             message: "Invalid authentication"
         }));
     }

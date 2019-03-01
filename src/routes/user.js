@@ -1,6 +1,5 @@
 const express       = require('express');
 const user          = require('../core/user');
-const helpers       = require('../helpers/helper.functions');
 const Controller    = require('../core/controller');
 const router        = express.Router();
 const controller    = new Controller;
