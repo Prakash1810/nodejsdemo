@@ -28,22 +28,11 @@ app.use(bodyParser.urlencoded({ extended: true}));
 app.use(`/api/${config.get('site.version')}/user/registration`,registrationRoutes);
 app.use(`/api/${config.get('site.version')}/user`,userRoutes);
 
-app.get('/', (req, res) => {
-    UserTemp.findOne({ email: 'satz@mail.com' })
-        .exec(function (err, adventure) {
-                console.log('test')
-                console.log(adventure.id)
-                // let encryptedHash = helpers.encrypt(
-                //     JSON.stringify({
-                //         'id': adventure.id,
-                //         'email': adventure.email
-                //     })
-                // );
-                });
+app.get('/', auth, (req, res) => {
     res.send('App Workss!!!!');
 });
 
-app.get('*', auth, (req, res) => {
+app.get('*', (req, res) => {
     res.status(404).send({ msg: 'not found'});
 });
 
