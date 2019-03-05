@@ -11,10 +11,10 @@ let host = config.get('database.host'),
     database = config.get('database.database');
 
 before( () => {
-    mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, { useNewUrlParser: true });
-    mongoose.connection.once('open', () => {
-        console.log('database connected successfully.')
-    }).on('error', (error) => {
-        console.log('Connection error ', error);
-    })
+    // mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, { useNewUrlParser: true });
+    // mongoose.connection.once('open', () => {
+    //     console.log('database connected successfully.')
+    // }).on('error', (error) => {
+    //     console.log('Connection error ', error);
+    // })
 });

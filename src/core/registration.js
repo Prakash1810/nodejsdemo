@@ -31,7 +31,7 @@ class Registration extends Controller {
                             }
                         }).label('password'),
                         password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
-                        referral_code: Joi.string().optional()
+                        referral_code: Joi.string().allow('').optional()
                     });
     
         return Joi.validate(req, schema, { abortEarly: false })
