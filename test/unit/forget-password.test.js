@@ -1,7 +1,7 @@
 'use strict';
 
 const { expect }    = require('chai');
-const password          = require('../../src/core/password');
+const password      = require('../../src/core/password');
 var isValidRequest  = { 'email' : '' };
 var errors          = {};
 
@@ -35,6 +35,9 @@ describe('Forgot password unit test :-', () => {
     });
 
     it ('should return encrypt hash', (done) => {
+        let email = 'satzkk@mail.com';
+        let hash  = password.encryptHash(email);
+        expect(hash).to.not.equal(null);
         done();
     })
 });                

@@ -1,5 +1,6 @@
 const express       = require('express');
 const user          = require('../core/user');
+const password      = require('../core/password');
 const Controller    = require('../core/controller');
 const router        = express.Router();
 const controller    = new Controller;
@@ -30,5 +31,29 @@ router.post('/login', (req, res) => {
 router.delete('/', (req, res) => {
     user.removeUser(req.body.email, res);
 });
+
+router.post('/forget-password', (req, res) => {
+    try {
+        let { error }  = password.validate(req.body);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error));
+        } else {
+            password.sendResetLink(req, res);
+        }
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorFormat({'message': err.message }));
+    }
+});
+
+router.get('/reset-password/:hash', (req, res) => {
+    try {
+        password.checkResetLink(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorFormat({'message': err.message }));
+    }
+});
+
 
 module.exports = router;
