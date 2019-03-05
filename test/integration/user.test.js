@@ -21,20 +21,6 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
                 });
     });
 
-    it('Validate invalid credentials', async () => {
-        await request(baseUrl)
-                .post(route)
-                .set('Accept', 'application/json')
-                .send({
-                    email: "satz@mail.com",
-                    password: "1234567SS"
-                })
-                .expect(400)
-                .then((res) => {
-                    expect(res.body.data.attributes.message).to.equal("Invalid credential");
-                });
-    });
-
     it ('User activation invalid token', async () => {
         let routeActivation = `/api/${config.get('site.version')}/user/activation/dsdsadsadsa`;
         await request(baseUrl)
@@ -66,22 +52,23 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             });
     });
 
-    it('Validate login credentials', async () => {
-         await request(baseUrl)
-        .post(route)
-        .send({
-            email: "satz@mail.com",
-            password: "1234567S"
-        })
-        .set('Accept', 'application/json')
-        .expect(400)
-        .then((res) => {
-            expect(res.body).to.have.property('errors', true);
-            expect(res.body).to.have.property('data.attributes.token');
-        });
+    it('Validate invalid credentials', async () => {
+        await request(baseUrl)
+                .post(route)
+                .set('Accept', 'application/json')
+                .send({
+                    email: "satz@mail.com",
+                    password: "1234567SS"
+                })
+                .expect(400)
+                .then((res) => {
+                    expect(res.body.data.attributes.message).to.equal("Invalid credentials");
+                });
     });
+});
 
-    it ('Delete login credentials', async () => {
+describe('User module integration test case for Login & Delete', () => {
+    it('Validate login credentials', async () => {
         await request(baseUrl)
         .post(route)
         .send({
@@ -89,10 +76,22 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             password: "1234567S"
         })
         .set('Accept', 'application/json')
-        .expect(400)
         .then((res) => {
-            expect(res.body).to.have.property('errors', true);
             expect(res.body).to.have.property('data.attributes.token');
         });
     });
+
+    // it ('Delete login credentials', async () => {
+    //     await request(baseUrl)
+    //     .delete(`/api/${config.get('site.version')}/user`)
+    //     .send({
+    //         email: "satz@mail.com"
+    //     })
+    //     .set('Accept', 'application/json')
+    //     .then((res) => {
+    //         console.log(res.body)
+    //         expect(res.body).to.have.property('errors', false);
+    //         expect(res.body.data.attributes.message).to.equal('account deleted successfully!');
+    //     });
+    // });
 });

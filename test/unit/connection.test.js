@@ -10,8 +10,8 @@ let host = config.get('database.host'),
     password = config.get('database.password'),
     database = config.get('database.database');
 
-before( async () => {
-    await mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, { useNewUrlParser: true });
+before( () => {
+    mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, { useNewUrlParser: true });
     mongoose.connection.once('open', () => {
         console.log('database connected successfully.')
     }).on('error', (error) => {

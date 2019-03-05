@@ -6,7 +6,7 @@ const UserTemp      = require('./src/db/user-temp');
 
 
 // set
-process.env['NODE_ENV'] = 'testing'
+process.env['NODE_ENV'] = 'development'
 
 const auth = require("./src/middleware/authentication");
 

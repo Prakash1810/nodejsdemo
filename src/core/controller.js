@@ -1,6 +1,3 @@
-const UserTemp      = require('../db/user-temp');
-const Users         = require('../db/users');
-
 class Controller {
 
     errorMsgFormat (error) {

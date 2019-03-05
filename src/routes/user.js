@@ -28,17 +28,7 @@ router.post('/login', (req, res) => {
 });
 
 router.delete('/', (req, res) => {
-    try {
-        let { error }  = user.validate(req.body);
-        if (error) {
-            return res.status(400).send(controller.errorFormat(error));
-        } else {
-            user.login(req, res);
-        }
-    }
-    catch (err) {
-        return res.status(500).send(controller.errorFormat({'message': err.message }));
-    }
+    user.removeUser(req.body.email, res);
 });
 
 module.exports = router;

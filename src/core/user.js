@@ -69,16 +69,15 @@ class User extends Controller {
         Users.findOne({ email: req.body.email })
         .exec()
         .then((result) => {
-            console.log(result)
             if (!result) {
-                return res.status(400).send(this.errorFormat({
-                    'message': 'Invalid credentialss'
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid credentials'
                 }));
             }
 
             let passwordCompare = bcrypt.compareSync(req.body.password, result.password);
             if (passwordCompare == false) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'Invalid credentials'
                 }));
             } else {
@@ -115,19 +114,24 @@ class User extends Controller {
         return Joi.validate(req, schema, { abortEarly: false });
     }
 
-    removeUser (email) {
-        Users.deleteOne({ email: email } 
-                    , function (err) {
-                        if (err != null) {
-                            return res.status(200).send(this.successFormat({
-                                'message': 'account deleted successfully!'
-                            }));
-                        } else {
-                            return res.status(400).send(this.errorFormat({
-                                'message': 'account not deleted!'
-                            }));
-                        }
-                    });
+    async removeUser  (email, res) {
+        await Users.deleteOne({ email: email })
+                .then(result => {
+                    if (result.deletedCount) {
+                        return res.status(200).send(this.successFormat({
+                            'message': 'account deleted successfully!'
+                        }));
+                    } else {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Invalid email address'
+                        }));    
+                    }
+                })
+                .catch(err => {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Invalid credentials'
+                    }));
+                });
     }
 }
 

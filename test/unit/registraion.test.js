@@ -10,10 +10,10 @@ var isValidRequest  = {
                     };
 
 before(() => {
-    Users.deleteOne({ email: 'satz@mail.com' } 
-                    , function (err) {
-                        expect(err).to.equal(null);
-                    });
+    // Users.deleteOne({ email: 'satz@mail.com' } 
+    //                 , function (err) {
+    //                     expect(err).to.equal(null);
+    //                 });
 });
 
 describe('Registration module unit test case :-', () => {

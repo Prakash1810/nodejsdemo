@@ -37,7 +37,11 @@ const UserTemp = module.exports =  mongoose.model('user-temps', userTempSchema);
 module.exports.removeUserTemp = async (id) => {
     return await UserTemp.deleteOne({ _id: id })
                 .then(result => {
-                    return true;
+                    if (result.deletedCount) {
+                        return true;
+                    } else {
+                        return false;
+                    }
                 })
                 .catch(err => {
                     return false;
