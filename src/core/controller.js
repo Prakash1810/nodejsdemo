@@ -1,11 +1,11 @@
 class Controller {
 
-    errorMsgFormat (error) {
+    errorMsgFormat (error, type = 'users') {
         return { 
             "code": 400,
             "errors": true,
             "data": { 
-                "type": "users",
+                "type": type,
                 "attributes": error
             }
         };
@@ -23,13 +23,13 @@ class Controller {
         return this.errorMsgFormat(errors);
     }
 
-    successFormat ( res, id = false ) {
+    successFormat ( res, id = null, type = 'users' ) {
         return { 
             "code": 200,
             "errors": false,
             "data": {
                 "id": id,
-                "type": "users",
+                "type": type,
                 "attributes": res
             }
         }; 

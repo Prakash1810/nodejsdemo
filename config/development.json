@@ -18,5 +18,8 @@
 	"site": {
 		"url": "http://localhost:3000",
 		"version": "v1"
+	},
+	"settings": {
+		"expiryTime": 7200
 	}
 }

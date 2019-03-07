@@ -3,9 +3,11 @@ const Joi           = require('joi');
 const Users         = require('../db/users');
 const Controller    = require('../core/controller');
 const helpers       = require('../helpers/helper.functions');
+const config        = require('config');
 
 
 class Password extends Controller {
+
     validate (req) {
         let emailReg = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
         let schema = Joi.object().keys({
@@ -25,7 +27,7 @@ class Password extends Controller {
     }
 
     encryptHash (email) {
-        let timeNow     = moment();
+        let timeNow     = moment().format('YYYY-MM-DD HH:mm:ss');
         let data     = JSON.stringify({
             'email': email,
             'datetime' : timeNow
@@ -39,8 +41,8 @@ class Password extends Controller {
             email: req.body.email
         }).exec()
         .then((user) => {
-            if (!user) {
-                return res.status(400).json(this.errorMsgFormat({ 'message': 'Invalid email address.' }));
+                if (!user) {
+                    return res.status(400).json(this.errorMsgFormat({ 'message': 'Invalid email address.' }));
             } else {
                 let encryptedHash = this.encryptHash(user.email);
 
@@ -53,28 +55,46 @@ class Password extends Controller {
     }
 
     checkResetLink (req, res) {
+
         let userHash = JSON.parse(helpers.decrypt(req.params.hash));
-        if (userHash.email) {
-            let sendedDate  = moment(userHash.datetime,'DD.MM.YYYY HH:mm:ss');
-            let timeNow     = moment().format('YYYY-M-DD HH:mm:ss');
-            return res.send(sendedDate.diff(s));
-            UserTemp.findByOne(userHash.email)
-            .exec()
-            .then((result) => {
-                re
-                if (!result ) {
-                    return res.status(400).send(this.errorFormat({
-                        'message': 'Invalid token. may be token as expired!'
-                    }));
-                } else {
-                    return userHash;    
-                }
-            });
+
+        if ( userHash.email ) {
+            let checkExpired = this.checkTimeExpired(userHash.datetime);
+            if ( checkExpired ) {
+                Users.findOne({ email: userHash.email })
+                .exec()
+                .then((result) => {
+                    if (!result) {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Invalid token. may be token as expired!'
+                        }));
+                    } else {
+                        return res.status(200).send(this.successFormat({
+                            'message': 'token is valid!'
+                        },result._id));
+                    }
+                });
+            } else {
+                return res.status(404).send(this.errorMsgFormat({
+                    'message': 'invalid token or token is expired.'
+                }));
+            }
         } else {
-            return res.status(500).send(this.errorFormat({
-                'message': 'invalid token.'
+            return res.status(404).send(this.errorMsgFormat({
+                'message': 'invalid token or token is expired.'
             }));
         }
+    }
+
+    checkTimeExpired ( startDate ) {
+        let duration    = moment.duration(moment().diff(startDate));
+
+        // check expiry time in seconds
+        if (config.get('settings.expiryTime') > duration.asSeconds()) {
+            return true;
+        }
+
+        return false;
     }
 }
 

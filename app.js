@@ -2,7 +2,6 @@ const mongoose   = require('mongoose');
 const express    = require('express');
 const config     = require('config');
 const bodyParser = require('body-parser');
-const UserTemp      = require('./src/db/user-temp');
 
 
 // set
@@ -37,7 +36,6 @@ app.get('*', (req, res) => {
 });
 
 app.listen(3000, () => {
-    
     console.log('listening on port 3000!!')
 });
 
