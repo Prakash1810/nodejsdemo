@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const helpers   = require('../helpers/helper.functions');
-const config     = require('config');
+
 const usersSchema = mongoose.Schema({
     user_id: { type: Number, default: 0 },
     email:{ 
@@ -30,8 +29,6 @@ const usersSchema = mongoose.Schema({
     is_deleted: { type: Boolean, default: false }
 });
 
-const Users = module.exports = mongoose.model('users', usersSchema); 
-
 module.exports.checkEmail = (email) => {
     try {
         return Users.find({ email: email }).exec();
@@ -40,3 +37,5 @@ module.exports.checkEmail = (email) => {
         // return res.status(500).send(error);
     }
 };
+
+const Users = module.exports = mongoose.model('users', usersSchema);

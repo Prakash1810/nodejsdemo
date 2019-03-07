@@ -3,10 +3,11 @@
 const { expect }    = require('chai');
 const password      = require('../../src/core/password');
 var isValidRequest  = { 'email' : '' };
-var errors          = {};
 
 describe('Forgot password unit test :-', () => {
+
     it ('should check email is required', (done) => {
+        var errors    = {};
         let { error } = password.validate(JSON.stringify({}));
         error.details.forEach((detail) => {
             errors[detail.path] = detail.message;
@@ -17,6 +18,7 @@ describe('Forgot password unit test :-', () => {
     });
 
     it ('should validate email format', (done) => {
+        var errors    = {};
         isValidRequest.email = 'satzkk@mail';
         let { error } = password.validate(JSON.stringify(isValidRequest));
         error.details.forEach((detail) => {

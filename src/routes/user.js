@@ -10,7 +10,7 @@ router.get('/activation/:hash', (req, res) => {
         user.activate(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorFormat({'message': 'Invalid token.' }));
+        return res.status(500).send(controller.errorMsgFormat({'message': 'Invalid token.' }));
     }
 });
 
@@ -24,7 +24,7 @@ router.post('/login', (req, res) => {
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
     }
 });
 
@@ -42,7 +42,7 @@ router.post('/forget-password', (req, res) => {
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
     }
 });
 
@@ -51,9 +51,23 @@ router.get('/reset-password/:hash', (req, res) => {
         password.checkResetLink(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
     }
 });
 
+
+router.patch('/change-password', (req, res) => {
+    try {
+        let { error }  = password.changePasswordValidate(req.body);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error));
+        } else {
+            password.changePassword(req, res);
+        }
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+    }
+});
 
 module.exports = router;

@@ -23,9 +23,9 @@ class Controller {
         return this.errorMsgFormat(errors);
     }
 
-    successFormat ( res, id = null, type = 'users' ) {
+    successFormat ( res, id = null, type = 'users' , code = 200 ) {
         return { 
-            "code": 200,
+            "code": code,
             "errors": false,
             "data": {
                 "id": id,

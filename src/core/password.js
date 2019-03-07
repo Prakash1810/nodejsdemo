@@ -4,6 +4,7 @@ const Users         = require('../db/users');
 const Controller    = require('../core/controller');
 const helpers       = require('../helpers/helper.functions');
 const config        = require('config');
+const bcrypt        = require('bcrypt');
 
 
 class Password extends Controller {
@@ -95,6 +96,51 @@ class Password extends Controller {
         }
 
         return false;
+    }
+
+    changePasswordValidate (req) {
+        let schema = Joi.object().keys({
+                        id: Joi.string().required().options({
+                            language:{
+                                string:{
+                                    required: '{{label}} field is required'
+                                }
+                            }
+                        }).label('id'),
+                        password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
+                            language:{
+                                string:{
+                                    required: '{{label}} field is required',
+                                    regex: {
+                                        base: '{{label}} must be at least 8 characters with uppercase letters and numbers.'
+                                    }
+                                }
+                            }
+                        }).label('password')
+                    });
+    
+        return Joi.validate(req, schema, { abortEarly: false })
+    }
+
+    changePassword (req, res) {
+        bcrypt.genSalt(10, (err, salt) => {
+            if (err) return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
+            
+            bcrypt.hash(req.body.password, salt, (err, hash) => {
+                if (err) return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
+                
+                // find and update the reccord
+                Users.findByIdAndUpdate(req.body.id, { password: hash }, (err, user) => {
+                    if (err) {
+                        return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
+                    } else {
+                        return res.status(202).send(this.successFormat({
+                            'message': 'Your password updated successfully.'
+                        }, user._id, 'users', 202));
+                    }
+                });
+            });
+        });
     }
 }
 

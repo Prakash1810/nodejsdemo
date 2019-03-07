@@ -42,7 +42,7 @@ describe('Registration module unit test case :-', () => {
         expect(errors.password_confirmation).to.equal("\"password confirmation\" must match password");
     });
 
-    it ('should match the password strength', () => {
+    it ('should check password strength', () => {
         var errors    = {};
         isValidRequest.password = '123456';
         isValidRequest.password_confirmation = '123456';
