@@ -98,7 +98,7 @@ class Password extends Controller {
         return false;
     }
 
-    changePasswordValidate (req) {
+    resetPasswordValidate (req) {
         let schema = Joi.object().keys({
                         id: Joi.string().required().options({
                             language:{
@@ -122,7 +122,7 @@ class Password extends Controller {
         return Joi.validate(req, schema, { abortEarly: false })
     }
 
-    changePassword (req, res) {
+    resetPassword (req, res) {
         bcrypt.genSalt(10, (err, salt) => {
             if (err) return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
             

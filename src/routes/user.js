@@ -56,13 +56,13 @@ router.get('/reset-password/:hash', (req, res) => {
 });
 
 
-router.patch('/change-password', (req, res) => {
+router.patch('/reset-password', (req, res) => {
     try {
-        let { error }  = password.changePasswordValidate(req.body);
+        let { error }  = password.resetPasswordValidate(req.body);
         if (error) {
             return res.status(400).send(controller.errorFormat(error));
         } else {
-            password.changePassword(req, res);
+            password.resetPassword(req, res);
         }
     }
     catch (err) {
