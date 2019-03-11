@@ -133,6 +133,21 @@ class User extends Controller {
                     }));
                 });
     }
+
+    getTokenToUserId (req, res) {
+        let token = req.headers.authorization;
+        jwt.verify(token, config.get('secrete.key'), function(err, decoded) {
+            if (err) {
+                return res.status(401).json(controller.errorMsgFormat({
+                    message: "Invalid authentication"
+                }));
+            } else {
+                return res.status(200).json({
+                    user_id: 1
+                });
+            }
+        });
+    }
 }
 
 module.exports = new User;
