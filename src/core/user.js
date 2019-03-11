@@ -142,9 +142,7 @@ class User extends Controller {
                     message: "Invalid authentication"
                 }));
             } else {
-                return res.status(200).json({
-                    user_id: 1
-                });
+                return res.status(200).json({"code": 0, "message": null, "data": {"user_id": 1}});
             }
         });
     }
