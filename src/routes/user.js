@@ -86,7 +86,7 @@ router.patch('/change-password', auth, (req, res) => {
     }
 });
 
-router.get('/get-user-id', (req, res) => {
+router.post('/get-user-id', (req, res) => {
     try {
         if (req.headers.authorization) {
             user.getTokenToUserId(req, res);
