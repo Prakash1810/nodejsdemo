@@ -2,6 +2,7 @@ const express       = require('express');
 const user          = require('../core/user');
 const password      = require('../core/password');
 const Controller    = require('../core/controller');
+const auth          = require("../middleware/authentication");
 const router        = express.Router();
 const controller    = new Controller;
 
@@ -63,6 +64,21 @@ router.patch('/reset-password', (req, res) => {
             return res.status(400).send(controller.errorFormat(error));
         } else {
             password.resetPassword(req, res);
+        }
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+    }
+});
+
+router.patch('/change-password', auth, (req, res) => {
+    try {
+        let { error }  = password.changePasswordValidate(req.body);
+
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error));
+        } else {
+            password.changePassword(req, res);
         }
     }
     catch (err) {

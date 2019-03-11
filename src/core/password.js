@@ -116,7 +116,8 @@ class Password extends Controller {
                                     }
                                 }
                             }
-                        }).label('password')
+                        }).label('password'),
+                        password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
                     });
     
         return Joi.validate(req, schema, { abortEarly: false })
@@ -140,6 +141,66 @@ class Password extends Controller {
                     }
                 });
             });
+        });
+    }
+
+    changePasswordValidate (req) {
+        let schema = Joi.object().keys({
+            id: Joi.string().required().options({
+                language:{
+                    string:{
+                        required: '{{label}} field is required'
+                    }
+                }
+            }).label('id'),
+            old_password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
+                language:{
+                    string:{
+                        required: '{{label}} field is required',
+                        regex: {
+                            base: '{{label}} must be at least 8 characters with uppercase letters and numbers.'
+                        }
+                    }
+                }
+            }).label('old_password'),
+            password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
+                language:{
+                    string:{
+                        required: '{{label}} field is required',
+                        regex: {
+                            base: '{{label}} must be at least 8 characters with uppercase letters and numbers.'
+                        }
+                    }
+                }
+            }).label('password'),
+            password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
+        });
+
+        return Joi.validate(req, schema, { abortEarly: false })
+    }
+
+    changePassword (req, res) {
+        Users.findById(req.body.id)
+        .exec()
+        .then((result) => {
+            if (!result) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid data'
+                }));
+            }
+
+            // compare existing password
+            let passwordCompare = bcrypt.compareSync(req.body.old_password, result.password);
+
+            if (passwordCompare == false) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Incorrect old password'
+                }));
+            } else {
+
+                // update password
+                this.resetPassword(req, res);
+            }
         });
     }
 }

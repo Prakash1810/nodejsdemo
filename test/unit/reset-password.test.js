@@ -3,7 +3,7 @@
 const { expect }    = require('chai');
 const password      = require('../../src/core/password');
 const moment        = require('moment');
-var isValidRequest  = { 'id': '5c7e662bba7fe90ebe523256' , 'password' : '1234567S' };
+var isValidRequest  = { 'id': '5c7e662bba7fe90ebe523256' , 'password' : '1234567S', 'password_confirmation' : '1234567S' };
 
 describe('Reset password link module unit test case:-', () => {
     it ('Should be check return encrypted hash', (done) => {
@@ -40,6 +40,7 @@ describe('Reset password module unit test :-', () => {
         expect(error.name).to.equal('ValidationError');
         expect(errors.id).to.equal("\"id\" is required");
         expect(errors.password).to.equal("\"password\" is required");
+        expect(errors.password_confirmation).to.equal("\"password confirmation\" is required");
         done()
     });
 
@@ -74,6 +75,19 @@ describe('Reset password module unit test :-', () => {
         expect(error.isJoi).to.equal(true);
         expect(error.name).to.equal('ValidationError');
         expect(errors.password).to.equal("password must be at least 8 characters with uppercase letters and numbers.");
+        done()
+    });
+
+    it ('should match the password and confirm password', (done) => {
+        var errors    = {};
+        isValidRequest.password  = '1234567SS';
+        let { error } = password.resetPasswordValidate(JSON.stringify(isValidRequest));
+        error.details.forEach((detail) => {
+            errors[detail.path] = detail.message;
+        });
+        expect(error.isJoi).to.equal(true);
+        expect(error.name).to.equal('ValidationError');
+        expect(errors.password_confirmation).to.equal("\"password confirmation\" must match password");
         done()
     });
 })

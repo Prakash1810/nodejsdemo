@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 // set
 process.env['NODE_ENV'] = 'development'
 
+// authentication
 const auth = require("./src/middleware/authentication");
 
 // routes

@@ -18,7 +18,7 @@ module.exports = (req, res, next) => {
         next();
     }
     catch (error) {
-        return res.status(401).json(controller.errorFormat({
+        return res.status(401).json(controller.errorMsgFormat({
             message: "Invalid authentication"
         }));
     }
