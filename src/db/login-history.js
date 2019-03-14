@@ -1,13 +1,13 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'), Schema = mongoose.Schema;
 
 const loginHistorySchema = mongoose.Schema({
-    user_id: { type: Schema.Types.ObjectId, ref: 'Users' },
-    login_ip: String,
-    device: String,
-    os: String,
+    user: { type: Schema.Types.ObjectId, ref: 'Users' },
+    device: { type: Schema.Types.ObjectId, ref: 'device-management' },
     oauth_type: Boolean,
-    login_date_time: { type: Date, default: Date.now }
+    auth_type: { type: Number, default: 1 },
+    logout_status: { type: Number, default: 1 },
+    login_date_time: { type: Date, default: Date.now },
+    logout_date_time: Date
 });
 
-LoginHistory = mongoose.model('login-history', loginHistorySchema); 
-module.exports = LoginHistory;
+module.exports = mongoose.model('login-history', loginHistorySchema);

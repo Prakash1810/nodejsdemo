@@ -1,8 +1,8 @@
 class Controller {
 
-    errorMsgFormat (error, type = 'users') {
+    errorMsgFormat (error, type = 'users' , code = 400) {
         return { 
-            "code": 400,
+            "code": code,
             "errors": true,
             "data": { 
                 "type": type,

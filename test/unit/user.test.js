@@ -18,6 +18,10 @@ describe('User module unit test case :-', () => {
         expect(error.name).to.equal('ValidationError');
         expect(errors.email).to.equal("\"email\" is required");
         expect(errors.password).to.equal("\"password\" is required");
+        expect(errors.is_browser).to.equal("\"is_browser\" is required");
+        expect(errors.is_mobile).to.equal("\"is_mobile\" is required");
+        expect(errors.ip).to.equal("\"ip\" is required");
+        expect(errors.country).to.equal("\"country\" is required");
     });
 
     it ('should be validate email format', () => {
@@ -34,9 +38,25 @@ describe('User module unit test case :-', () => {
     });
 
     it ('should check all the fields are entered', () => {
-        isValidRequest.password = '1234567S';
-        isValidRequest.email = 'satz@gmail.com';
+        isValidRequest.password     = '1234567S';
+        isValidRequest.email        = 'satz@gmail.com';
+        isValidRequest.is_browser   = true;
+        isValidRequest.is_mobile    = false;
+        isValidRequest.ip           = '171.78.139.171';
+        isValidRequest.country      = 'India';
         let { error } = user.validate(JSON.stringify(isValidRequest));
         expect(error).to.equal(null);
+    });
+
+    it ('should check whitelist ip requested encrypted hash', (done) => {
+        let encryptHash = user.encryptHash({ "user_id": "5c879462ba7d780086704fdc", "device_id": "5c89f7e5868f251959a2a7c8", "verified": true });
+        expect(encryptHash).to.be.a('string');
+        done()
+    });
+
+    it ('should check token is invalid', (done) => {
+        let checkExired = user.checkTimeExpired(moment(time).format('YYYY-MM-DD HH:mm:ss'));
+        expect(checkExired).to.equal(false);
+        done()   
     });
 });

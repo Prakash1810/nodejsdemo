@@ -39,7 +39,7 @@ class Registration extends Controller {
 
     post (req, res) {
         // check email address already exits in user temp collections
-        UserTemp.find({ email: req.body.email })
+        UserTemp.find({ email: req.body.data.attributes.email })
         .exec()
         .then(result => {
 
@@ -47,7 +47,7 @@ class Registration extends Controller {
                 return res.status(400).send(this.errorFormat({ 'email': 'This email address already exits.' }));
             } else {
                 // check email address already exits in user temp collections
-                Users.find({email: req.body.email})
+                Users.find({email: req.body.data.attributes.email})
                 .exec()
                 .then(result => {
                     if (result.length) {
@@ -64,9 +64,9 @@ class Registration extends Controller {
 
     insertUser (req, res) {
         UserTemp.create({
-            email: req.body.email,
-            password: req.body.password,
-            referral_code: req.body.referral_code ? req.body.referral_code : null
+            email: req.body.data.attributes.email,
+            password: req.body.data.attributes.password,
+            referral_code: req.body.data.attributes.referral_code ? req.body.data.attributes.referral_code : null
         }, (err, user) => {
             if (err) {
                 return res.status(500).json(this.errorFormat({ 'message': err.message }));
@@ -74,12 +74,12 @@ class Registration extends Controller {
                 let encryptedHash = helpers.encrypt(
                                         JSON.stringify({
                                             'id': user.id,
-                                            'email': req.body.email
+                                            'email': req.body.data.attributes.email
                                         })
                                     );
 
                 return res.status(200).json(this.successFormat({
-                            'message': `We have sent a confirmation email to your registered email address. ${req.body.email}. Please follow the instructions in the email to continue.`,
+                            'message': `We have sent a confirmation email to your registered email address. ${req.body.data.attributes.email}. Please follow the instructions in the email to continue.`,
                             'activation_link' : `${config.get('site.url')}/api/${config.get('site.version')}/user/activation/${encryptedHash}`
                         }));
             }

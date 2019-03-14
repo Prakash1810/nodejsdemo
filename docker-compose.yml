@@ -5,7 +5,6 @@ services:
   database:
     container_name: mongo
     image: mongo
-    command: [--auth]
     restart: always
     ports:
       - "27017:27017"

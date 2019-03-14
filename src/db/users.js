@@ -1,4 +1,12 @@
-const mongoose = require('mongoose');
+const mongoose      = require('mongoose');
+const autoIncrement = require('mongoose-auto-increment');
+const config        = require('config');
+const user          = config.get('database.user');
+const password      = config.get('database.password');
+const host          = config.get('database.host');
+const port          = config.get('database.port');
+const database      = config.get('database.database');
+const connection    = mongoose.createConnection(`mongodb://${user}:${password}@${host}:${port}/${database}`, { autoIndex: false, useFindAndModify: false, useNewUrlParser: true});
 
 const usersSchema = mongoose.Schema({
     user_id: { type: Number, default: 0 },
@@ -22,20 +30,15 @@ const usersSchema = mongoose.Schema({
     is_blocked: { type: Boolean, default: false },
     beldex_discount: { type: Boolean, default: false },
     level: Number, 
-    created_date: { type: Date },
+    created_date: { type: Date, default: Date.now},
     created_by: Number,
     modified_date: Date,
     modified_by: Number,
     is_deleted: { type: Boolean, default: false }
 });
 
-module.exports.checkEmail = (email) => {
-    try {
-        return Users.find({ email: email }).exec();
-    } catch (error) {
-        // handle query error
-        // return res.status(500).send(error);
-    }
-};
+autoIncrement.initialize(connection);
 
-const Users = module.exports = mongoose.model('users', usersSchema);
+usersSchema.plugin(autoIncrement.plugin, { model: 'Users', field: 'user_id', startAt: 1 });
+
+module.exports = mongoose.model('Users', usersSchema);

@@ -39,7 +39,7 @@ class Password extends Controller {
     
     sendResetLink (req, res) {
         Users.findOne({
-            email: req.body.email
+            email: req.body.data.attributes.email
         }).exec()
         .then((user) => {
                 if (!user) {
@@ -127,11 +127,11 @@ class Password extends Controller {
         bcrypt.genSalt(10, (err, salt) => {
             if (err) return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
             
-            bcrypt.hash(req.body.password, salt, (err, hash) => {
+            bcrypt.hash(req.body.data.attributes.password, salt, (err, hash) => {
                 if (err) return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
                 
                 // find and update the reccord
-                Users.findByIdAndUpdate(req.body.id, { password: hash }, (err, user) => {
+                Users.findByIdAndUpdate(req.body.data.attributes.id, { password: hash }, (err, user) => {
                     if (err) {
                         return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
                     } else {
@@ -180,7 +180,7 @@ class Password extends Controller {
     }
 
     changePassword (req, res) {
-        Users.findById(req.body.id)
+        Users.findById(req.body.data.attributes.id)
         .exec()
         .then((result) => {
             if (!result) {
@@ -190,7 +190,7 @@ class Password extends Controller {
             }
 
             // compare existing password
-            let passwordCompare = bcrypt.compareSync(req.body.old_password, result.password);
+            let passwordCompare = bcrypt.compareSync(req.body.data.attributes.old_password, result.password);
 
             if (passwordCompare == false) {
                 return res.status(400).send(this.errorMsgFormat({

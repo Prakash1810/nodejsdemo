@@ -1,15 +1,21 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'), Schema = mongoose.Schema;
 
 const deviceSchema = mongoose.Schema({
-    user_id: { type: Schema.Types.ObjectId, ref: 'Users' },
-    device: String,
+    user: { type: Schema.Types.ObjectId, ref: 'Users' },
+    is_browser: Boolean,
+    is_mobile: Boolean,
     os: String,
+    os_byte: String,
+    browser: String,
+    browser_version: String,
+    ip: String,
+    city: String,
+    region: String,
+    country: String,
     verified: Boolean,
-    created_by: { type: Schema.Types.ObjectId, ref: 'Users' },
     created_date: { type: Date, default: Date.now },
     modified_date: Date,
     is_deleted: Boolean
 });
 
-DeviceMangement = mongoose.model('device-management', deviceSchema); 
-module.exports = DeviceMangement;
+module.exports = mongoose.model('device-management', deviceSchema);

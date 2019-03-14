@@ -17,7 +17,7 @@ router.get('/activation/:hash', (req, res) => {
 
 router.post('/login', (req, res) => {
     try {
-        let { error }  = user.validate(req.body);
+        let { error }  = user.validate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error));
         } else {
@@ -30,12 +30,12 @@ router.post('/login', (req, res) => {
 });
 
 router.delete('/', (req, res) => {
-    user.removeUser(req.body.email, res);
+    user.removeUser(req.body.data.attributes.email, res);
 });
 
 router.post('/forget-password', (req, res) => {
     try {
-        let { error }  = password.validate(req.body);
+        let { error }  = password.validate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error));
         } else {
@@ -59,7 +59,7 @@ router.get('/reset-password/:hash', (req, res) => {
 
 router.patch('/reset-password', (req, res) => {
     try {
-        let { error }  = password.resetPasswordValidate(req.body);
+        let { error }  = password.resetPasswordValidate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error));
         } else {
@@ -73,7 +73,7 @@ router.patch('/reset-password', (req, res) => {
 
 router.patch('/change-password', auth, (req, res) => {
     try {
-        let { error }  = password.changePasswordValidate(req.body);
+        let { error }  = password.changePasswordValidate(req.body.data.attributes);
 
         if (error) {
             return res.status(400).send(controller.errorFormat(error));
@@ -95,6 +95,33 @@ router.post('/get-user-id', (req, res) => {
                 message: "Invalid authentication"
             }));
         }
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+    }
+});
+
+router.get('/login-history', auth, (req, res) => {
+    try {
+        user.getLoginHistory(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+    }
+});
+
+router.get('/device-history', auth, (req, res) => {
+    try {
+        user.getDeviceHistory(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+    }
+});
+
+router.patch('/whitelist-ip/:hash', (req, res) => {
+    try {
+        user.patchWhiteListIP(req, res);
     }
     catch (err) {
         return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
