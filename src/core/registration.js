@@ -1,11 +1,12 @@
 const Joi           = require('joi');
 const UserTemp      = require('../db/user-temp');
 const Users         = require('../db/users');
+const UserServices  = require('../services/users');
 const Controller    = require('../core/controller');
-const config        = require('config');
 const helpers       = require('../helpers/helper.functions');
 
 class Registration extends Controller {
+
     validate (req) {
         let emailReg = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
         let schema = Joi.object().keys({
@@ -67,7 +68,7 @@ class Registration extends Controller {
             email: req.body.data.attributes.email,
             password: req.body.data.attributes.password,
             referral_code: req.body.data.attributes.referral_code ? req.body.data.attributes.referral_code : null
-        }, (err, user) => {
+        }, async (err, user) => {
             if (err) {
                 return res.status(500).json(this.errorFormat({ 'message': err.message }));
             } else {
@@ -78,9 +79,17 @@ class Registration extends Controller {
                                         })
                                     );
 
+                // send email notification to the registered user
+                let serviceData   = {
+                    'hash' : encryptedHash,
+                    "to_email": req.body.data.attributes.email,
+                    "subject": "Confirm Your Registration",
+                    "email_for": "registration"
+                };
+                await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
+                
                 return res.status(200).json(this.successFormat({
                             'message': `We have sent a confirmation email to your registered email address. ${req.body.data.attributes.email}. Please follow the instructions in the email to continue.`,
-                            'activation_link' : `${config.get('site.url')}/api/${config.get('site.version')}/user/activation/${encryptedHash}`
                         }));
             }
         });

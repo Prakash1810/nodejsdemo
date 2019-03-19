@@ -1,6 +1,7 @@
 const moment        = require('moment');
 const Joi           = require('joi');
 const Users         = require('../db/users');
+const UserServices  = require('../services/users');
 const Controller    = require('../core/controller');
 const helpers       = require('../helpers/helper.functions');
 const config        = require('config');
@@ -21,7 +22,8 @@ class Password extends Controller {
                         }
                     }
                 }
-            }).label('email')
+            }).label('email'),
+            ip: Joi.string().allow('').optional()
         });
 
         return Joi.validate(req, schema, { abortEarly: false });
@@ -41,11 +43,21 @@ class Password extends Controller {
         Users.findOne({
             email: req.body.data.attributes.email
         }).exec()
-        .then((user) => {
+        .then( async (user) => {
                 if (!user) {
                     return res.status(400).json(this.errorMsgFormat({ 'message': 'Invalid email address.' }));
             } else {
                 let encryptedHash = this.encryptHash(user.email);
+                
+                // send email notification to the registered user
+                let serviceData   = {
+                    'hash' : encryptedHash,
+                    "to_email": req.body.data.attributes.email,
+                    "subject": `Password Reset From ${req.body.data.attributes.ip} - ${moment().format('YYYY-MM-DD HH:mm:ss')} (${config.get('settings.timeZone')})`,
+                    "email_for": "forget-password"
+                };
+
+                await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
 
                 return res.status(200).json(this.successFormat({
                             'message': `We have sent a reset email to your email address. Please follow the instructions in the email to continue.`,

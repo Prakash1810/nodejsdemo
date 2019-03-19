@@ -2,6 +2,7 @@ const mongoose   = require('mongoose');
 const express    = require('express');
 const config     = require('config');
 const bodyParser = require('body-parser');
+const UserServices  = require('./src/services/users');
 
 
 // set

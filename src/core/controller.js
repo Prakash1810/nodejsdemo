@@ -34,6 +34,15 @@ class Controller {
             }
         }; 
     }
+
+    requestDataFormat (data) {
+        return {
+            "lang": "en",
+            "data": {
+                "attributes": data
+            }
+        };
+    }
 }
 
 module.exports = Controller;

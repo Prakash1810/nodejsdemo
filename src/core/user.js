@@ -1,5 +1,6 @@
 const moment           = require('moment');
 const users            = require('../db/users');
+const UserServices     = require('../services/users');
 const deviceMangement  = require('../db/device-management');
 const loginHistory     = require('../db/login-history');
 const userTemp         = require('../db/user-temp');
@@ -166,6 +167,7 @@ class User extends Controller {
 
     checkDevice (req, res, user) {
         var userID = user._id;
+        var timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
 
         // Find some documents
         deviceMangement.countDocuments({ user: userID }, async (err, count) => {
@@ -173,13 +175,17 @@ class User extends Controller {
                 // insert new device records
                 await this.insertDevice(req, userID, true).then(async (device) => {
                     // insert login history
-                    await this.insertLoginHistory(req, userID, device._id);
+                    await this.insertLoginHistory(req, userID, device._id, timeNow);
                 });
                 
+                // send email notification
+                this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os });
+
                 return res.status(200).send(this.successFormat({
                     "token": this.createToken(user),
-                    "created_at": Date.now()
+                    "created_at": timeNow
                 }, user._id));
+
             } else {
                 deviceMangement.findOne({ user: userID, ip: req.body.data.attributes.ip, verified: true })
                 .exec()
@@ -188,22 +194,48 @@ class User extends Controller {
                         // insert new device records
                         await this.insertDevice(req, userID).then(() => { });
                         let urlHash = this.encryptHash({ "user_id": userID, "ip": req.body.data.attributes.ip, "verified": true });
+                        
+                        // send email notification
+                        this.sendNotificationForAuthorize({ "to_email": req.body.data.attributes.email,"subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,"email_for": "user-authorize", "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`, "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`, "ip": req.body.data.attributes.ip, "hash": urlHash })
                         return res.status(401).send(this.errorMsgFormat({ 'msg' : 'unauthorized', 'hash': urlHash }, 'users', 401));
                     } else {
                         // insert new device records
                         await this.insertDevice(req, userID, true).then(async (device) => {
                             // insert login history
-                            await this.insertLoginHistory(req, userID, device._id);
+                            await this.insertLoginHistory(req, userID, device._id, timeNow);
                         });
+                        
+                        // send email notification
+                        this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os });
                         
                         return res.status(200).send(this.successFormat({
                             "token": this.createToken(user),
-                            "created_at": Date.now()
+                            "created_at": timeNow
                         }, user._id));
                     }
                     });
             }
         });
+    }
+
+    // send email notification to the authorize device
+    async sendNotificationForAuthorize(data) {
+        await UserServices.sendEmailNotification(this.requestDataFormat(data));
+    }
+
+    // send email notification to the registered user
+    async sendNotification  (data) {
+
+        let serviceData   = {
+            "to_email": data.email,
+            "subject": `Successful Login From New IP ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
+            "email_for": "user-login",
+            "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
+            "time": data.time,
+            "ip": data.ip
+        };
+
+        await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
     }
 
     insertDevice (req, userID, verify = false, cb) {
@@ -225,11 +257,12 @@ class User extends Controller {
         return new deviceMangement(data).save(cb);
     }
 
-    insertLoginHistory ( req, userID, deviceID ) {
+    insertLoginHistory ( req, userID, deviceID, timeNow) {
         loginHistory.create({
             user: userID,
             device: deviceID,
-            auth_type: req.body.data.attributes.auth_type ? req.body.data.attributes.auth_type : 1
+            auth_type: req.body.data.attributes.auth_type ? req.body.data.attributes.auth_type : 1,
+            login_date_time: timeNow
         }, (err) => {
             if (err) {
                 return res.status(500).json(this.errorMsgFormat({ 'message': err.message }));
