@@ -1,0 +1,459 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Exchange API",
+    "description": "Sample Exchange Document",
+    "termsOfService": "http://swagger.io/terms/"
+  },
+  "basePath": "/",
+  "tags" : [
+    {"name": "Tag1", 
+    "description": "API for something"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/user/registration": {
+       "post": {
+          "tags": ["Tag1"],
+          "description": "Registration and return to activation key",
+          "operationId": "save",
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+              {
+                "name": "Parameters",
+                "in": "body",
+                "description": "Registration API",
+                "required": true,
+                "schema": {
+                  "$ref": "#/definitions/registration"
+                }
+            }
+          ]
+        }
+    },
+    "/api/v1/user/activation/{Hash}": {
+      "get":{
+          "tags": [ "Tag1"],
+          "description": "Returns response based on hash key",
+          "operationId": "findById",
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+              {
+                "name": "hash",
+                "in": "path",
+                "description": "Account activation",
+                "required": true,
+                "type": "string",               
+                "schema": {
+                  "$ref": "#/definitions/activation"
+                }
+              }
+            ]
+        }
+      },
+    "/api/v1/user/login": {
+      "post":{
+          "tags": [ "Tag1"],
+          "description": "Returns login credentials correct or not",
+          "operationId": "findById",
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+              {
+                "name": "ID",
+                "in": "body",
+                "description": "Account login",
+                "required": true,
+                "type": "string",
+                "schema": {
+                  "$ref": "#/definitions/login"
+                  }
+              }
+            ]
+        }
+      },
+      "/api/v1/user/forget-password": {
+        "post":{
+            "tags": [ "Tag1"],
+            "description": "send link to your registered email address",
+            "operationId": "findById",
+            "produces": [
+              "application/json"
+            ],
+            "parameters": [
+                {
+                  "name": "ID",
+                  "in": "body",
+                  "description": "Forget password",
+                  "required": true,
+                  "type": "string",
+                  "schema": {
+                    "$ref": "#/definitions/forgotpassword"
+                    }
+                }
+              ]
+          }
+        },
+        "/api/v1/user/reset-password/{hash}": {
+          "get":{
+              "tags": [ "Tag1"],
+              "description": "Check correct hash",
+              "operationId": "findById",
+              "produces": [
+                "application/json"
+              ],
+              "parameters": [
+                  {
+                    "name": "hash",
+                    "in": "path",
+                    "description": "Reset password",
+                    "required": true,
+                    "type": "string",
+                    "schema": {
+                      "$ref": "#/definitions/resetpasswordhash"
+                      }
+                  }
+                ]
+            }
+          },
+        "/api/v1/user/reset-password": {
+          "patch":{
+              "tags": [ "Tag1"],
+              "description": "Reset password",
+              "operationId": "findById",
+              "produces": [
+                "application/json"
+              ],
+              "parameters": [
+                  {
+                    "name": "ID",
+                    "in": "body",
+                    "description": "Reset password",
+                    "required": true,
+                    "type": "string",
+                    "schema": {
+                      "$ref": "#/definitions/resetpassword"
+                      }
+                  }
+                ]
+            }
+          },
+          "/api/v1/user/whitelist-ip/{hash}": {
+            "patch":{
+                "tags": [ "Tag1"],
+                "description": "Working IP check",
+                "operationId": "findById",
+                "produces": [
+                  "application/json"
+                ],
+                "parameters": [
+                    {
+                      "name": "hash",
+                      "in": "path",
+                      "description": "ID to fetch",
+                      "required": true,
+                      "type": "string",
+                      "schema": {
+                        "$ref": "#/definitions/whitelist"
+                        }
+                    }
+                  ]
+              }
+            },
+            "/api/v1/user/get-user-id": {
+              "post":{
+                  "tags": [ "Tag1"],
+                  "description": "Get user id",
+                  "operationId": "findById",
+                  "produces": [
+                    "application/json"
+                  ],
+                  "parameters": [
+                      {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Get user id",
+                        "required": true,
+                        "type": "apikey",
+                        "schema": {
+                          "$ref": "#/definitions/getuserid"
+                          }
+                      }
+                    ]
+                }
+              },
+              "/api/v1/user/device-history": {
+                "get":{
+                    "tags": [ "Tag1"],
+                    "description": "Get device history",
+                    "operationId": "findById",
+                    "produces": [
+                      "application/json"
+                    ],
+                    "parameters": [
+                        {
+                          "name": "Authorization",
+                          "in": "header",
+                          "description": "Get device history",
+                          "required": true,
+                          "type": "apikey",
+                          "schema": {
+                            "$ref": "#/definitions/devicehistory"
+                            }
+                        }
+                      ]
+                  }
+                },
+                "/api/v1/user/login-history": {
+                  "get":{
+                      "tags": [ "Tag1"],
+                      "description": "Get login history",
+                      "operationId": "findById",
+                      "produces": [
+                        "application/json"
+                      ],
+                      "parameters": [
+                          {
+                            "name": "Authorization",
+                            "in": "header",
+                            "description": "Get login history",
+                            "required": true,
+                            "type": "apikey",
+                            "schema": {
+                              "$ref": "#/definitions/loginhistory"
+                              }
+                          }
+                        ]
+                    }
+                  }
+
+  },
+  "definitions": {
+    "registration": {
+      "properties": {
+        "lang": {
+          "required":true,
+          "type": "string",
+          "example": "en"
+        },
+      "data": {
+        "example":{
+          "attributes": {
+            "email": "xyz@gmail.com",
+            "password": "1234567S",
+            "password_confirmation": "1234567S",
+            "referral_code" : "BELDEX_001"
+        }
+        }  
+      }
+     }
+    },
+    "login": {
+        "properties": {
+          "lang": {
+            "required":true,
+            "type": "string",
+            "example": "en"
+          },
+          "data" :{
+            "example" :{
+              "attributes": {
+                "email": "satz2@mail.com",
+                "password": "1234567S",
+                "is_browser": true,
+                "is_mobile": false,
+                "os": "Linux",
+                "os_byte": "x86_64",
+                "browser": "Chrome",
+                "browser_version": "71.0.3578.11",
+                "ip": "171.78.139.181",
+                "city": "Chennai",
+                "region": "Tamil Nadu",
+                "country": "India"
+              }
+            }
+          }
+      }
+    },
+    "forgotpassword": {
+      "properties": {
+        "lang": {
+          "required":true,
+          "type": "string",
+          "example": "en"
+        },
+        "data" :{
+          "example" :{
+            "attributes": {
+              "email": "xyz@gmail.com"
+            }
+          }
+        }
+    }
+  },
+  "resetpassword": {
+    "properties": {
+      "lang": {
+        "required":true,
+        "type": "string",
+        "example": "en"
+      },
+      "data" :{
+        "example" :{
+          "attributes": {
+            "id": "5c90dd8e6410cd0378d8fd7e",
+            "password": "tesR123456",
+            "password_confirmation": "tesR123456"
+          }
+        }
+      }
+  }
+},
+"activation": {
+  "properties": {
+    "code":{
+      "example": 200
+    },
+    "errors": {
+      "required":true,
+      "type": "string",
+      "example": "false"
+    },
+    "data" :{
+      "example" :{
+        "id": "null",
+        "type": "users",
+        "attributes": {
+          "message": "Congratulation!, Your account has been activated."
+        }
+      }
+    }
+}
+},
+
+"resetpasswordhash":{
+  "properties": {
+    "code":{
+      "example": 202
+    },
+    "errors": {
+      "required":true,
+      "type": "string",
+      "example": "false"
+    },
+    "data" :{
+      "example" :{
+        "id": "your id",
+        "type": "users",
+        "attributes": {
+          "message": "Your password updated successfully."
+        }
+      }
+    }
+}
+},
+
+"getuserid" : {
+  "properties": {
+    "code":{
+      "example": 0
+    },
+    "message": {
+      "example": "Authorization successfully."
+    },
+    "data" :{
+      "example" :{
+        "user_id": 1
+      }
+    }
+}
+},
+
+"whitelist" : {
+  "properties": {
+    "code":{
+      "example": 202
+    },
+    "errors": {
+      "example": "false"
+    },
+    "data" :{
+      "example" :{
+        "id": "null",
+        "type": "users",
+        "attributes": {
+          "message": "Your IP address whitelisted Now you can able to login.."
+        }
+      }
+    }
+}
+},
+
+"devicehistory": {
+  "properties": {
+    "code":{
+      "example": 200
+    },
+    "errors": {
+      "example": "false"
+    },
+    "data" :{
+      "example" :{
+        "id": "5c908652f83b10002f0f7478",
+        "type": "devices",
+        "attributes": {
+          "data": [
+        ]
+        }
+      }
+    }
+}
+},
+
+"loginhistory" : {
+  "properties": {
+    "code":{
+      "example": 200
+    },
+    "errors": {
+      "example": "false"
+    },
+    "data" :{
+      "example" :{
+        "id": "5c908652f83b10002f0f7478",
+        "type": "loginHistory",
+        "attributes": {
+          "data": [
+        ]
+        }
+      }
+    }
+}
+},
+
+"400error" : {
+  "properties": {
+    "message": {
+      "type": "string",
+      "example" : "400 Bad Request"
+    }
+  }
+}
+
+  }
+}
