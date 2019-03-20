@@ -24,7 +24,7 @@ const usersSchema = mongoose.Schema({
     referral_code: { type: String, default: null },
     sms_auth: { type: Boolean, default: false },
     google_auth: { type: Boolean, default: false },
-    anti_phishing_code: String,
+    anti_phishing_code: { type: String, default: null },
     white_list_address: { type: Boolean, default: false },
     is_active: { type: Boolean, default: false },
     is_blocked: { type: Boolean, default: false },

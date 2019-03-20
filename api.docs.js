@@ -16,7 +16,6 @@ if(argv.domain !== undefined) {
 
 var applicationUrl = 'http://' + domain;
 
-//console.log('Application url',applicationUrl);
 swagger.configure(applicationUrl, '1.0.0');
 
 module.exports = swagger;

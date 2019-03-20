@@ -1,6 +1,6 @@
 const moment           = require('moment');
 const users            = require('../db/users');
-const UserServices     = require('../services/users');
+const userServices     = require('../services/users');
 const deviceMangement  = require('../db/device-management');
 const loginHistory     = require('../db/login-history');
 const userTemp         = require('../db/user-temp');
@@ -9,9 +9,9 @@ const config           = require('config');
 const jwt              = require('jsonwebtoken');
 const Joi              = require('joi');
 const bcrypt           = require('bcrypt');
-const Controller       = require('../core/controller');
+const controller       = require('../core/controller');
 
-class User extends Controller {
+class User extends controller {
 
     activate (req, res) {
         const userHash = JSON.parse(helpers.decrypt(req.params.hash));
@@ -220,7 +220,7 @@ class User extends Controller {
 
     // send email notification to the authorize device
     async sendNotificationForAuthorize(data) {
-        await UserServices.sendEmailNotification(this.requestDataFormat(data));
+        await userServices.sendEmailNotification(this.requestDataFormat(data));
     }
 
     // send email notification to the registered user
@@ -233,7 +233,7 @@ class User extends Controller {
             "time": data.time,
             "ip": data.ip
         };
-        await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
+        await userServices.sendEmailNotification(this.requestDataFormat(serviceData));
     }
 
     insertDevice (req, userID, verify = false, cb) {
@@ -409,33 +409,37 @@ class User extends Controller {
                                 }
                             }
                         }).label('id'),
-                        ip: Joi.string().allow('').optional()
+                        sms_auth: Joi.bool().optional(),
+                        google_auth: Joi.boolean().optional(),
+                        mobile: Joi.number().optional(),
+                        mobile_code: Joi.number().optional(),
+                        anti_phishing_code: Joi.string().optional()
                     });
 
         return Joi.validate(req, schema, { abortEarly: false });
     }
 
     patchSettings (req, res) {
-        const updateUsers = {};
-        each(req.body.data.attributes.data,function(value, key) {
-            updateUsers[key] = value;
-        }, function(err){
-            return res.status(500).send(this.errorMsgFormat({ 'message': err.message }, 'users', 500));
-        });
+        let requestData = req.body.data.attributes;
+        if (Object.keys(requestData).length > 1) {
+            let id = requestData.id;
 
-        if (updateUsers.length) {
+            // remove id from requested object
+            delete requestData.id;
+            
+            console.log(requestData)
             // find and update the reccord
-            // Users.update(, { password: hash }, (err, user) => {
-            //     if (err) {
-            //         return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
-            //     } else {
-            //         return res.status(202).send(this.successFormat({
-            //             'message': 'Your password updated successfully.'
-            //         }, user._id, 'users', 202));
-            //     }
-            // });
+            users.findOneAndUpdate({ _id: id }, { $set: requestData })
+            .then(result => {
+                return res.status(202).send(this.successFormat({
+                    'message': 'Your request is updated successfully.'
+                }, result._id, 'users', 202));
+            })
+            .catch(err => {
+                return res.status(404).send(this.errorMsgFormat({'message': err.message }));
+            });
         } else {
-            return res.status(404).send(this.errorMsgFormat({'message': 'No records found.' }, 'users', 404));
+            return res.status(406).send(this.errorMsgFormat({'message': 'Invalid format..' }, 'users', 406));
         }
     }
     

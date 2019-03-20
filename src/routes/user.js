@@ -11,7 +11,7 @@ router.get('/activation/:hash', (req, res) => {
         user.activate(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': 'Invalid token.' }));
+        return res.status(500).send(controller.errorMsgFormat({'message': 'Invalid token.' }, 'users', 500));
     }
 });
 
@@ -19,13 +19,13 @@ router.post('/login', (req, res) => {
     try {
         let { error }  = user.validate(req.body.data.attributes);
         if (error) {
-            return res.status(400).send(controller.errorFormat(error));
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
             user.login(req, res);
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 
@@ -37,13 +37,13 @@ router.post('/forget-password', (req, res) => {
     try {
         let { error }  = password.validate(req.body.data.attributes);
         if (error) {
-            return res.status(400).send(controller.errorFormat(error));
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
             password.sendResetLink(req, res);
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 
@@ -52,7 +52,7 @@ router.get('/reset-password/:hash', (req, res) => {
         password.checkResetLink(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 
@@ -61,13 +61,13 @@ router.patch('/reset-password', (req, res) => {
     try {
         let { error }  = password.resetPasswordValidate(req.body.data.attributes);
         if (error) {
-            return res.status(400).send(controller.errorFormat(error));
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
             password.resetPassword(req, res);
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 
@@ -76,13 +76,13 @@ router.patch('/change-password', auth, (req, res) => {
         let { error }  = password.changePasswordValidate(req.body.data.attributes);
 
         if (error) {
-            return res.status(400).send(controller.errorFormat(error));
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
             password.changePassword(req, res);
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 
@@ -93,11 +93,11 @@ router.post('/get-user-id', (req, res) => {
         } else {
             return res.status(401).json(controller.errorMsgFormat({
                 message: "Invalid authentication"
-            }));
+            }, 'users', 500));
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 
@@ -106,7 +106,7 @@ router.get('/login-history', auth, (req, res) => {
         user.getLoginHistory(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 
@@ -115,7 +115,7 @@ router.get('/device-history', auth, (req, res) => {
         user.getDeviceHistory(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 
@@ -124,16 +124,22 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
         user.patchWhiteListIP(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 
 router.patch('/settings', auth, (req, res) => {
     try {
-        user.patchUserSettings(req, res);
+        let { error }  = user.settingsValidate(req.body.data.attributes);
+
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        } else {
+            user.patchSettings(req, res);
+        }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
 

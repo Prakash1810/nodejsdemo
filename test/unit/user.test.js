@@ -63,21 +63,47 @@ describe('User login module unit test case :-', () => {
     });
 });
 
-
-let req = {
-    body: {
-        lang: "en",
-        data: {
-            attributes: {}
-        }
-    },
-};
-
 describe('User Settings module unit test case :-', () => {
-    it ('Should be check authentication', (done) => {
-        // let res = user.patchUserSettings(req);
-        // console.log(res)
-        // expect(res).to.contain('message');
+    it ('Should be validate settings required fields', (done) => {
+        var errors    = {};
+        let { error } = user.settingsValidate({});
+        error.details.forEach((detail) => {
+            errors[detail.path] = detail.message;
+        });
+        expect(error.isJoi).to.equal(true);
+        expect(error.name).to.equal('ValidationError');
+        expect(errors.id).to.equal("\"id\" is required");
+        done();
+    });
+
+    it ('Should be validate settings valid input fields', (done) => {
+        let { error } = user.settingsValidate({ "id": "dsad3224sd23saa321", "google_auth": true });
+        expect(error).to.equal(null);
+        done();
+    });
+    
+    it ('Should be validate settings invalid input fields', (done) => {
+        var errors    = {};
+        let { error } = user.settingsValidate({ "test": "test" });
+        error.details.forEach((detail) => {
+            errors[detail.path] = detail.message;
+        });
+        expect(error.isJoi).to.equal(true);
+        expect(error.name).to.equal('ValidationError');
+        expect(errors.id).to.equal("\"id\" is required");
+        expect(errors.test).to.equal("\"test\" is not allowed");
+        done();
+    });
+
+    it ('Should be validate settings google_auth must be boolean value ', (done) => {
+        var errors    = {};
+        let { error } = user.settingsValidate({ "id": "sd1233t3213213est", "google_auth": "test" });
+        error.details.forEach((detail) => {
+            errors[detail.path] = detail.message;
+        });
+        expect(error.isJoi).to.equal(true);
+        expect(error.name).to.equal('ValidationError');
+        expect(errors.google_auth).to.equal("\"google_auth\" must be a boolean");
         done();
     });
 });
