@@ -400,7 +400,7 @@ class User extends Controller {
         });
     }
 
-    settingsValidate () {
+    settingsValidate (req) {
         let schema = Joi.object().keys({
                         id: Joi.string().required().options({
                             language:{
@@ -417,7 +417,6 @@ class User extends Controller {
 
     patchSettings (req, res) {
         const updateUsers = {};
-
         each(req.body.data.attributes.data,function(value, key) {
             updateUsers[key] = value;
         }, function(err){

@@ -21,7 +21,7 @@ app.use(`/api/${config.get('site.version')}/user/registration`,registrationRoute
 app.use(`/api/${config.get('site.version')}/user`,userRoutes);
 
 // swagger api documentation
-require('./api-doc');
+require('./api.docs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.use(express.static('dist'));
