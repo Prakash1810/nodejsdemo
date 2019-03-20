@@ -40,6 +40,7 @@ class Password extends Controller {
     }
     
     sendResetLink (req, res) {
+       
         Users.findOne({
             email: req.body.data.attributes.email
         }).exec()
@@ -60,7 +61,7 @@ class Password extends Controller {
                 await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
 
                 return res.status(200).json(this.successFormat({
-                            'message': `We have sent a reset email to your email address. Please follow the instructions in the email to continue.`,
+                            'message': 'We have sent a reset email to your email address. Please follow the instructions in the email to continue.',
                             'hash' : encryptedHash
                         }));
             }
@@ -68,7 +69,7 @@ class Password extends Controller {
     }
 
     checkResetLink (req, res) {
-
+        
         let userHash = JSON.parse(helpers.decrypt(req.params.hash));
 
         if ( userHash.email ) {

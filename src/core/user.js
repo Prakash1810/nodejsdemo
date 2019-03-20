@@ -225,16 +225,14 @@ class User extends Controller {
 
     // send email notification to the registered user
     async sendNotification  (data) {
-
         let serviceData   = {
-            "to_email": data.email,
+            "to_email": data.to_email,
             "subject": `Successful Login From New IP ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
             "email_for": "user-login",
             "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
             "time": data.time,
             "ip": data.ip
         };
-
         await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
     }
 
@@ -395,12 +393,51 @@ class User extends Controller {
             if (err) {
                 return res.status(404).send(this.errorMsgFormat({'message': 'Invalid device.' }));
             } else {
-                console.log(device)
                 return res.status(202).send(this.successFormat({
                     'message': 'Your IP address whitelisted Now you can able to login..'
                 }, device.user, 'users', 202));
             }
         });
+    }
+
+    settingsValidate () {
+        let schema = Joi.object().keys({
+                        id: Joi.string().required().options({
+                            language:{
+                                string:{
+                                    required: '{{label}} field is required'
+                                }
+                            }
+                        }).label('id'),
+                        ip: Joi.string().allow('').optional()
+                    });
+
+        return Joi.validate(req, schema, { abortEarly: false });
+    }
+
+    patchSettings (req, res) {
+        const updateUsers = {};
+
+        each(req.body.data.attributes.data,function(value, key) {
+            updateUsers[key] = value;
+        }, function(err){
+            return res.status(500).send(this.errorMsgFormat({ 'message': err.message }, 'users', 500));
+        });
+
+        if (updateUsers.length) {
+            // find and update the reccord
+            // Users.update(, { password: hash }, (err, user) => {
+            //     if (err) {
+            //         return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
+            //     } else {
+            //         return res.status(202).send(this.successFormat({
+            //             'message': 'Your password updated successfully.'
+            //         }, user._id, 'users', 202));
+            //     }
+            // });
+        } else {
+            return res.status(404).send(this.errorMsgFormat({'message': 'No records found.' }, 'users', 404));
+        }
     }
     
 }

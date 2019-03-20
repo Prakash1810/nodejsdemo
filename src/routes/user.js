@@ -128,4 +128,13 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
     }
 });
 
+router.patch('/settings', auth, (req, res) => {
+    try {
+        user.patchUserSettings(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+    }
+});
+
 module.exports = router;

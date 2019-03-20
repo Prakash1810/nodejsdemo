@@ -2,7 +2,6 @@
 
 const { expect }    = require('chai');
 const password      = require('../../src/core/password');
-const moment        = require('moment');
 var isValidRequest  = { 'id': '5c7e662bba7fe90ebe523256' , 'old_password' : '1234567S', 'password' : '1234567S', 'password_confirmation' : '1234567S' };
 
 describe('change password module unit test :-', () => {

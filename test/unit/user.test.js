@@ -1,13 +1,18 @@
 'use strict';
 
 const { expect }    = require('chai');
+const moment        = require('moment');
 const user          = require('../../src/core/user');
-var isValidRequest  = {
+var isValidRequest  = { 
                         'email' : 'satz@mail.com',
                         'password'  : '1234567S',
+                        'is_browser'    : true,
+                        'is_mobile' : false,
+                        'ip'    : '171.78.139.171',
+                        'country'   : 'India'
                     };
 
-describe('User module unit test case :-', () => {
+describe('User login module unit test case :-', () => {
     it ('should check all the fields are required', () => {
         var errors    = {};
         let { error } = user.validate({});
@@ -40,10 +45,6 @@ describe('User module unit test case :-', () => {
     it ('should check all the fields are entered', () => {
         isValidRequest.password     = '1234567S';
         isValidRequest.email        = 'satz@gmail.com';
-        isValidRequest.is_browser   = true;
-        isValidRequest.is_mobile    = false;
-        isValidRequest.ip           = '171.78.139.171';
-        isValidRequest.country      = 'India';
         let { error } = user.validate(JSON.stringify(isValidRequest));
         expect(error).to.equal(null);
     });
@@ -55,8 +56,28 @@ describe('User module unit test case :-', () => {
     });
 
     it ('should check token is invalid', (done) => {
+        let time = moment().subtract(8199, 'seconds').format('YYYY-MM-DD HH:mm:ss');
         let checkExired = user.checkTimeExpired(moment(time).format('YYYY-MM-DD HH:mm:ss'));
         expect(checkExired).to.equal(false);
         done()   
+    });
+});
+
+
+let req = {
+    body: {
+        lang: "en",
+        data: {
+            attributes: {}
+        }
+    },
+};
+
+describe('User Settings module unit test case :-', () => {
+    it ('Should be check authentication', (done) => {
+        // let res = user.patchUserSettings(req);
+        // console.log(res)
+        // expect(res).to.contain('message');
+        done();
     });
 });

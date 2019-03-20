@@ -2,19 +2,11 @@
 
 const { expect }    = require('chai');
 const registration  = require('../../src/core/registration');
-const Users         = require('../../src/db/users');
 var isValidRequest  = {
                         'email' : 'satz@mail.com',
                         'password'  : '1234567S',
                         'password_confirmation' : '1234567S'
                     };
-
-before(() => {
-    // Users.deleteOne({ email: 'satz@mail.com' } 
-    //                 , function (err) {
-    //                     expect(err).to.equal(null);
-    //                 });
-});
 
 describe('Registration module unit test case :-', () => {
     it ('should check all the fields are required', () => {

@@ -2,14 +2,15 @@
   "swagger": "2.0",
   "info": {
     "version": "1.0.0",
-    "title": "Exchange API",
-    "description": "Sample Exchange Document",
+    "title": "Beldex Exchange API",
+    "description": "Beldex Exchange Document",
     "termsOfService": "http://swagger.io/terms/"
   },
   "basePath": "/",
   "tags" : [
-    {"name": "Tag1", 
-    "description": "API for something"
+    {
+      "name": "Tag1", 
+      "description": "Core - API List"
     }
   ],
   "schemes": [
