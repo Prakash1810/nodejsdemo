@@ -206,11 +206,13 @@ class User extends controller {
                         });
                         
                         // send email notification
-                        this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os });
+                        this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_phishing_code': user.anti_phishing_code });
                         
                         return res.status(200).send(this.successFormat({
                             "token": this.createToken(user),
-                            "created_at": timeNow
+                            "google_auth": user.google_auth,
+                            "sms_auth": user.sms_auth,
+                            "loggedIn": timeNow
                         }, user._id));
                     }
                     });

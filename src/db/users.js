@@ -1,12 +1,6 @@
-const mongoose      = require('mongoose');
-const autoIncrement = require('mongoose-auto-increment');
-const config        = require('config');
-const user          = config.get('database.user');
-const password      = config.get('database.password');
-const host          = config.get('database.host');
-const port          = config.get('database.port');
-const database      = config.get('database.database');
-const connection    = mongoose.createConnection(`mongodb://${user}:${password}@${host}:${port}/${database}`, { autoIndex: false, useFindAndModify: false, useNewUrlParser: true});
+const mongooseConnect  = require('../app/db.config');
+const mongoose         = require('mongoose');
+const autoIncrement    = require('mongoose-auto-increment');
 
 const usersSchema = mongoose.Schema({
     user_id: { type: Number, default: 0 },
@@ -37,8 +31,7 @@ const usersSchema = mongoose.Schema({
     is_deleted: { type: Boolean, default: false }
 });
 
-autoIncrement.initialize(connection);
-
+autoIncrement.initialize(mongooseConnect.connect());
 usersSchema.plugin(autoIncrement.plugin, { model: 'Users', field: 'user_id', startAt: 1 });
 
 module.exports = mongoose.model('Users', usersSchema);
