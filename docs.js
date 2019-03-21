@@ -19,14 +19,12 @@ if(argv.domain !== undefined) {
 var applicationUrl = 'http://' + domain;
 
 swagger.configure(applicationUrl, '1.0.0');
-
-// swagger api documentation
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
-app.use('/doc', subpath);
 
 subpath.get('/', function (req, res) {
-    res.sendfile(__dirname + '/dist/index.html');
+    res.sendFile(path.resolve('dist/index.html'));
 });
 
-module.exports = { swagger, app };
+// swagger api documentation
+module.exports = subpath;
