@@ -99,9 +99,9 @@ class User extends controller {
             email: Joi.string().required().regex(emailReg).options({
                 language: {
                     string: {
-                        required: '{{label}} field is required',
+                        required: lang.__('_email_required'),
                         regex: {
-                            base: 'Invalid {{label}} address.'
+                            base: lang.__('_email_required')
                         }
                     }
                 }

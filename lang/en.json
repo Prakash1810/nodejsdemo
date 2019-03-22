@@ -1,5 +1,5 @@
 {
-    "WELCOME_MESSAGE": {
-        "en": "Welcome"
+    "_email_required": {
+        "en": "Email is required"
     }
 }
