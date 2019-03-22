@@ -9,6 +9,12 @@ const i18n       = require('i18n-nodejs');
 
 const app        = express();
 
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 
@@ -22,11 +28,9 @@ app.use(helmet());
 app.use(cors());
 
 // mount api v1 routes with multi language features
-app.use(`/api/${config.get('site.version')}`, (req, res, next) => {
+app.use(`/api/${config.get('site.version')}`, cors(), (req, res, next) => {
     var requestedLang = (req.body.lang !== undefined) ? req.body.lang : 'en';
     lang = new i18n(requestedLang, `./../../lang/${requestedLang}.json`);
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
   }, routes);
 
