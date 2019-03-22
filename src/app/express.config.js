@@ -6,7 +6,7 @@ const cors       = require('cors');
 const helmet     = require('helmet');
 const routes     = require('../routes');
 const i18n       = require('i18n-nodejs');
-
+const fs         = require('fs')
 const app        = express();
 
 app.use(bodyParser.json());
@@ -23,9 +23,16 @@ app.use(cors());
 
 // mount api v1 routes with multi language features
 app.use(`/api/${config.get('site.version')}`, cors(), (req, res, next) => {
-    var requestedLang = (req.body.lang !== undefined) ? req.body.lang : 'en';
-    lang = new i18n(requestedLang, `./../../lang/${requestedLang}.json`);
-    next();
+  var langFilepath = `./lang/${req.body.lang}.json`;
+
+  if (fs.existsSync(langFilepath)) {
+    var requestedLang =  req.body.lang;
+  } else {
+    var requestedLang =  'en';
+  }
+  //var requestedLang = (req.body.lang !== undefined) ? req.body.lang : 'en';
+  lang = new i18n(requestedLang, `./../../lang/${requestedLang}.json`);
+  next();       
   }, routes);
 
 module.exports = app;

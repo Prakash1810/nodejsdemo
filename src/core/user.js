@@ -99,13 +99,13 @@ class User extends controller {
             email: Joi.string().required().regex(emailReg).options({
                 language: {
                     string: {
-                        required: lang.__('_email_required'),
+                        required: '{{label}}',
                         regex: {
-                            base: lang.__('_email_required')
+                            base: '{{label}}'
                         }
                     }
                 }
-            }).label('email'),
+            }).label(lang.__('_email_required')),
             password: Joi.string().required().options({
                 language: {
                     string: {
