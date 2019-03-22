@@ -25,6 +25,8 @@ app.use(cors());
 app.use(`/api/${config.get('site.version')}`, (req, res, next) => {
     var requestedLang = (req.body.lang !== undefined) ? req.body.lang : 'en';
     lang = new i18n(requestedLang, `./../../lang/${requestedLang}.json`);
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
   }, routes);
 
