@@ -16,26 +16,28 @@
   "license": "ISC",
   "homepage": "https://bitbucket.org/beldex/core-api#readme",
   "devDependencies": {
-    "jest": "^24.1.0",
     "supertest": "^3.4.1",
     "chai": "^4.2.0",
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "path": "^0.12.7",
+    "minimist": "*",
+    "swagger-node-express": "~2.0"
   },
   "dependencies": {
     "axios": "^0.18.0",
     "bcrypt": "^3.0.3",
+    "compression": "^1.7.4",
     "config": "^3.0.1",
+    "cors": "^2.8.5",
     "express": "^4.16.4",
+    "helmet": "^3.16.0",
+    "i18n-nodejs": "^3.0.0",
     "joi": "^14.3.0",
     "jsonwebtoken": "^8.5.0",
     "moment": "^2.24.0",
     "mongoose": "^5.4.16",
     "mongoose-auto-increment": "^5.0.1",
     "nodemon": "^1.18.10",
-    "npm": "^6.8.0",
-    "i18n-nodejs": "^3.0.0",
-    "minimist": "*",
-    "path": "^0.12.7",
-    "swagger-node-express": "~2.0"
+    "npm": "^6.8.0"
   }
 }

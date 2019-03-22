@@ -2,7 +2,8 @@ const express       = require('express');
 const user          = require('../core/user');
 const password      = require('../core/password');
 const Controller    = require('../core/controller');
-const auth          = require("../middleware/authentication");
+const auth          = require("../middlewares/authentication");
+
 const router        = express.Router();
 const controller    = new Controller;
 

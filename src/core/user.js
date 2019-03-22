@@ -99,13 +99,13 @@ class User extends controller {
             email: Joi.string().required().regex(emailReg).options({
                 language: {
                     string: {
-                        required: '{{label}} field is required',
+                        required: '{{label}}',
                         regex: {
-                            base: 'Invalid {{label}} address.'
+                            base: '{{label}}'
                         }
                     }
                 }
-            }).label('email'),
+            }).label(lang.__('_email_required')),
             password: Joi.string().required().options({
                 language: {
                     string: {
@@ -179,7 +179,7 @@ class User extends controller {
                 });
                 
                 // send email notification
-                this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os });
+                this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code });
 
                 return res.status(200).send(this.successFormat({
                     "token": this.createToken(user),
@@ -196,7 +196,7 @@ class User extends controller {
                         let urlHash = this.encryptHash({ "user_id": userID, "ip": req.body.data.attributes.ip, "verified": true });
                         
                         // send email notification
-                        this.sendNotificationForAuthorize({ "to_email": req.body.data.attributes.email,"subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,"email_for": "user-authorize", "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`, "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`, "ip": req.body.data.attributes.ip, "hash": urlHash })
+                        this.sendNotificationForAuthorize({ "to_email": req.body.data.attributes.email,"subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,"email_for": "user-authorize", "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`, "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`, "ip": req.body.data.attributes.ip, "hash": urlHash, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code })
                         return res.status(401).send(this.errorMsgFormat({ 'msg' : 'unauthorized', 'hash': urlHash }, 'users', 401));
                     } else {
                         // insert new device records
@@ -206,11 +206,13 @@ class User extends controller {
                         });
                         
                         // send email notification
-                        this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os });
+                        this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code });
                         
                         return res.status(200).send(this.successFormat({
                             "token": this.createToken(user),
-                            "created_at": timeNow
+                            "google_auth": user.google_auth,
+                            "sms_auth": user.sms_auth,
+                            "loggedIn": timeNow
                         }, user._id));
                     }
                     });
@@ -231,8 +233,10 @@ class User extends controller {
             "email_for": "user-login",
             "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
             "time": data.time,
-            "ip": data.ip
+            "ip": data.ip,
+            'anti_phishing_code': data.anti_phishing_code
         };
+
         await userServices.sendEmailNotification(this.requestDataFormat(serviceData));
     }
 
@@ -427,7 +431,6 @@ class User extends controller {
             // remove id from requested object
             delete requestData.id;
             
-            console.log(requestData)
             // find and update the reccord
             users.findOneAndUpdate({ _id: id }, { $set: requestData })
             .then(result => {
