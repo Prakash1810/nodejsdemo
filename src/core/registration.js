@@ -97,7 +97,7 @@ class Registration extends Controller {
         "subject": "Confirm Your Registration",
         "email_for": "registration"
         };
-        await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
+        await UserServices.sendEmailNotification(serviceData);
     }
     
     resendEmail (req, res) {
@@ -107,7 +107,7 @@ class Registration extends Controller {
             if ( requestedData.type === 'registration' ) {
                 UserTemp.findById(requestedData.id).exec()
                     .then((user) => {
-                        if (user.length) {
+                        if (user === null) {
                             return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid requested.' }));
                         } else {
 
