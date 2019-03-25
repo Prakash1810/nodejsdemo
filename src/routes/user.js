@@ -3,6 +3,7 @@ const user          = require('../core/user');
 const password      = require('../core/password');
 const Controller    = require('../core/controller');
 const auth          = require("../middlewares/authentication");
+const registration  = require('../core/registration');
 
 const router        = express.Router();
 const controller    = new Controller;
@@ -143,5 +144,24 @@ router.patch('/settings', auth, (req, res) => {
         return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
+
+router.post('/resend-email', (req, res) => {
+    try {
+        registration.resendEmail(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+    }
+});
+
+router.patch('/disable', (req, res) => {
+    try {
+        user.disableAccount(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+    }
+});
+
 
 module.exports = router;

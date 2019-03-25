@@ -68,32 +68,65 @@ class Registration extends Controller {
             email: req.body.data.attributes.email,
             password: req.body.data.attributes.password,
             referral_code: req.body.data.attributes.referral_code ? req.body.data.attributes.referral_code : null
-        }, async (err, user) => {
+        }, (err, user) => {
             if (err) {
                 return res.status(500).json(this.errorFormat({ 'message': err.message }));
             } else {
-                let encryptedHash = helpers.encrypt(
-                                        JSON.stringify({
-                                            'id': user.id,
-                                            'email': req.body.data.attributes.email
-                                        })
-                                    );
+                 // send activation email
+                 this.sendActivationEmail(user);
 
-                // send email notification to the registered user
-                let serviceData   = {
-                    'hash' : encryptedHash,
-                    "to_email": req.body.data.attributes.email,
-                    "subject": "Confirm Your Registration",
-                    "email_for": "registration"
-                };
-                await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
-                
                 return res.status(200).json(this.successFormat({
-                            'message': `We have sent a confirmation email to your registered email address. ${req.body.data.attributes.email}. Please follow the instructions in the email to continue.`,
-                        }));
+                    'message': `We have sent a confirmation email to your registered email address. ${user.email}. Please follow the instructions in the email to continue.`,
+                }, user._id));
             }
         });
     }
+
+    async sendActivationEmail (user) {
+        let encryptedHash = helpers.encrypt(
+            JSON.stringify({
+                'id': user._id,
+                'email': user.email
+            })
+        );
+
+        // send email notification to the registered user
+        let serviceData   = {
+        'hash' : encryptedHash,
+        "to_email": user.email,
+        "subject": "Confirm Your Registration",
+        "email_for": "registration"
+        };
+        await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
+    }
+    
+    resendEmail (req, res) {
+        let requestedData = req.body.data.attributes;
+
+        if ( requestedData.id !== undefined ) {
+            if ( requestedData.type === 'registration' ) {
+                UserTemp.findById(requestedData.id).exec()
+                    .then((user) => {
+                        if (user.length) {
+                            return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid requested.' }));
+                        } else {
+
+                            // send activation email
+                            this.sendActivationEmail(user);
+
+                            return res.status(200).json(this.successFormat({
+                                'message': `Mail sended successfully. ${user.email}. Please follow the instructions in the email to continue.`,
+                            }, user._id));
+                        }
+                    });
+            } else {
+                return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }));
+            }
+        } else {
+            return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }));
+        }
+    }
+
 }
 
 module.exports = new Registration;
