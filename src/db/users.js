@@ -20,7 +20,7 @@ const usersSchema = mongoose.Schema({
     google_auth: { type: Boolean, default: false },
     anti_phishing_code: { type: String, default: null },
     white_list_address: { type: Boolean, default: false },
-    is_active: { type: Boolean, default: false },
+    is_active: { type: Boolean, default: true },
     is_blocked: { type: Boolean, default: false },
     beldex_discount: { type: Boolean, default: false },
     level: Number, 

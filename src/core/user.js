@@ -78,17 +78,20 @@ class User extends controller {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Invalid credentials'
                 }));
-            }
-
-            let passwordCompare = bcrypt.compareSync(req.body.data.attributes.password, result.password);
-            if (passwordCompare == false) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid credentials'
-                }));
+            } else if ( result.is_active ) {
+                let passwordCompare = bcrypt.compareSync(req.body.data.attributes.password, result.password);
+                if (passwordCompare == false) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Invalid credentials'
+                    }));
+                } else {
+                    // check that device is already exists or not
+                    this.checkDevice(req, res, result);
+                }
             } else {
-
-                // check that device is already exists or not
-                this.checkDevice(req, res, result);
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Your account has been disabled.'
+                }));
             }
         });
     }
@@ -196,7 +199,7 @@ class User extends controller {
                         let urlHash = this.encryptHash({ "user_id": userID, "ip": req.body.data.attributes.ip, "verified": true });
                         
                         // send email notification
-                        this.sendNotificationForAuthorize({ "to_email": req.body.data.attributes.email,"subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,"email_for": "user-authorize", "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`, "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`, "ip": req.body.data.attributes.ip, "hash": urlHash, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code })
+                        this.sendNotificationForAuthorize({ "to_email": req.body.data.attributes.email,"subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,"email_for": "user-authorize", "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`, "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`, "ip": req.body.data.attributes.ip, "hash": urlHash, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code, "user_id": user._id })
                         return res.status(401).send(this.errorMsgFormat({ 'msg' : 'unauthorized', 'hash': urlHash }, 'users', 401));
                     } else {
                         // insert new device records
@@ -206,7 +209,7 @@ class User extends controller {
                         });
                         
                         // send email notification
-                        this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code });
+                        this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code, "disableAccount": user._id  });
                         
                         return res.status(200).send(this.successFormat({
                             "token": this.createToken(user),
@@ -222,7 +225,7 @@ class User extends controller {
 
     // send email notification to the authorize device
     async sendNotificationForAuthorize(data) {
-        await userServices.sendEmailNotification(this.requestDataFormat(data));
+        await userServices.sendEmailNotification(data);
     }
 
     // send email notification to the registered user
@@ -234,10 +237,11 @@ class User extends controller {
             "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
             "time": data.time,
             "ip": data.ip,
-            'anti_phishing_code': data.anti_phishing_code
+            'anti_phishing_code': data.anti_phishing_code,
+            "user_id": data.user_id
         };
 
-        await userServices.sendEmailNotification(this.requestDataFormat(serviceData));
+        await userServices.sendEmailNotification(serviceData);
     }
 
     insertDevice (req, userID, verify = false, cb) {
@@ -425,6 +429,12 @@ class User extends controller {
 
     patchSettings (req, res) {
         let requestData = req.body.data.attributes;
+
+        if (requestData.code !== undefined) {
+            const userHash = JSON.parse(helpers.decrypt(requestData.code));
+            requestData.is_active = userHash.is_active;
+        }
+
         if (Object.keys(requestData).length > 1) {
             let id = requestData.id;
 
@@ -445,7 +455,16 @@ class User extends controller {
             return res.status(406).send(this.errorMsgFormat({'message': 'Invalid format..' }, 'users', 406));
         }
     }
-    
+
+    disableAccount (req, res) {
+        let requestedData = req.body.data.attributes;
+        const userHash = JSON.parse(helpers.decrypt(requestedData.code));
+        if ( userHash.is_active !== undefined ) {
+            this.patchSettings(req, res);
+        } else {
+            return res.status(400).send(this.errorMsgFormat({'message': 'Invalid request..' }, 'users', 400));
+        }
+    }
 }
 
 module.exports = new User;

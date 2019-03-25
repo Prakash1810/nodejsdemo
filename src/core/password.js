@@ -56,10 +56,11 @@ class Password extends Controller {
                     'to_email': req.body.data.attributes.email,
                     'subject': `Password Reset From ${req.body.data.attributes.ip} - ${moment().format('YYYY-MM-DD HH:mm:ss')} (${config.get('settings.timeZone')})`,
                     'email_for': 'forget-password',
-                    'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code
+                    'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code,
+                    'user_id': user._id
                 };
 
-                await UserServices.sendEmailNotification(this.requestDataFormat(serviceData));
+                await UserServices.sendEmailNotification(serviceData);
 
                 return res.status(200).json(this.successFormat({
                             'message': 'We have sent a reset email to your email address. Please follow the instructions in the email to continue.',
