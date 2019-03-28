@@ -4,9 +4,11 @@ const password      = require('../core/password');
 const Controller    = require('../core/controller');
 const auth          = require("../middlewares/authentication");
 const registration  = require('../core/registration');
-
+const slide           = require('../core/geetest-captcha');
 const router        = express.Router();
 const controller    = new Controller;
+
+
 
 router.get('/activation/:hash', (req, res) => {
     try {
@@ -19,6 +21,7 @@ router.get('/activation/:hash', (req, res) => {
 
 router.post('/login', (req, res) => {
     try {
+        
         let { error }  = user.validate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
@@ -163,5 +166,26 @@ router.patch('/disable', (req, res) => {
     }
 });
 
+router.get("/gt/register-slide", function (req, res) {
+
+    try {
+        slide.register(null, function (err, data) {
+            if (err) {
+                console.error(err);
+                res.status(500);
+                res.send(err);
+                return;
+            }
+            return res.status(200).json(controller.successFormat({
+                'message': 'Captcha values fetching successfully...',
+                'data' : data
+            }));
+        });
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+    }
+});
+ 
 
 module.exports = router;
