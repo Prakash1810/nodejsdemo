@@ -177,7 +177,7 @@ router.get("/gt/register-slide", function (req, res) {
                 return;
             }
             return res.status(200).json(controller.successFormat({
-                'message': 'Geettest captcha following parameters...',
+                'message': 'Captcha values fetching successfully...',
                 'data' : data
             }));
         });
@@ -186,6 +186,6 @@ router.get("/gt/register-slide", function (req, res) {
         return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
-
+ 
 
 module.exports = router;
