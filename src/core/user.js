@@ -39,11 +39,15 @@ class User extends controller {
             password: result.password,
             referral_code: result.referral_code,
             created_date: result.created_date
-        }, (err) => {
+        }, async (err) => {
             if (err) {
                 return res.status(500).send(this.errorMsgFormat(err))
             } else {
                 if (userTemp.removeUserTemp(result.id)) {
+
+                    // generate address
+                    await userServices.generateAddress(result, res);
+
                     return res.status(200).send(this.successFormat({
                         'message': `Congratulation!, Your account has been activated.`
                     }));

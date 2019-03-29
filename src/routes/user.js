@@ -4,6 +4,7 @@ const password      = require('../core/password');
 const Controller    = require('../core/controller');
 const auth          = require("../middlewares/authentication");
 const registration  = require('../core/registration');
+const UserServices  = require('../services/users');
 
 const router        = express.Router();
 const controller    = new Controller;
@@ -159,6 +160,14 @@ router.patch('/disable', (req, res) => {
         user.disableAccount(req, res);
     }
     catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+    }
+});
+
+router.post('/test', (req, res) => {
+    try {
+        UserServices.generateAddress(req, res)
+    } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });

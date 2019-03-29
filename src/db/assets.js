@@ -10,20 +10,18 @@ const assetsSchema = mongoose.Schema({
     address_url: String,
     block_url: String,
     confirm_times: Number,
-    parent_code: String,
+    coin_confirmations: Number,
+    exchange_confirmations: Number,
     minimum_product_withdraw: Number,
-    gas: Number,
     enable_withdraw: Boolean,
     enable_charge: Boolean,
-    regex: String,
-    reset_address_status: Boolean,
     is_suspend: Boolean,
+    is_deleted: Boolean,
+    is_default: { type: Boolean, default: false },
     created_date: { type: Date, default: Date.now },
-    created_by: Number,
+    created_by: String,
     modified_date: Date,
-    modified_by: Number,
-    is_deleted: Boolean
+    modified_by: String,
 });
 
-Assets = mongoose.model('assets', assetsSchema); 
-module.exports = Assets;
+module.exports = mongoose.model('assets', assetsSchema); 
