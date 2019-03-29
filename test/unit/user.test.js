@@ -1,3 +1,5 @@
+'use strict';
+
 const { expect }    = require('chai');
 const moment        = require('moment');
 const user          = require('../../src/core/user');

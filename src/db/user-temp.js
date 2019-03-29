@@ -47,3 +47,12 @@ module.exports.removeUserTemp = async (id) => {
                     return false;
                 });
 };
+
+module.exports.checkEmail = (email) => {
+    try {
+        return UserTemp.find({ email: email }).exec();
+    } catch (error) {
+        // handle query error
+        // return res.status(500).send(error);
+    }
+};

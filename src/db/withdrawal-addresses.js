@@ -9,4 +9,5 @@ const withdrawAddressSchema = mongoose.Schema({
     is_deleted: Boolean
 });
 
-module.exports = mongoose.model('withdrawal-address', withdrawAddressSchema);
+WithdrawAddress = mongoose.model('withdrawal-address', withdrawAddressSchema); 
+module.exports = WithdrawAddress;
