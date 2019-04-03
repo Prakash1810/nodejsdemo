@@ -8,8 +8,6 @@ const slide           = require('../core/geetest-captcha');
 const router        = express.Router();
 const controller    = new Controller;
 
-
-
 router.get('/activation/:hash', (req, res) => {
     try {
         user.activate(req, res);

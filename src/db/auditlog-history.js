@@ -1,13 +1,12 @@
 const mongoose = require('mongoose');
 
 const auditLogSchema = mongoose.Schema({
-    user_id: { type: Schema.Types.ObjectId, ref: 'Users' },
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
     request: String,
     response: String,
-    message: String,
+    path: String,
     ip_address: String,
     create_date_time: { type: Date, default: Date.now }
 });
 
-AuditLog = mongoose.model('auditlog-history', auditLogSchema); 
-module.exports = AuditLog;
+const AuditLog = module.exports =  mongoose.model('auditlog-history', auditLogSchema);
