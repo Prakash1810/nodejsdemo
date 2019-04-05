@@ -8,8 +8,6 @@ const slide           = require('../core/geetest-captcha');
 const router        = express.Router();
 const controller    = new Controller;
 
-
-
 router.get('/activation/:hash', (req, res) => {
     try {
         user.activate(req, res);
@@ -171,10 +169,7 @@ router.get("/gt/register-slide", function (req, res) {
     try {
         slide.register(null, function (err, data) {
             if (err) {
-                console.error(err);
-                res.status(500);
-                res.send(err);
-                return;
+                return res.status(500).send(err);
             }
             return res.status(200).json(controller.successFormat({
                 'message': 'Captcha values fetching successfully...',

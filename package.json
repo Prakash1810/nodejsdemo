@@ -4,9 +4,11 @@
   "description": "An API which act as a core interface between the UI and the microservices",
   "main": "app.js",
   "scripts": {
-    "unit-test": "mocha test/unit/*.js --exit",
+    "test": "nyc mocha test/unit/*.js --exit",
     "integration-test": "mocha test/integration/*.js --exit",
-    "start": "nodemon -L app.js"
+    "start": "nodemon -L app.js",
+    "coverage" : "nyc --reporter=lcov --reporter=text-lcov npm test"
+
   },
   "repository": {
     "type": "git",
@@ -19,11 +21,13 @@
     "supertest": "^3.4.1",
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
+    "nyc": "^13.3.0",
     "path": "^0.12.7",
     "minimist": "*",
     "swagger-node-express": "~2.0"
   },
   "dependencies": {
+    "app-root-path": "^2.2.1",
     "axios": "^0.18.0",
     "bcrypt": "^3.0.3",
     "compression": "^1.7.4",
@@ -40,6 +44,7 @@
     "mongoose": "^5.4.16",
     "mongoose-auto-increment": "^5.0.1",
     "nodemon": "^1.18.10",
-    "npm": "^6.8.0"
+    "npm": "^6.8.0",
+    "winston": "^3.2.1"
   }
 }
