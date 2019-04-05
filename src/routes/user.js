@@ -182,7 +182,7 @@ router.get("/gt/register-slide", function (req, res) {
     }
 });
 
-router.patch('/g2f-settings', (req, res) => {
+router.patch('/g2f-settings', auth, (req, res) => {
     try {
         user.patch2FAuth(req, res);
     }
