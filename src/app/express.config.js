@@ -30,9 +30,9 @@ app.use(`/api/${config.get('site.version')}`, cors(), (req, res, next) => {
   } else {
     var requestedLang =  'en';
   }
-  //var requestedLang = (req.body.lang !== undefined) ? req.body.lang : 'en';
+
   lang = new i18n(requestedLang, `./../../lang/${requestedLang}.json`);
   next();       
-  }, routes);
+}, routes);
 
 module.exports = app;

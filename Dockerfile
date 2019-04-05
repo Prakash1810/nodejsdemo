@@ -25,8 +25,6 @@ RUN npm install -g nodemon
 # Install dependencies (if any) in package.json
 RUN npm install --quiet
 
-RUN export NODE_ENV=development
-
 RUN npm update
 
 # Expose port from container so host can access 3000

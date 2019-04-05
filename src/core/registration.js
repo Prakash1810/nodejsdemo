@@ -82,7 +82,7 @@ class Registration extends Controller {
         });
     }
 
-    async sendActivationEmail (user) {
+    sendActivationEmail (user) {
         let encryptedHash = helpers.encrypt(
             JSON.stringify({
                 'id': user._id,
@@ -97,7 +97,8 @@ class Registration extends Controller {
         "subject": "Confirm Your Registration",
         "email_for": "registration"
         };
-        await UserServices.sendEmailNotification(serviceData);
+        
+        UserServices.sendEmailNotification(serviceData);
     }
     
     resendEmail (req, res) {

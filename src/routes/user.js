@@ -186,6 +186,16 @@ router.get("/gt/register-slide", function (req, res) {
         return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
     }
 });
- 
+
+router.patch('/g2f-settings', (req, res) => {
+    try {
+        user.patch2FAuth(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+    }
+});
+
+
 
 module.exports = router;

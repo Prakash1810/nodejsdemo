@@ -39,11 +39,15 @@ class User extends controller {
             password: result.password,
             referral_code: result.referral_code,
             created_date: result.created_date
-        }, (err) => {
+        }, (err, user) => {
             if (err) {
                 return res.status(500).send(this.errorMsgFormat(err))
             } else {
                 if (userTemp.removeUserTemp(result.id)) {
+                    
+                    // address creation
+                    userServices.addressCreation(user);
+                    
                     return res.status(200).send(this.successFormat({
                         'message': `Congratulation!, Your account has been activated.`
                     }));
@@ -102,13 +106,13 @@ class User extends controller {
             email: Joi.string().required().regex(emailReg).options({
                 language: {
                     string: {
-                        required: '{{label}}',
+                        required: '{{label}} field is required',
                         regex: {
-                            base: '{{label}}'
+                            base: 'Invalid {{label}} address'
                         }
                     }
                 }
-            }).label(lang.__('_email_required')),
+            }).label("email"),
             password: Joi.string().required().options({
                 language: {
                     string: {
@@ -131,30 +135,29 @@ class User extends controller {
         return Joi.validate(req, schema, { abortEarly: false });
     }
 
-    async removeUser  (email, res) {
-        await users.deleteOne({ email: email })
-                .then(result => {
-                    if (result.deletedCount) {
-                        return res.status(200).send(this.successFormat({
-                            'message': 'account deleted successfully!'
-                        }));
-                    } else {
-                        return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Invalid email address'
-                        }));    
-                    }
-                })
-                .catch(err => {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Invalid credentials'
-                    }));
-                });
+    removeUser  (email, res) {
+        users.deleteOne({ email: email })
+        .then(result => {
+            if (result.deletedCount) {
+                return res.status(200).send(this.successFormat({
+                    'message': 'account deleted successfully!'
+                }));
+            } else {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid email address'
+                }));    
+            }
+        })
+        .catch(err => {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Invalid credentials'
+            }));
+        });
     }
 
     getTokenToUserId (req, res, data = 'json') {
         let token = req.headers.authorization;
         try {
-
             let decoded  = jwt.verify(token, config.get('secrete.key'));
             if (data === 'json') {
                 return res.status(200).json({ "code": 0, "message": 'Authorization successfully.', "data": { "user_id": decoded.user_id }});
@@ -173,12 +176,12 @@ class User extends controller {
         var timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
 
         // Find some documents
-        deviceMangement.countDocuments({ user: userID }, async (err, count) => {
+        deviceMangement.countDocuments({ user: userID }, (err, count) => {
             if(!count) {
                 // insert new device records
-                await this.insertDevice(req, userID, true).then(async (device) => {
+                this.insertDevice(req, userID, true).then((device) => {
                     // insert login history
-                    await this.insertLoginHistory(req, userID, device._id, timeNow);
+                    this.insertLoginHistory(req, userID, device._id, timeNow);
                 });
                 
                 // send email notification
@@ -186,16 +189,18 @@ class User extends controller {
 
                 return res.status(200).send(this.successFormat({
                     "token": this.createToken(user),
-                    "created_at": timeNow
+                    "google_auth": user.google_auth,
+                    "sms_auth": user.sms_auth,
+                    "loggedIn": timeNow
                 }, user._id));
 
             } else {
                 deviceMangement.findOne({ user: userID, ip: req.body.data.attributes.ip, verified: true })
                 .exec()
-                .then(async (result) => {
+                .then((result) => {
                     if (!result) {
                         // insert new device records
-                        await this.insertDevice(req, userID).then(() => { });
+                        this.insertDevice(req, userID).then(() => { });
                         let urlHash = this.encryptHash({ "user_id": userID, "ip": req.body.data.attributes.ip, "verified": true });
                         
                         // send email notification
@@ -203,9 +208,9 @@ class User extends controller {
                         return res.status(401).send(this.errorMsgFormat({ 'msg' : 'unauthorized', 'hash': urlHash }, 'users', 401));
                     } else {
                         // insert new device records
-                        await this.insertDevice(req, userID, true).then(async (device) => {
+                        this.insertDevice(req, userID, true).then(async (device) => {
                             // insert login history
-                            await this.insertLoginHistory(req, userID, device._id, timeNow);
+                            this.insertLoginHistory(req, userID, device._id, timeNow);
                         });
                         
                         // send email notification
@@ -224,12 +229,12 @@ class User extends controller {
     }
 
     // send email notification to the authorize device
-    async sendNotificationForAuthorize(data) {
-        await userServices.sendEmailNotification(data);
+    sendNotificationForAuthorize(data) {
+        userServices.sendEmailNotification(data);
     }
 
     // send email notification to the registered user
-    async sendNotification  (data) {
+    sendNotification  (data) {
         let serviceData   = {
             "to_email": data.to_email,
             "subject": `Successful Login From New IP ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
@@ -241,7 +246,7 @@ class User extends controller {
             "user_id": data.user_id
         };
 
-        await userServices.sendEmailNotification(serviceData);
+        userServices.sendEmailNotification(serviceData);
     }
 
     insertDevice (req, userID, verify = false, cb) {
@@ -418,6 +423,7 @@ class User extends controller {
                             }
                         }).label('id'),
                         sms_auth: Joi.bool().optional(),
+                        password: Joi.string().optional(),
                         google_auth: Joi.boolean().optional(),
                         mobile: Joi.number().optional(),
                         mobile_code: Joi.number().optional(),
@@ -464,6 +470,35 @@ class User extends controller {
         } else {
             return res.status(400).send(this.errorMsgFormat({'message': 'Invalid request..' }, 'users', 400));
         }
+    }
+
+    patch2FAuth (req, res) {
+        var requestedData = req.body.data.attributes;
+        if ( requestedData.password !== undefined && requestedData.id != undefined ) {
+            users.findById(requestedData.id)
+            .exec()
+            .then((result) => {
+                if (!result) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Invalid user'
+                    }));
+                } else {
+                    let passwordCompare = bcrypt.compareSync(requestedData.password, result.password);
+                    if (passwordCompare == false) {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Incorrect password'
+                        }));
+                    } else {
+                        this.patchSettings(req, res);
+                    }
+                }
+            });
+        } else {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Invalid request'
+            }));
+        }
+        
     }
 }
 
