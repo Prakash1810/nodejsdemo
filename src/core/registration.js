@@ -4,6 +4,7 @@ const Users         = require('../db/users');
 const UserServices  = require('../services/users');
 const Controller    = require('../core/controller');
 const helpers       = require('../helpers/helper.functions');
+const password      = require('../core/password');
 
 class Registration extends Controller {
 
@@ -120,6 +121,8 @@ class Registration extends Controller {
                             }, user._id));
                         }
                     });
+            } else if (requestedData.type === 'forget-passwod' ) {
+                password.sendResetLink(req, res);
             } else {
                 return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }));
             }
