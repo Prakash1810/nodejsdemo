@@ -191,6 +191,13 @@ router.patch('/g2f-settings', auth, (req, res) => {
     }
 });
 
-
+router.post('/g2f-verify', auth, (req, res) => {
+    try {
+        user.postVerifyG2F(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+    }
+});
 
 module.exports = router;

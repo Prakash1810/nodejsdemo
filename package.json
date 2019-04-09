@@ -7,8 +7,7 @@
     "test": "nyc mocha test/unit/*.js --exit",
     "integration-test": "mocha test/integration/*.js --exit",
     "start": "nodemon -L app.js",
-    "coverage" : "nyc --reporter=lcov --reporter=text-lcov npm test"
-
+    "coverage": "nyc --reporter=lcov --reporter=text-lcov npm test"
   },
   "repository": {
     "type": "git",
@@ -27,6 +26,7 @@
     "swagger-node-express": "~2.0"
   },
   "dependencies": {
+    "2fa": "^0.1.2",
     "app-root-path": "^2.2.1",
     "axios": "^0.18.0",
     "bcrypt": "^3.0.3",

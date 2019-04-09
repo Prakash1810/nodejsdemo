@@ -10,6 +10,7 @@ const jwt              = require('jsonwebtoken');
 const Joi              = require('joi');
 const bcrypt           = require('bcrypt');
 const controller       = require('../core/controller');
+const g2fa             = require('2fa');
 
 class User extends controller {
 
@@ -185,12 +186,13 @@ class User extends controller {
                 });
                 
                 // send email notification
-                this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code });
+                this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code });
 
                 return res.status(200).send(this.successFormat({
                     "token": this.createToken(user),
                     "google_auth": user.google_auth,
                     "sms_auth": user.sms_auth,
+                    "anti_spoofing": user.anti_spoofing,
                     "loggedIn": timeNow
                 }, user._id));
 
@@ -204,7 +206,7 @@ class User extends controller {
                         let urlHash = this.encryptHash({ "user_id": userID, "ip": req.body.data.attributes.ip, "verified": true });
                         
                         // send email notification
-                        this.sendNotificationForAuthorize({ "to_email": req.body.data.attributes.email,"subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,"email_for": "user-authorize", "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`, "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`, "ip": req.body.data.attributes.ip, "hash": urlHash, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code, "user_id": user._id })
+                        this.sendNotificationForAuthorize({ "to_email": req.body.data.attributes.email,"subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,"email_for": "user-authorize", "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`, "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`, "ip": req.body.data.attributes.ip, "hash": urlHash, 'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code, "user_id": user._id })
                         return res.status(401).send(this.errorMsgFormat({ 'msg' : 'unauthorized', 'hash': urlHash }, 'users', 401));
                     } else {
                         // insert new device records
@@ -214,12 +216,13 @@ class User extends controller {
                         });
                         
                         // send email notification
-                        this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_phishing_code': (user.anti_phishing_code === null) ? false : user.anti_phishing_code, "disableAccount": user._id  });
+                        this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code, "disableAccount": user._id  });
                         
                         return res.status(200).send(this.successFormat({
                             "token": this.createToken(user),
                             "google_auth": user.google_auth,
                             "sms_auth": user.sms_auth,
+                            "anti_spoofing": user.anti_spoofing,
                             "loggedIn": timeNow
                         }, user._id));
                     }
@@ -242,7 +245,7 @@ class User extends controller {
             "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
             "time": data.time,
             "ip": data.ip,
-            'anti_phishing_code': data.anti_phishing_code,
+            'anti_spoofing_code': data.anti_spoofing_code,
             "user_id": data.user_id
         };
 
@@ -425,9 +428,11 @@ class User extends controller {
                         sms_auth: Joi.bool().optional(),
                         password: Joi.string().optional(),
                         google_auth: Joi.boolean().optional(),
+                        google_secrete_key: Joi.string().optional(),
                         mobile: Joi.number().optional(),
                         mobile_code: Joi.number().optional(),
-                        anti_phishing_code: Joi.string().optional()
+                        anti_spoofing: Joi.boolean().optional(),
+                        anti_spoofing_code: Joi.string().optional(),
                     });
 
         return Joi.validate(req, schema, { abortEarly: false });
@@ -474,8 +479,8 @@ class User extends controller {
 
     patch2FAuth (req, res) {
         var requestedData = req.body.data.attributes;
-        if ( requestedData.password !== undefined && requestedData.id != undefined ) {
-            users.findById(requestedData.id)
+        if ( ( requestedData.password !== undefined || requestedData.g2f_code !== undefined )  && req.body.data.id != undefined ) {
+            users.findById(req.body.data.id)
             .exec()
             .then((result) => {
                 if (!result) {
@@ -483,13 +488,17 @@ class User extends controller {
                         'message': 'Invalid user'
                     }));
                 } else {
-                    let passwordCompare = bcrypt.compareSync(requestedData.password, result.password);
-                    if (passwordCompare == false) {
-                        return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Incorrect password'
-                        }));
+                    if (requestedData.password !== undefined ) {
+                        let passwordCompare = bcrypt.compareSync(requestedData.password, result.password);
+                        if (passwordCompare == false) {
+                            return res.status(400).send(this.errorMsgFormat({
+                                'message': 'Incorrect password'
+                            }));
+                        } else {
+                            this.updateG2F(req, res)
+                        }
                     } else {
-                        this.patchSettings(req, res);
+                        this.updateG2F(req, res)
                     }
                 }
             });
@@ -498,7 +507,62 @@ class User extends controller {
                 'message': 'Invalid request'
             }));
         }
-        
+    }
+
+    updateG2F (req, res) {
+        if (this.postVerifyG2F(req, res, 'boolean')) {
+            // delete password attribute
+            delete req.body.data.attributes.password;
+
+            this.patchSettings(req, res);
+        } else {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Incorrect code'
+            }));
+        }
+    }
+
+    verifyG2F (req, res, type, google_secrete_key) {
+        let opts = {
+            beforeDrift: 2,
+            afterDrift: 2,
+            drift: 4,
+            step: 30
+        };
+
+        let returnStatus = g2fa.verifyTOTP(google_secrete_key, req.body.data.attributes.g2f_code, opts);
+        if (type === 'boolean') {
+            return returnStatus;
+        } else {
+            return res.status(200).send(this.successFormat({
+                'status': returnStatus
+            }, '2factor', 200));
+        }
+    }
+
+    postVerifyG2F (req, res, type = 'json') {
+        let requestedData = req.body.data.attributes;
+        if (requestedData.g2f_code !== undefined) {
+            if ( requestedData.google_secrete_key === undefined ) {
+                users.findById(req.body.data.id)
+                .exec()
+                .then((result) => {
+                    if (!result) {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Invalid data'
+                        }));
+                    } else {
+                        this.verifyG2F(req, res, type, result.google_secrete_key)
+                    }
+                });
+            } else {
+                this.verifyG2F(req, res, type, requestedData.google_secrete_key)
+            }
+        } else {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Invalid request'
+            }, '2factor', 400));
+        }
     }
 }
 
