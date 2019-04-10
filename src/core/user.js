@@ -510,8 +510,9 @@ class User extends controller {
     }
 
     updateG2F (req, res) {
-        console.log(this.postVerifyG2F(req, res, 'boolean'))
-        console.log(typeof this.postVerifyG2F(req, res, 'boolean'))
+        let check = this.postVerifyG2F(req, res, 'boolean');
+        console.log(check)
+        console.log(typeof check)
         
         if (this.postVerifyG2F(req, res, 'boolean') === true) {
             // delete password attribute
