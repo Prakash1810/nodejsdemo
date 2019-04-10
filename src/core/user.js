@@ -447,7 +447,7 @@ class User extends controller {
         }
 
         if (Object.keys(requestData).length > 1) {
-            
+
             // find and update the reccord
             users.findOneAndUpdate({ _id: req.body.data.id }, { $set: requestData })
             .then(result => {
@@ -531,9 +531,16 @@ class User extends controller {
         if (type === 'boolean') {
             return returnStatus;
         } else {
-            return res.status(200).send(this.successFormat({
-                'status': returnStatus
-            }, '2factor', 200));
+            if (returnStatus === true) {
+                return res.status(200).send(this.successFormat({
+                    'status': returnStatus
+                }, '2factor', 200));
+            } else 
+                return res.status(400).send(this.successFormat({
+                    'status': returnStatus,
+                    'message': 'Incorrect code'
+                }, '2factor', 400));
+            }
         }
     }
 
