@@ -530,7 +530,10 @@ class User extends controller {
             step: 30
         };
         let counter = Math.floor(Date.now() / 1000 / opts.step);
+        console.log(google_secrete_key);
+
         let returnStatus = g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
+        console.log(returnStatus)
         if (type === 'boolean') {
             return returnStatus;
         } else {
