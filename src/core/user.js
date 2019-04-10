@@ -418,13 +418,6 @@ class User extends controller {
 
     settingsValidate (req) {
         let schema = Joi.object().keys({
-                        id: Joi.string().required().options({
-                            language:{
-                                string:{
-                                    required: '{{label}} field is required'
-                                }
-                            }
-                        }).label('id'),
                         sms_auth: Joi.bool().optional(),
                         password: Joi.string().optional(),
                         google_auth: Joi.boolean().optional(),
@@ -440,13 +433,12 @@ class User extends controller {
 
     patchSettings (req, res) {
         let requestData = req.body.data.attributes;
-
         if (requestData.code !== undefined) {
             let userHash = JSON.parse(helpers.decrypt(requestData.code));
             requestData.is_active = userHash.is_active;
         }
 
-        if (Object.keys(requestData).length > 1) {
+        if (req.body.data.id !== undefined && Object.keys(requestData).length > 1) {
 
             // find and update the reccord
             users.findOneAndUpdate({ _id: req.body.data.id }, { $set: requestData })
