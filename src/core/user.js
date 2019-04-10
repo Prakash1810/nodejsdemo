@@ -451,7 +451,7 @@ class User extends controller {
                 return res.status(404).send(this.errorMsgFormat({'message': err.message }));
             });
         } else {
-            return res.status(406).send(this.errorMsgFormat({'message': 'Invalid format..' }, 'users', 406));
+            return res.status(400).send(this.errorMsgFormat({'message': 'Invalid request.' }, 'users', 400));
         }
     }
 
