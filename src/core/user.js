@@ -442,7 +442,7 @@ class User extends controller {
         let requestData = req.body.data.attributes;
 
         if (requestData.code !== undefined) {
-            const userHash = JSON.parse(helpers.decrypt(requestData.code));
+            let userHash = JSON.parse(helpers.decrypt(requestData.code));
             requestData.is_active = userHash.is_active;
         }
 
@@ -469,7 +469,7 @@ class User extends controller {
 
     disableAccount (req, res) {
         let requestedData = req.body.data.attributes;
-        const userHash = JSON.parse(helpers.decrypt(requestedData.code));
+        let userHash = JSON.parse(helpers.decrypt(requestedData.code));
         if ( userHash.is_active !== undefined ) {
             this.patchSettings(req, res);
         } else {
@@ -509,12 +509,9 @@ class User extends controller {
         }
     }
 
-    updateG2F (req, res) {
-        let check = this.postVerifyG2F(req, res, 'boolean');
-        console.log(check)
-        console.log(typeof check)
-        
-        if (this.postVerifyG2F(req, res, 'boolean') === true) {
+    async updateG2F (req, res) {
+        let check = await this.postVerifyG2F(req, res, 'boolean');
+        if (check === true) {
             // delete password attribute
             delete req.body.data.attributes.password;
 
@@ -556,11 +553,11 @@ class User extends controller {
                             'message': 'Invalid data'
                         }));
                     } else {
-                        this.verifyG2F(req, res, type, result.google_secrete_key)
+                        return this.verifyG2F(req, res, type, result.google_secrete_key)
                     }
                 });
             } else {
-                this.verifyG2F(req, res, type, requestedData.google_secrete_key)
+                return this.verifyG2F(req, res, type, requestedData.google_secrete_key)
             }
         } else {
             return res.status(400).send(this.errorMsgFormat({
