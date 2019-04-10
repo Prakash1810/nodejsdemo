@@ -535,7 +535,7 @@ class User extends controller {
                 return res.status(200).send(this.successFormat({
                     'status': returnStatus
                 }, '2factor', 200));
-            } else 
+            } else {
                 return res.status(400).send(this.successFormat({
                     'status': returnStatus,
                     'message': 'Incorrect code'
@@ -556,11 +556,11 @@ class User extends controller {
                             'message': 'Invalid data'
                         }));
                     } else {
-                        return this.verifyG2F(req, res, type, result.google_secrete_key)
+                        return this.verifyG2F(req, res, type, result.google_secrete_key);
                     }
                 });
             } else {
-                return this.verifyG2F(req, res, type, requestedData.google_secrete_key)
+                return this.verifyG2F(req, res, type, requestedData.google_secrete_key);
             }
         } else {
             return res.status(400).send(this.errorMsgFormat({
