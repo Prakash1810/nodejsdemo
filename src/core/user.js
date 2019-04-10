@@ -447,13 +447,9 @@ class User extends controller {
         }
 
         if (Object.keys(requestData).length > 1) {
-            let id = requestData.id;
-
-            // remove id from requested object
-            delete requestData.id;
             
             // find and update the reccord
-            users.findOneAndUpdate({ _id: id }, { $set: requestData })
+            users.findOneAndUpdate({ _id: req.body.data.id }, { $set: requestData })
             .then(result => {
                 return res.status(202).send(this.successFormat({
                     'message': 'Your request is updated successfully.'
