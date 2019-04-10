@@ -529,8 +529,8 @@ class User extends controller {
             drift: 4,
             step: 30
         };
-
-        let returnStatus = g2fa.verifyTOTP(google_secrete_key, req.body.data.attributes.g2f_code, opts);
+        let counter = Math.floor(Date.now() / 1000 / opts.step);
+        let returnStatus = g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
         if (type === 'boolean') {
             return returnStatus;
         } else {
