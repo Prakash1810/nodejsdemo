@@ -4,8 +4,7 @@
   "description": "An API which act as a core interface between the UI and the microservices",
   "main": "app.js",
   "scripts": {
-    "test": "nyc mocha test/unit/*.js --exit",
-    "integration-test": "mocha test/integration/*.js --exit",
+    "test": "nyc mocha test/* --exit",
     "start": "nodemon -L app.js",
     "coverage": "nyc --reporter=lcov --reporter=text-lcov npm test"
   },

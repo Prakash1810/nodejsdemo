@@ -39,7 +39,7 @@ describe('User login module unit test case :-', () => {
         });
         expect(error.isJoi).to.equal(true);
         expect(error.name).to.equal('ValidationError');
-        expect(errors.email).to.equal("Invalid email address.");
+        expect(errors.email).to.equal("Invalid email address");
     });
 
     it ('should check all the fields are entered', () => {

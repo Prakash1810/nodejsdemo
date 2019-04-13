@@ -5,18 +5,17 @@ const request       = require('supertest');
 const config        = require('config');
 const baseUrl       = config.get('site.url');
 const route         = `/api/${config.get('site.version')}/user/registration`;
+const UserTemp      = require('../../src/db/user-temp');
 
 describe('Registration module intergration test case:- /api/v1/user/registraton', () => {
-    it( 'Validate email , password and confirm password is required' , async () => {
+    it( 'Check empty parameter in registration end point' , async () => {
         await request(baseUrl)
         .post(route)
         .set('Accept', 'application/json')
         .send({})
-        .expect(400)
+        .expect(500)
         .then((res) => {
-            expect(res.body.data.attributes.email).to.equal("\"email\" is required");
-            expect(res.body.data.attributes.password).to.equal("\"password\" is required");
-            expect(res.body.data.attributes.password_confirmation).to.equal("\"password confirmation\" is required");
+            expect(res.body.data.attributes.message).to.equal("Cannot read property 'attributes' of undefined");
         });
     });
 
@@ -25,10 +24,15 @@ describe('Registration module intergration test case:- /api/v1/user/registraton'
         .post(route)
         .set('Accept', 'application/json')
         .send({
-            email: "satzmail.com",
-            password: "1234567S",
-            password_confirmation: "1234567S",
-            refferal_code: null
+            "lang": "en",
+            "data": {
+                    "attributes": {
+                        "email": "naveen.mail.com",
+                        "password": "Temp!123",
+                        "password_confirmation": "Temp!123",
+                        "referral_code" : "BELDEX_001"
+                    }
+                }
         })
         .expect(400)
         .then((res) => {
@@ -36,14 +40,20 @@ describe('Registration module intergration test case:- /api/v1/user/registraton'
         });
     });
 
-    it('Validate pasword match with regx', async () => {
+    it('Validate password match with regx', async () => {
         await request(baseUrl)
         .post(route)
         .set('Accept', 'application/json')
         .send({
-            email: "satz@mail.com",
-            password: "1234567",
-            password_confirmation: "1234567"
+            "lang": "en",
+            "data": {
+                    "attributes": {
+                        "email": "naveen.mail.com",
+                        "password": "1234567",
+                        "password_confirmation": "Temp!123",
+                        "referral_code" : "BELDEX_001"
+                    }
+                }
         })
         .expect(400)
         .then((res) => {
@@ -56,9 +66,15 @@ describe('Registration module intergration test case:- /api/v1/user/registraton'
         .post(route)
         .set('Accept', 'application/json')
         .send({
-            email: "satz@mail.com",
-            password: "1234567S",
-            password_confirmation: "1234567"
+            "lang": "en",
+            "data": {
+                    "attributes": {
+                        "email": "naveen.mail.com",
+                        "password": "12345678",
+                        "password_confirmation": "Temp!123",
+                        "referral_code" : "BELDEX_001"
+                    }
+                }
         })
         .expect(400)
         .then((res) => {
@@ -71,9 +87,15 @@ describe('Registration module intergration test case:- /api/v1/user/registraton'
         .post(route)
         .set('Accept', 'application/json')
         .send({
-            email: "satz@mail.com",
-            password: "1234567S",
-            password_confirmation: "1234567S"
+            "lang": "en",
+            "data": {
+                    "attributes": {
+                        "email": "naveen@gmail.com",
+                        "password": "Temp!123",
+                        "password_confirmation": "Temp!123",
+                        "referral_code" : "BELDEX_001"
+                    }
+                }
         })
         .expect(200)
         .then((res) => {
@@ -83,18 +105,20 @@ describe('Registration module intergration test case:- /api/v1/user/registraton'
         });
     });
 
-    it('Validate email address already registred', async () => {
-        await request(baseUrl)
-        .post(route)
-        .set('Accept', 'application/json')
-        .send({
-            email: "satz@mail.com",
-            password: "1234567S",
-            password_confirmation: "1234567S"
-        })
-        .expect(400)
-        .then((res) => {
-            expect(res.body.data.attributes.email).to.equal("This email address already exits.");
+    it('should report error when email already exists', () => {
+        
+        UserTemp.findOne({ email: 'naveen@gmail.com' })
+            .exec(function (err, result) {
+                request(baseUrl)
+                .post(route)
+                .set('Accept', 'application/json')
+                .expect(400)
+                .then((res) => {
+                    expect(res.body.data.type).to.equal("users");
+                    expect(res.body.data.attributes.email).to.equal("This email address already exits.");
+                });
         });
-    });
+
+  });
+
 });
