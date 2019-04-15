@@ -465,29 +465,24 @@ class User extends controller {
         }
     }
 
-    patch2FAuth (req, res) {
+    async patch2FAuth (req, res) {
         var requestedData = req.body.data.attributes;
         if ( ( requestedData.password !== undefined && requestedData.g2f_code !== undefined )  && req.body.data.id != undefined ) {
-            users.findById(req.body.data.id)
-            .exec()
-            .then((result) => {
-                if (!result) {
+            let result = await users.findById(req.body.data.id).exec();
+            if (!result) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid user'
+                }));
+            }else if (requestedData.password !== undefined ) {
+                let passwordCompare = bcrypt.compareSync(requestedData.password, result.password);
+                if (passwordCompare == false) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Invalid user'
+                        'message': 'Incorrect password'
                     }));
-                } else {
-                    if (requestedData.password !== undefined ) {
-                        let passwordCompare = bcrypt.compareSync(requestedData.password, result.password);
-                        if (passwordCompare == false) {
-                            return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Incorrect password'
-                            }));
-                        }
-                    }
-
-                    return this.updateG2F(req, res)
                 }
-            });
+            }
+            
+            return this.updateG2F(req, res)
         } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Invalid request'
@@ -497,7 +492,6 @@ class User extends controller {
 
     async updateG2F (req, res) {
         let check = await this.postVerifyG2F(req, res, 'boolean');
-        console.log(check)
         if (check === true) {
             // delete password attribute
             delete req.body.data.attributes.password;
@@ -510,7 +504,7 @@ class User extends controller {
         }
     }
 
-    verifyG2F (req, res, type, google_secrete_key) {
+    async verifyG2F (req, res, type, google_secrete_key) {
         let opts = {
             beforeDrift: 2,
             afterDrift: 2,
@@ -518,7 +512,7 @@ class User extends controller {
             step: 30
         };
         let counter = Math.floor(Date.now() / 1000 / opts.step);
-        let returnStatus = g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
+        let returnStatus = await g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
         if (type === 'boolean') {
             return returnStatus;
         } else {
@@ -539,17 +533,13 @@ class User extends controller {
         let requestedData = req.body.data.attributes;
         if (requestedData.g2f_code !== undefined) {
             if ( requestedData.google_secrete_key === undefined ) {
-                await users.findById(req.body.data.id)
-                    .exec()
-                    .then((result) => {
-                        if (!result) {
-                            return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Invalid data'
-                            }));
-                        } else {
-                            return this.verifyG2F(req, res, type, result.google_secrete_key);
-                        }
-                    });
+                let result = await users.findById(req.body.data.id).exec();
+                if (!result) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Invalid data'
+                    }));
+                } 
+                return this.verifyG2F(req, res, type, result.google_secrete_key);
             } else {
                 return this.verifyG2F(req, res, type, requestedData.google_secrete_key);
             }
