@@ -241,8 +241,167 @@
                           }
                         ]
                     }
+                  },
+                  "/api/v1/user/gt/register-slide" : {
+                    "get" :{
+                      "tags": [ "Tag1"],
+                      "description": "Get register slide",
+                      "operationId": "findById",
+                      "produces": [
+                        "application/json"
+                      ],  
+                      "schema": {
+                        "$ref": "#/definitions/captchaslide"
+                        }
+                    }
+                  },
+                  "/api/v1/wallet/assets" : {
+                    "get" :{
+                      "tags": [ "Tag1"],
+                      "description": "Get wallet assets",
+                      "operationId": "findById",
+                      "produces": [
+                        "application/json"
+                      ],
+                      "parameters": [
+                        {
+                          "name": "Authorization",
+                          "in": "header",
+                          "description": "Assets",
+                          "required": true,
+                          "type": "apikey",
+                          "schema": {
+                            "$ref": "#/definitions/assets"
+                            }
+                        }
+                      ]
+                    }
+                  },
+                  "/api/v1/user/resend-email" : {
+                    "post" : {
+                      "tags": [ "Tag1"],
+                      "description": "Resend Mail",
+                      "operationId": "findById",
+                      "produces": [
+                        "application/json"
+                      ],
+                      "parameters": [
+                        {
+                          "name": "Parameters",
+                          "in": "body",
+                          "description": "Resend mail",
+                          "required": true,
+                          "type": "apikey",
+                          "schema": {
+                            "$ref": "#/definitions/resendmail"
+                            }
+                        }
+                      ]
+                    }
+                  },
+                  "/api/v1/user/g2f-verify" : {
+                    "post" : {
+                      "tags": [ "Tag1"],
+                      "description": "g2f verify",
+                      "operationId": "findById",
+                      "produces": [
+                        "application/json"
+                      ],
+                      "parameters": [
+                        {
+                          "name": "Authorization",
+                          "in": "header",
+                          "description": "g2f verify",
+                          "required": true,
+                          "type": "apikey"
+                        },
+                        {
+                          "name": "Parameters",
+                          "in": "body",
+                          "description": "Assets",
+                          "required": true,
+                          "type": "apikey",
+                          "schema": {
+                            "$ref": "#/definitions/g2f-verify"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "/api/v1/user/g2f-settings" : {
+            
+                   "patch" : {
+                      "tags": [ "Tag1"],
+                      "description": "Get g2f settings",
+                      "operationId": "findById",
+                      "produces": [
+                        "application/json"
+                      ],
+                      "parameters": [
+                        {
+                          "name": "Authorization",
+                          "in": "header",
+                          "description": "g2f settings",
+                          "required": true,
+                          "type": "apikey"
+                        },
+                        {
+                          "name": "Parameters",
+                          "in": "body",
+                          "description": "g2f settings",
+                          "required": true,
+                          "type": "apikey",          
+                          "schema": {
+                            "$ref": "#/definitions/g2f-settings"
+                            }
+                        }
+                      ]
+                    }
+                  },
+                  "/api/v1/user/settings" : {
+                    "patch" : {
+                      "tags": [ "Tag1"],
+                      "description": "Get user settings",
+                      "operationId": "findById",
+                      "produces": [
+                        "application/json"
+                      ],
+                      "parameters": [
+                        {
+                          "name": "Parameters",
+                          "in": "body",
+                          "description": "Setting",
+                          "required": true,
+                          "type": "apikey",
+                          "schema": {
+                            "$ref": "#/definitions/settings"
+                            }
+                        }
+                      ]
+                    }
+                  },
+                  "/api/v1/user/disable" : {
+                    "patch" : {
+                      "tags": [ "Tag1"],
+                      "description": "Get user settings",
+                      "operationId": "findById",
+                      "produces": [
+                        "application/json"
+                      ],
+                      "parameters": [
+                        {
+                          "name": "Parameters",
+                          "in": "body",
+                          "description": "Setting",
+                          "required": true,
+                          "type": "apikey",
+                          "schema": {
+                            "$ref": "#/definitions/disable"
+                            }
+                        }
+                      ]
+                    }
                   }
-
   },
   "definitions": {
     "registration": {
@@ -446,7 +605,142 @@
     }
 }
 },
+"captchaslide" : {
+  "properties": {
+    "code":{
+      "example": 200
+    },
+    "errors": {
+      "example": "false"
+    },
+    "data" :{
+      "example" :{
+        "id": "",
+        "type": "users",
+        "example" :{
+          "attributes": {
+            "success": 1,
+                "challenge": "aa2943c240dd4a535ad24faeaed9fa00",
+                "gt": "91a05c40b919e5197ab228fc40f0a7f6",
+                "new_captcha": true
+          }
+        }
+      }
+    }
+}
+},
 
+"assets" : {
+  "properties": {
+    "code":{
+      "example": 404
+    },
+    "errors": {
+      "example": "false"
+    },
+    "data" :{
+      "example" :{
+        "id": "",
+        "type": "device",
+        "example" :{
+          "attributes": {
+            "message": ""
+          }
+        }
+      }
+    }
+}
+},
+"resendmail" : {
+  "properties": {
+    "lang": {
+      "required":true,
+      "type": "string",
+      "example": "en"
+    },
+    "data" :{
+      "example" :{
+        "attributes": {
+          "id": "5c960beebd528c10aae89c15",
+          "type": "registration"
+        }
+      }
+    }
+}
+},
+
+"g2f-verify" : {
+  "properties": {
+    "lang": {
+      "required":true,
+      "type": "string",
+      "example": "en"
+    },
+    "data" :{
+      "example" :{
+        "id":  "{{user_id}}",
+        "attributes": {
+          "google_secrete_key": "dsa31dsae2132",
+          "g2f_code": "1234567S"
+        }
+      }
+    }
+}
+},
+"g2f-settings" : {
+  "properties": {
+    "lang": {
+      "required":true,
+      "type": "string",
+      "example": "en"
+    },
+    "data" :{
+      "example" :{
+        "id":  "{{user_id}}",
+        "attributes": {
+            "google_auth": "true",
+            "g2f_code": "674145",
+            "password": "Temp!123"
+        }
+      }
+    }
+}
+},
+"settings" : {
+  "properties": {
+    "lang": {
+      "required":true,
+      "type": "string",
+      "example": "en"
+    },
+    "data" :{
+      "example" :{
+        "id":  "{{user_id}}",
+        "attributes": {
+          "anti_spoofing_code": "satz",
+          "anti_spoofing": "true"
+        }
+      }
+    }
+}
+},
+"disable" : {
+  "properties": {
+    "lang": {
+      "required":true,
+      "type": "string",
+      "example": "en"
+    },
+    "data" :{
+      "example" :{
+        "attributes": {
+          "id": "{{user_id}}",
+          "code": "a4a4592231744ef38a8c53b4355719f02dd28cadba505cd30574efbe61c597fbac22797e1b69238577044727d476b052cf81576ed10b18be2e2ccc0377a256f9"
+        }
+      }
+    }
+}
+},
 "400error" : {
   "properties": {
     "message": {
