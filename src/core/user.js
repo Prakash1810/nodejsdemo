@@ -484,7 +484,7 @@ class User extends controller {
                             }));
                         }
                     }
-                    
+
                     return this.updateG2F(req, res)
                 }
             });
@@ -497,6 +497,7 @@ class User extends controller {
 
     async updateG2F (req, res) {
         let check = await this.postVerifyG2F(req, res, 'boolean');
+        console.log(check)
         if (check === true) {
             // delete password attribute
             delete req.body.data.attributes.password;
@@ -534,21 +535,21 @@ class User extends controller {
         }
     }
 
-    postVerifyG2F (req, res, type = 'json') {
+    async postVerifyG2F (req, res, type = 'json') {
         let requestedData = req.body.data.attributes;
         if (requestedData.g2f_code !== undefined) {
             if ( requestedData.google_secrete_key === undefined ) {
-                users.findById(req.body.data.id)
-                .exec()
-                .then((result) => {
-                    if (!result) {
-                        return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Invalid data'
-                        }));
-                    } else {
-                        return this.verifyG2F(req, res, type, result.google_secrete_key);
-                    }
-                });
+                await users.findById(req.body.data.id)
+                    .exec()
+                    .then((result) => {
+                        if (!result) {
+                            return res.status(400).send(this.errorMsgFormat({
+                                'message': 'Invalid data'
+                            }));
+                        } else {
+                            return this.verifyG2F(req, res, type, result.google_secrete_key);
+                        }
+                    });
             } else {
                 return this.verifyG2F(req, res, type, requestedData.google_secrete_key);
             }

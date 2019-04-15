@@ -30,7 +30,7 @@ class Users extends Controller {
 
 
     addressCreation (user) {
-        assets.find({ asset_code: 'BTC' }).then((results) => {
+        assets.find({ is_default: true }).then((results) => {
             results.forEach((result, index) => {
                 let data = { coin: result.asset_code.toLowerCase(), user_id: user.user_id };
                 axios.post(
