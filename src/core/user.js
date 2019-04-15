@@ -467,7 +467,7 @@ class User extends controller {
 
     patch2FAuth (req, res) {
         var requestedData = req.body.data.attributes;
-        if ( ( requestedData.password !== undefined || requestedData.g2f_code !== undefined )  && req.body.data.id != undefined ) {
+        if ( ( requestedData.password !== undefined && requestedData.g2f_code !== undefined )  && req.body.data.id != undefined ) {
             users.findById(req.body.data.id)
             .exec()
             .then((result) => {
@@ -482,12 +482,10 @@ class User extends controller {
                             return res.status(400).send(this.errorMsgFormat({
                                 'message': 'Incorrect password'
                             }));
-                        } else {
-                            this.updateG2F(req, res)
                         }
-                    } else {
-                        this.updateG2F(req, res)
                     }
+                    
+                    return this.updateG2F(req, res)
                 }
             });
         } else {
@@ -503,7 +501,7 @@ class User extends controller {
             // delete password attribute
             delete req.body.data.attributes.password;
 
-            this.patchSettings(req, res);
+            return this.patchSettings(req, res);
         } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Incorrect code'
