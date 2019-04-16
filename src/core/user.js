@@ -175,7 +175,7 @@ class User extends controller {
     checkDevice (req, res, user) {
         var userID = user._id;
         var timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-
+        var anti_spoofing_code = user.anti_spoofing_code;
         // Find some documents
         deviceMangement.countDocuments({ user: userID }, (err, count) => {
             if(!count) {
@@ -193,6 +193,7 @@ class User extends controller {
                     "google_auth": user.google_auth,
                     "sms_auth": user.sms_auth,
                     "anti_spoofing": user.anti_spoofing,
+                    "anti_spoofing_code": ( anti_spoofing_code === null ) ? null : anti_spoofing_code.substring(0,2),
                     "loggedIn": timeNow
                 }, user._id));
 
@@ -223,6 +224,7 @@ class User extends controller {
                             "google_auth": user.google_auth,
                             "sms_auth": user.sms_auth,
                             "anti_spoofing": user.anti_spoofing,
+                            "anti_spoofing_code": ( anti_spoofing_code === null ) ? null : anti_spoofing_code.substring(0,2),
                             "loggedIn": timeNow
                         }, user._id));
                     }
@@ -438,7 +440,7 @@ class User extends controller {
             requestData.is_active = userHash.is_active;
         }
 
-        if (req.body.data.id !== undefined && Object.keys(requestData).length > 1) {
+        if (req.body.data.id !== undefined && Object.keys(requestData).length) {
 
             // find and update the reccord
             users.findOneAndUpdate({ _id: req.body.data.id }, { $set: requestData })
