@@ -15,7 +15,7 @@ const deviceSchema = mongoose.Schema({
     verified: Boolean,
     created_date: { type: Date, default: Date.now },
     modified_date: Date,
-    is_deleted: Boolean
+    is_deleted: {type:Boolean, default:false}
 });
 
 module.exports = mongoose.model('device-management', deviceSchema);

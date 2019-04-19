@@ -10,10 +10,11 @@ let verifyOptions   = {
     expiresIn:  config.get('secrete.expiry')
 };
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
 	try {
 		const token = req.headers.authorization;
-        jwt.verify(token, config.get('secrete.key'), verifyOptions);
+        const data = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
+        req.user = data;
         next();
     }
     catch (error) {

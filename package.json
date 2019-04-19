@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "nyc mocha test/* --exit",
+    "integration-test": "mocha test/integration/user.test.js",
     "start": "nodemon -L app.js",
     "coverage": "nyc --reporter=lcov --reporter=text-lcov npm test"
   },
@@ -16,12 +17,12 @@
   "license": "ISC",
   "homepage": "https://bitbucket.org/beldex/core-api#readme",
   "devDependencies": {
-    "supertest": "^3.4.1",
     "chai": "^4.2.0",
+    "minimist": "^1.2.0",
     "mocha": "^5.2.0",
     "nyc": "^13.3.0",
     "path": "^0.12.7",
-    "minimist": "*",
+    "supertest": "^3.4.1",
     "swagger-node-express": "~2.0"
   },
   "dependencies": {

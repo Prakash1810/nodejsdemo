@@ -1,26 +1,26 @@
-const express       = require('express');
-const user          = require('../core/user');
-const password      = require('../core/password');
-const Controller    = require('../core/controller');
-const auth          = require("../middlewares/authentication");
-const registration  = require('../core/registration');
-const slide           = require('../core/geetest-captcha');
-const router        = express.Router();
-const controller    = new Controller;
+const express = require('express');
+const user = require('../core/user');
+const password = require('../core/password');
+const Controller = require('../core/controller');
+const auth = require("../middlewares/authentication");
+const registration = require('../core/registration');
+const slide = require('../core/geetest-captcha');
+const router = express.Router();
+const controller = new Controller;
 
 router.get('/activation/:hash', (req, res) => {
     try {
         user.activate(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': 'Invalid token.' }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': 'Invalid token.' }, 'users', 500));
     }
 });
 
 router.post('/login', (req, res) => {
     try {
-        
-        let { error }  = user.validate(req.body.data.attributes);
+
+        let { error } = user.validate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -28,7 +28,7 @@ router.post('/login', (req, res) => {
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -38,7 +38,7 @@ router.delete('/', (req, res) => {
 
 router.post('/forget-password', (req, res) => {
     try {
-        let { error }  = password.validate(req.body.data.attributes);
+        let { error } = password.validate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -46,7 +46,7 @@ router.post('/forget-password', (req, res) => {
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -55,14 +55,14 @@ router.get('/reset-password/:hash', (req, res) => {
         password.checkResetLink(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
 
 router.patch('/reset-password', (req, res) => {
     try {
-        let { error }  = password.resetPasswordValidate(req.body.data.attributes);
+        let { error } = password.resetPasswordValidate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -70,13 +70,13 @@ router.patch('/reset-password', (req, res) => {
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
 router.patch('/change-password', auth, (req, res) => {
     try {
-        let { error }  = password.changePasswordValidate(req.body.data.attributes);
+        let { error } = password.changePasswordValidate(req.body.data.attributes);
 
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
@@ -85,7 +85,7 @@ router.patch('/change-password', auth, (req, res) => {
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -100,7 +100,7 @@ router.post('/get-user-id', (req, res) => {
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -109,7 +109,7 @@ router.get('/login-history', auth, (req, res) => {
         user.getLoginHistory(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -118,7 +118,7 @@ router.get('/device-history', auth, (req, res) => {
         user.getDeviceHistory(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -127,13 +127,13 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
         user.patchWhiteListIP(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
 router.patch('/settings', auth, (req, res) => {
     try {
-        let { error }  = user.settingsValidate(req.body.data.attributes);
+        let { error } = user.settingsValidate(req.body.data.attributes);
 
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
@@ -142,7 +142,7 @@ router.patch('/settings', auth, (req, res) => {
         }
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -151,7 +151,7 @@ router.post('/resend-email', (req, res) => {
         registration.resendEmail(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }));
     }
 });
 
@@ -160,7 +160,7 @@ router.patch('/disable', (req, res) => {
         user.disableAccount(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -173,12 +173,12 @@ router.get("/gt/register-slide", function (req, res) {
             }
             return res.status(200).json(controller.successFormat({
                 'message': 'Captcha values fetching successfully...',
-                'data' : data
+                'data': data
             }));
         });
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -187,7 +187,7 @@ router.patch('/g2f-settings', auth, (req, res) => {
         user.patch2FAuth(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
 
@@ -196,8 +196,56 @@ router.post('/g2f-verify', auth, (req, res) => {
         user.postVerifyG2F(req, res);
     }
     catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({'message': err.message }, 'users', 500));
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
+router.post('/token', async (req, res) => {
+    try {
+
+        let { error } = user.validate(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        } else {
+            user.login(req, res);
+        }
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
+    }
+});
+
+router.post('/logout',auth, async (req, res) => {
+    try {
+        const result = await user.logout(req.user);
+        if (result.status) {
+            return res.status(200).send(controller.successFormat({
+                'message': 'Logout Success',
+            }))
+        }
+        throw result
+    }
+    catch (err) {
+        return res.status(err.errorCode).send(controller.errorMsgFormat({ 'message': err.message }, 'users', err.errorCode));
+    }
+})
+
+router.delete('/whitelist', auth, async (req, res) => {
+    try {
+        let data = req.body.data.attributes;
+        data.user = req.user.user;
+        const result = await user.deleteWhitList(data);
+        if (result.status) {
+            return res.status(200).send(controller.successFormat({
+                'message': 'Delete WhiteList Success ',
+            }))
+        }
+        else{
+            throw result
+        }
+    }
+    catch (err) {
+        return res.status(err.errorCode).send(controller.errorMsgFormat({ 'message': err.message }, 'users', err.errorCode));
+    }
+})
 
 module.exports = router;
