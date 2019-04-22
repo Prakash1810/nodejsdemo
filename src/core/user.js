@@ -69,7 +69,6 @@ class User extends controller {
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.expiry'),
         };
-
         return jwt.sign({
             user: user._id,
             login_id: id,
@@ -577,7 +576,6 @@ class User extends controller {
     }
     async deleteWhitList(data) {
         try {
-            console.log("data:",data);
             const deleteWhitList = await deviceMangement.findOneAndUpdate({
                     browser: data.browser,
                     browser_version:data.browser_version,
@@ -585,7 +583,6 @@ class User extends controller {
                     user: data.user, 
                     is_deleted: false
             }, { is_deleted: true });
-            console.log("DeleteList:",deleteWhitList);
             if (deleteWhitList) {
                 return { status: true }
             }

@@ -163,7 +163,8 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
     it('should check refresh token', (done) => {
         request(baseUrl)
             .post(`/api/${config.get('site.version')}/user/token`)
-            .send(refreshTokenData)
+            .send()
+            .set('authorization', accessToken)
             .end((err, res) => {
 
                 expect(res.status).to.deep.equal(200);
@@ -176,9 +177,10 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
         delete refreshTokenData.data.attributes.password;
         request(baseUrl)
             .post(`/api/${config.get('site.version')}/user/token`)
-            .send(refreshTokenData)
+            .send()
+            .set('authorization', '')
             .end((err, res) => {
-                expect(res.status).to.deep.equal(400);
+                expect(res.status).to.deep.equal(401);
                 done();
             })
     });

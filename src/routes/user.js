@@ -199,14 +199,14 @@ router.post('/g2f-verify', auth, (req, res) => {
         return res.status(500).send(controller.errorMsgFormat({ 'message': err.message }, 'users', 500));
     }
 });
-router.post('/token', async (req, res) => {
+router.post('/token',auth, async (req, res) => {
     try {
-
-        let { error } = user.validate(req.body.data.attributes);
-        if (error) {
-            return res.status(400).send(controller.errorFormat(error, 'users', 400));
-        } else {
-            user.login(req, res);
+        const refreshToken = await user.createRefreshToken(req.user.user,req.user.login_id);
+        if(refreshToken)
+        {
+            return res.status(200).send(controller.successFormat({
+                'refreshToken': refreshToken,
+            }));
         }
     }
     catch (err) {
