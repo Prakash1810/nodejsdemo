@@ -353,7 +353,7 @@ class User extends controller {
             if (err) {
                 return res.status(404).json(this.errorMsgFormat({ "message": "No data found" }, 'device', 404))
             } else {
-                deviceMangement.find({ user: userID }, '-_id -__v -user', query, (err, data) => {
+                deviceMangement.find({ user: userID , is_deleted:false }, '-_id -__v -user', query, (err, data) => {
                     if (err || !data.length) {
                         return res.status(404).json(this.errorMsgFormat({ "message": "No data found" }, 'device', 404));
                     } else {
