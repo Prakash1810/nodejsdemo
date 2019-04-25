@@ -401,7 +401,83 @@
                         }
                       ]
                     }
-                  }
+                  },
+
+                  "/api/v1/user/token" : {
+                    "post" : {
+                      "tags": [ "Tag1"],
+                      "description": " Create Refresh Token",
+                      "operationId": "",
+                      "produces": [
+                        "application/json"
+                      ],
+                      "parameters": [
+                        {
+                          "name": "Authorization",
+                          "in": "header",
+                          "description": "Setting",
+                          "required": true,
+                          "type": "apikey",
+                          "schema": {
+                            "$ref": "#/definitions/refreshToken"
+                            }
+                        }
+                      ]
+                    }
+                  },
+
+                  "/api/v1/user/logout" : {
+                    "post" : {
+                      "tags": [ "Tag1"],
+                      "description": "User Logout and add logout time",
+                      "operationId": "findOneAndUpdate",
+                      "produces": [
+                        "application/json"
+                      ],
+                      "parameters": [
+                        {
+                          "name": "Authorization",
+                          "in": "header",
+                          "description": "Setting",
+                          "required": true,
+                          "type": "apikey",
+                          "schema": {
+                            "$ref": "#/definitions/logout"
+                            }
+                        }
+                      ]
+                    }
+                  },
+
+                  "/api/v1/user/whitelist" : {
+                    "delete" : {
+                       "tags": [ "Tag1"],
+                       "description": "Delete whitelist user in Db",
+                       "operationId": "updateMany",
+                       "produces": [
+                         "application/json"
+                       ],
+                       "parameters": [
+                         {
+                           "name": "Authorization",
+                           "in": "header",
+                           "description": "settings",
+                           "required": true,
+                           "type": "apikey"
+                         },
+                         {
+                           "name": "Parameters",
+                           "in": "body",
+                           "description": "settings",
+                           "required": true,
+                           "type": "apikey",          
+                           "schema": {
+                             "$ref": "#/definitions/deleteWhitList"
+                             }
+                         }
+                       ]
+                     }
+                   }
 
   },
   "definitions": {
@@ -565,6 +641,27 @@
 }
 },
 
+"deleteWhitList": {
+  "properties": {
+    "code":{
+      "example": 200
+    },
+    "errors": {
+      "example": "false"
+    },
+    "data" :{
+      "example" :{
+        "attributes":
+			  {
+				"browser": "Chrome",
+				"browser_version": "71.0.3578.11",
+				"os": "Linux"
+				}
+      }
+    }
+}
+},
+
 "devicehistory": {
   "properties": {
     "code":{
@@ -606,6 +703,31 @@
     }
 }
 },
+
+"logout": {
+  "properties": {
+    "code":{
+      "example": 200
+    },
+    "errors": {
+      "example": "false"
+    }
+
+  }
+},
+
+"refreshToken": {
+  "properties": {
+    "code":{
+      "example": 200
+    },
+    "errors": {
+      "example": "false"
+    }
+
+  }
+},
+
 "captchaslide" : {
   "properties": {
     "code":{
