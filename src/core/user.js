@@ -177,13 +177,13 @@ class User extends controller {
         try {
             let decoded = jwt.verify(token, config.get('secrete.key'));
             if (data === 'json') {
-                return res.status(200).json({ "code": 0, "message": 'Authorization successfully.', "data": { "user_id": decoded.user_id } });
+                return res.status(200).json({ "code": 0, "message": 'Authorization successfully.', "data": { "user_id": decoded.user_id, "user":decoded.user } });
             } else {
                 return decoded.user;
             }
         } catch (err) {
             return res.status(401).json(this.errorMsgFormat({
-                message: "Invalid authentication"
+                message: "Invalid Authentication"
             }, 'user', 401));
         }
     }
@@ -213,7 +213,7 @@ class User extends controller {
                 }, user._id));
 
             } else {
-                deviceMangement.findOne({ user: userID, ip: req.body.data.attributes.ip, verified: true })
+                deviceMangement.findOne({ user: userID, ip: req.body.data.attributes.ip, verified: true, is_deleted:false })
                     .exec()
                     .then(async (result) => {
                         if (!result) {
@@ -387,6 +387,7 @@ class User extends controller {
     }
 
     patchWhiteListIP(req, res) {
+
         let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
         if (deviceHash.data.user_id) {
             let checkExpired = this.checkTimeExpired(deviceHash.data.datetime);
@@ -409,7 +410,7 @@ class User extends controller {
             }
         } else {
             return res.status(404).send(this.errorMsgFormat({
-                'message': 'invalid token or token is expired.'
+                'message': 'invalid token or token is Expired.'
             }));
         }
     }
@@ -576,19 +577,20 @@ class User extends controller {
     }
     async deleteWhitList(data) {
         try {
-            const deleteWhitList = await deviceMangement.findOneAndUpdate({
+            const deleteWhitList = await deviceMangement.updateMany({
                     browser: data.browser,
                     browser_version:data.browser_version,
                     os: data.os,
                     user: data.user, 
                     is_deleted: false
             }, { is_deleted: true });
-            if (deleteWhitList) {
+            
+            if ( deleteWhitList.nModified != 0 ) {
                 return { status: true }
-            }
-
-            return { status: false, error: "NOT_FOUND", errorCode: 404 }
-
+            } else {
+                return { status: false, error: "NOT_FOUND", errorCode: 404 }
+            } 
+        
         } catch (error) {
             return { status: false, error: err, errorCode: 500 }
         }

@@ -476,8 +476,8 @@
       },
       "data" :{
         "example" :{
+          "id": "5c90dd8e6410cd0378d8fd7e",
           "attributes": {
-            "id": "5c90dd8e6410cd0378d8fd7e",
             "password": "tesR123456",
             "password_confirmation": "tesR123456"
           }
@@ -661,9 +661,9 @@
     },
     "data" :{
       "example" :{
+        "id": "5c960beebd528c10aae89c15",
         "attributes": {
-          "id": "5c960beebd528c10aae89c15",
-          "type": "registration"
+            "type": "registration"
         }
       }
     }
