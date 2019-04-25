@@ -16,11 +16,11 @@ class Helpers {
         decrypted += decipher.final('utf-8');
         return decrypted;
     }
-    requestDataFormat (data ,id=null) {
+    requestDataFormat (data, id = null) {
         return {
             "lang": "en",
             "data": {
-                "id":id,
+                "id": id,
                 "attributes": data
             }
         };

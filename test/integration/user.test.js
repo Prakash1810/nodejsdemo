@@ -256,7 +256,6 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
         request(baseUrl)
             .get(`/api/${config.get('site.version')}/user/reset-password/${dummyHash}`)
             .end((err, res) => {
-                //console.log("REs:",res.body)
                 expect(res.status).to.deep.equal(404);
                 expect(res.body.data.attributes.message).to.be.equal('invalid token or token is expired.');
                 done();
@@ -436,7 +435,6 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
         request(baseUrl)
             .patch(`/api/${config.get('site.version')}/user/whitelist-ip/${incorrectHash}`)
             .end((err, res) => {
-                //console.log("Res:",res.body)
                 expect(res.status).to.deep.equal(404)
                 expect(res.body.data.attributes.message).to.be.equal('invalid token or token is expired.')
                 done();

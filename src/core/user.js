@@ -585,9 +585,11 @@ class User extends controller {
                     is_deleted: false
             }, { is_deleted: true });
             
-            if (deleteWhitList.nModified!=0) {
+            if ( deleteWhitList.nModified != 0 ) {
                 return { status: true }
-            }else return { status: false, error: "NOT_FOUND", errorCode: 404 }
+            } else {
+                return { status: false, error: "NOT_FOUND", errorCode: 404 }
+            } 
         
         } catch (error) {
             return { status: false, error: err, errorCode: 500 }
