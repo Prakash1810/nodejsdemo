@@ -35,10 +35,12 @@ class Controller {
         }; 
     }
 
-    requestDataFormat (data) {
+    requestDataFormat (data ,) {
         return {
             "lang": "en",
+    
             "data": {
+                
                 "attributes": data
             }
         };

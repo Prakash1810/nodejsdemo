@@ -177,7 +177,7 @@ class User extends controller {
         try {
             let decoded = jwt.verify(token, config.get('secrete.key'));
             if (data === 'json') {
-                return res.status(200).json({ "code": 0, "message": 'Authorization successfully.', "data": { "user_id": decoded.user } });
+                return res.status(200).json({ "code": 0, "message": 'Authorization successfully.', "data": { "user_id": decoded.user_id, "user":decoded.user } });
             } else {
                 return decoded.user;
             }
@@ -587,11 +587,8 @@ class User extends controller {
             
             if (deleteWhitList.nModified!=0) {
                 return { status: true }
-            }
-            else
-            {
-                return { status: false, error: "NOT_FOUND", errorCode: 404 }
-            }
+            }else return { status: false, error: "NOT_FOUND", errorCode: 404 }
+        
         } catch (error) {
             return { status: false, error: err, errorCode: 500 }
         }

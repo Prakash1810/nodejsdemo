@@ -16,6 +16,15 @@ class Helpers {
         decrypted += decipher.final('utf-8');
         return decrypted;
     }
+    requestDataFormat (data ,id=null) {
+        return {
+            "lang": "en",
+            "data": {
+                "id":id,
+                "attributes": data
+            }
+        };
+    }
 }
 
 module.exports = new Helpers();

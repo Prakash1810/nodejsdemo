@@ -15,140 +15,55 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
     beforeEach(() => {
 
         accessToken = user.createToken({
-            _id: "5cc15f16198ddc04dcb1e5b1"
+            _id: "5cc18077df393c0e4e3a9b0b"
 
         }, '5cc046055346e30463cf6eaa');
+        disable = helpers.requestDataFormat({"code": ""},"");
 
-        disable = {
-            "lang": "en",
-            "data": {
-                "id": "",
-                "attributes": {
-                    "code": ""
-                }
-            }
-        }
+        patchSettings = helpers.requestDataFormat({
+            "anti_spoofing_code": "mathan",
+            "anti_spoofing": "true"
+        },"");
 
-        patchSettings =
-            {
-                "data":
-                {
-                    "id": "",
-                    "attributes": {
-                        "anti_spoofing_code": "mathan",
-                        "anti_spoofing": "true"
-                    }
-                }
-            }
+        deleteWhiteList = helpers.requestDataFormat({
+            "browser": "Chrome",
+            "browser_version": "71.0.3578.11",
+            "os": "Linux"});
 
-        deleteWhiteList = {
-            "data":
-            {
-                "attributes":
-                {
-                    "browser": "Chrome",
-                    "browser_version": "71.0.3578.11",
-                    "os": "Linux"
-
-                }
-            }
-        }
-
-        loginData = {
-            "lang": "en",
-            "data": {
-                "attributes": {
-                    "email": "mathanms@gmail.com",
-                    "password": "1234567S",
-                    "is_browser": true,
-                    "is_mobile": false,
-                    "os": "Linux",
-                    "os_byte": "x86_64",
-                    "browser": "Chrome",
-                    "browser_version": "71.0.3578.11",
-                    "ip": "171.78.139.181",
-                    "city": "Chennai",
-                    "region": "Tamil Nadu",
-                    "country": "India"
-                }
-            }
-        }
-        forgetPassword = {
-            "lang": "en",
-            "data": {
-                "attributes": {
-                    "email": "mathanms@gmail.com",
-                }
-            }
-        }
-
-        dummyResetPassword = {
-            "lang": "en",
-            "data": {
-                "attributes": {
-                    "id": "5cbdc483aac2340334d5aeec",
-                    "password": "1234567S",
-                    "password_confirmation": "1234567S"
-                }
-            }
-        }
-        resendEmail = {
-            "lang": "en",
-            "data": {
-                "attributes": {
-                    "id": "",
-                    "type": "registration"
-                }
-            }
-        }
+        loginData = helpers.requestDataFormat({
+            "email": "mathanms@gmail.com",
+            "password": "1234567S",
+            "is_browser": true,
+            "is_mobile": false,
+            "os": "Linux",
+            "os_byte": "x86_64",
+            "browser": "Chrome",
+            "browser_version": "71.0.3578.11",
+            "ip": "171.78.139.181",
+            "city": "Chennai",
+            "region": "Tamil Nadu",
+            "country": "India"
+        });
         
-        g2fsetting = { 
-            "lang": "en",
-            "data": {
-              "id": " ",
-              "attributes": {
-                "google_auth": "true",
-                "g2f_code": "674145",
-                "password": "Temp!123"
-              }
-            }
-          }
+        forgetPassword = helpers.requestDataFormat({ "email": "mathanms@gmail.com",});
 
-        g2fverfiy ={
-            "lang": "en",
-            "data": {
-              "id": " ",
-              "attributes": {
-                "google_secrete_key": "dsa31dsae2132",
-                "g2f_code": "1234567S"
-              }
-            }
-          }
-    })
+        dummyResetPassword = helpers.requestDataFormat({
+            "password": "1234567S",
+            "password_confirmation": "1234567S"
+        },"5cbdc483aac2340334d5aeec")
 
-    // CHECK USER ACTIVATION WITH HASH
-
-    // it('should check user activation ',(done)=>{
-    //     request(baseUrl)
-    //     .post(`/api/${config.get('site.version')}/user/get-user-id`)
-    //     .set('authorization', accessToken)
-    //     .end((err, res) => {
-    //         let encryptedHash = helpers.encrypt(
-    //             JSON.stringify({
-    //                 "id": res.body.data.user_id,
-    //             })
-    //         );
-    //             request(baseUrl)
-    //             .get(`/api/${config.get('site.version')}/user/activation/${encryptedHash}`)
-    //             .end((err,res)=>
-    //             {
+        resendEmail = helpers.requestDataFormat({ "type": "registration"},"")
         
-    //                 expect(res.status).to.deep.equal(200);
-    //                 expect(res.body.data.attributes.message).to.be.equal('Congratulation!, Your account has been activated.');
-    //                 done();
-    //             });
-    //     });
-    // });
+        g2fsetting = helpers.requestDataFormat({
+        "google_auth": "true",
+        "g2f_code": "674145",
+        "password": "Temp!123"},"");
+        
+        g2fverfiy = helpers.requestDataFormat({
+        "google_secrete_key": "dsa31dsae2132",
+        "g2f_code": "1234567S"},"");
+
+    });
 
     // CHECK USER ACTIVATION INVAILD USER
 
@@ -239,7 +154,6 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .post(`/api/${config.get('site.version')}/user/login`)
             .send(loginData)
             .end((err, res) => {
-
                 expect(res.status).to.deep.equal(400);
                 expect(res.body.data.attributes.message).to.be.equal('Invalid credentials');
                 done();
@@ -338,11 +252,11 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
 
     it('should check if user reset password time expiry', (done) => {
         let dummyHash = '162860e9f96e9493e6aaaa1102c8352b8b783dd513164fbb7b9b7c165fc41b08a5ac92483ff8ab7a3cc50f247a5f9b4835b61c80e552e657111d38c2bad421e4'
-        //console.log("DummyHash:",dummyHash);
+       
         request(baseUrl)
             .get(`/api/${config.get('site.version')}/user/reset-password/${dummyHash}`)
             .end((err, res) => {
-                console.log("REs:",res.body)
+                //console.log("REs:",res.body)
                 expect(res.status).to.deep.equal(404);
                 expect(res.body.data.attributes.message).to.be.equal('invalid token or token is expired.');
                 done();
@@ -359,7 +273,7 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
                 'email': "mm@gmail.com"
             })
         );
-        //console.log("DummyHash:",dummyHash);
+       
         request(baseUrl)
             .get(`/api/${config.get('site.version')}/user/reset-password/${encryptedHash}`)
             .end((err, res) => {
@@ -378,7 +292,8 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .post(`/api/${config.get('site.version')}/user/get-user-id`)
             .set('authorization', accessToken)
             .end((err, res) => {
-              dummyResetPassword.data.attributes.id = res.body.data.user_id;
+                
+              dummyResetPassword.data.id = res.body.data.user;
                 request(baseUrl)
                     .patch(`/api/${config.get('site.version')}/user/reset-password/`)
                     .send(dummyResetPassword)
@@ -521,7 +436,7 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
         request(baseUrl)
             .patch(`/api/${config.get('site.version')}/user/whitelist-ip/${incorrectHash}`)
             .end((err, res) => {
-                console.log("REs:",res.body)
+                //console.log("Res:",res.body)
                 expect(res.status).to.deep.equal(404)
                 expect(res.body.data.attributes.message).to.be.equal('invalid token or token is expired.')
                 done();
@@ -551,7 +466,7 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .post(`/api/${config.get('site.version')}/user/get-user-id`)
             .set('authorization', accessToken)
             .end((err, res) => {
-                patchSettings.data.id = res.body.data.user_id;
+                patchSettings.data.id = res.body.data.user;
                 request(baseUrl)
                     .patch(`/api/${config.get('site.version')}/user/settings`)
                     .send(patchSettings)
@@ -614,26 +529,6 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             });
     });
 
-    // //CHECK IF USER RESEND EMAIL 
-
-    // it('should check if user resend email', (done) => {
-
-    //     request(baseUrl)
-    //         .post(`/api/${config.get('site.version')}/user/get-user-id`)
-    //         .set('authorization', accessToken)
-    //         .end((err, res) => {
-    //             resendEmail.data.attributes.id=res.body.data.user_id;
-    //             request(baseUrl)
-    //             .post(`/api/${config.get('site.version')}/user/resend-email`)
-    //             .send(resendEmail)
-    //             .end((error, result) => {
-    //             //                 expect(result.status).to.deep.equal(200);
-    //                 expect(result.body.data.attributes.message).to.be.equal('Cast to ObjectId failed for value "" at path "_id" for model "Users"');
-    //                 done();
-    //             });
-
-    //              });
-    // });
 
     // CHECK IF USER DISABLE ACCOUNT WITHOUT ACTIVE
 
@@ -645,10 +540,10 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .end((err, res) => {
                 let encryptedHash = helpers.encrypt(
                     JSON.stringify({
-                        "user_id": res.body.data.user_id,
+                        "user_id": res.body.data.user,
                     })
                 );
-                disable.data.id = res.body.data.user_id;
+                disable.data.id = res.body.data.user;
                 disable.data.attributes.code = encryptedHash
                 request(baseUrl)
                     .patch(`/api/${config.get('site.version')}/user/disable`)
@@ -671,7 +566,7 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .post(`/api/${config.get('site.version')}/user/get-user-id`)
             .set('authorization', accessToken)
             .end((err, res) => {
-                g2fsetting.data.id = res.body.data.user_id;
+                g2fsetting.data.id = res.body.data.user;
                 delete g2fsetting.data.attributes.password;
                 request(baseUrl)
                     .patch(`/api/${config.get('site.version')}/user/g2f-settings`)
@@ -695,7 +590,7 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .post(`/api/${config.get('site.version')}/user/get-user-id`)
             .set('authorization', accessToken)
             .end((err, res) => {
-                g2fsetting.data.id = res.body.data.user_id;
+                g2fsetting.data.id = res.body.data.user;
                 delete g2fsetting.data.attributes.g2f_code
                 request(baseUrl)
                     .patch(`/api/${config.get('site.version')}/user/g2f-settings`)
@@ -734,7 +629,7 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .post(`/api/${config.get('site.version')}/user/get-user-id`)
             .set('authorization', accessToken)
             .end((err, res) => {
-                g2fsetting.data.id = res.body.data.user_id;
+                g2fsetting.data.id = res.body.data.user;
                 //g2fsetting.data.attributes.password="123"
                 request(baseUrl)
                 .patch(`/api/${config.get('site.version')}/user/g2f-settings`)
@@ -755,7 +650,7 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .post(`/api/${config.get('site.version')}/user/get-user-id`)
             .set('authorization', accessToken)
             .end((err, res) => {
-                g2fverfiy.data.id = res.body.data.user_id;
+                g2fverfiy.data.id = res.body.data.user;
                 delete g2fverfiy.data.attributes.g2f_code
                 request(baseUrl)
                 .post(`/api/${config.get('site.version')}/user/g2f-verify`)
@@ -864,7 +759,6 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .get(`/api/${config.get('site.version')}/user/device-history`)
             .set('authorization', accessToken)
             .end((err, res) => {
-                console.log("Res3:",res.body);
                 expect(res.status).to.deep.equal(200)
                 done();
             });
@@ -936,11 +830,11 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
             .end((err, res) => {
                 let encryptedHash = helpers.encrypt(
                     JSON.stringify({
-                        "user_id": res.body.data.user_id,
+                        "user_id": res.body.data.user,
                         'is_active': false
                     })
                 );
-                disable.data.id = res.body.data.user_id;
+                disable.data.id = res.body.data.user;
                 disable.data.attributes.code = encryptedHash
                 request(baseUrl)
                     .patch(`/api/${config.get('site.version')}/user/disable`)
