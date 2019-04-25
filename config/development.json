@@ -21,7 +21,7 @@
 		"version": "v1"
 	},
 	"settings": {
-		"expiryTime": 7200,
+		"expiryTime": 72,
 		"timeZone": "UTC"
 	},
 	"notification-api": {

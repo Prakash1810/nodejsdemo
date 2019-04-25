@@ -70,7 +70,7 @@ class Password extends Controller {
     }
 
     checkResetLink (req, res) {
-        
+            
         let userHash = JSON.parse(helpers.decrypt(req.params.hash));
 
         if ( userHash.email ) {
@@ -96,7 +96,7 @@ class Password extends Controller {
             }
         } else {
             return res.status(404).send(this.errorMsgFormat({
-                'message': 'invalid token or token is expired.'
+                'message': 'invalid token or token is Expired.'
             }));
         }
     }
@@ -146,7 +146,7 @@ class Password extends Controller {
                 
                 // find and update the reccord
                 Users.findByIdAndUpdate(req.body.data.attributes.id, { password: hash }, (err, user) => {
-                    if (err) {
+                    if (user==null) {
                         return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
                     } else {
                         return res.status(202).send(this.successFormat({
