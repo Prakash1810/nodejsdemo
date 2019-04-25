@@ -562,7 +562,31 @@ class User extends controller {
             }, '2factor', 400));
         }
     }
-    async  logout(user) {
+
+    async refreshToken(data)
+    {
+        try {
+            const user = await users.findOne({_id:data.user})
+
+            if(user)
+            {
+                return { status: true, result:{
+                "token": this.createToken(user, data.login_id),
+                "refreshToken": this.createRefreshToken(user, data.login_id),
+                "google_auth": user.google_auth,
+                "sms_auth": user.sms_auth,
+                "anti_spoofing": user.anti_spoofing,
+                "expiresIn": config.get('secrete.expiry')
+                }, id: user._id };
+            } else {
+                return { status: false, error:"NOT_FOUND", errorCode:404 }
+            }
+        } catch(err) {
+            return { status: false, error: err, errorCode: 500 }
+        }
+     }
+
+    async logout(user) {
         try {
 
             const logout = await loginHistory.findOneAndUpdate({ user: user.user, logout_status: 1, _id: user.login_id }, { logout_status: 0, logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
@@ -575,6 +599,7 @@ class User extends controller {
             return { status: false, error: err, errorCode: 500 }
         }
     }
+
     async deleteWhitList(data) {
         try {
             const deleteWhitList = await deviceMangement.updateMany({
