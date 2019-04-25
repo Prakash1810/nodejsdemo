@@ -434,7 +434,7 @@ describe('User module intergration testing for POST and GET:- /api/user', () => 
 
         request(baseUrl)
             .patch(`/api/${config.get('site.version')}/user/whitelist-ip/${incorrectHash}`)
-            .end((err, res) => {
+            .end((err, res) => {    
                 expect(res.status).to.deep.equal(404)
                 expect(res.body.data.attributes.message).to.be.equal('invalid token or token is expired.')
                 done();
