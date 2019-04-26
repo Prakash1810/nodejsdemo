@@ -13,8 +13,8 @@
 		"issuer": "test",
 		"domain": "www.test.com",
 		"key": "privateKey",
-		"expiry": 10,
-		"refreshTokenExpiry":15
+		"expiry": 300,
+		"refreshTokenExpiry":360
 	},
 	"site": {
 		"url": "http://localhost:3000",

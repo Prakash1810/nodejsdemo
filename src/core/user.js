@@ -209,7 +209,8 @@ class User extends controller {
                     "google_auth": user.google_auth,
                     "sms_auth": user.sms_auth,
                     "anti_spoofing": user.anti_spoofing,
-                    "loggedIn": timeNow
+                    "loggedIn": timeNow,
+                    "expiresIn": config.get('secrete.expiry')
                 }, user._id));
 
             } else {
@@ -239,7 +240,8 @@ class User extends controller {
                                 "google_auth": user.google_auth,
                                 "sms_auth": user.sms_auth,
                                 "anti_spoofing": user.anti_spoofing,
-                                "loggedIn": timeNow
+                                "loggedIn": timeNow,
+                                "expiresIn": config.get('secrete.expiry')
                             }, user._id));
                         }
                     });
