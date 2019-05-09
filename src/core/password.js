@@ -1,7 +1,7 @@
 const moment        = require('moment');
 const Joi           = require('joi');
 const Users         = require('../db/users');
-const UserServices  = require('../services/users');
+const apiServices   = require('../services/api');
 const Controller    = require('../core/controller');
 const helpers       = require('../helpers/helper.functions');
 const config        = require('config');
@@ -59,7 +59,7 @@ class Password extends Controller {
                     'user_id': user._id
                 };
 
-                await UserServices.sendEmailNotification(serviceData);
+                await apiServices.sendEmailNotification(serviceData);
 
                 return res.status(200).json(this.successFormat({
                             'message': 'We have sent a reset email to your email address. Please follow the instructions in the email to continue.',

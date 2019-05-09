@@ -29,7 +29,7 @@
 		"version": "v1"
 	},
 	"wallet-api": {
-		"url": "http://35.185.71.25:1100",
+		"url": "http://857d72e0.ngrok.io",
 		"version": "v1"
 	}
 }

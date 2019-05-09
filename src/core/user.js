@@ -1,6 +1,6 @@
 const moment = require('moment');
 const users = require('../db/users');
-const userServices = require('../services/users');
+const apiServices = require('../services/api');
 const deviceMangement = require('../db/device-management');
 const loginHistory = require('../db/login-history');
 const userTemp = require('../db/user-temp');
@@ -20,7 +20,7 @@ class User extends controller {
             userTemp.findById(userHash.id)
                 .exec((err, result) => {
                     if (result) {
-                        this.insertUser(result, res)
+                        return this.insertUser(result, res)
                     } else {
                         return res.status(400).send(this.errorMsgFormat({
                             'message': 'Invalid token. may be token as expired!'
@@ -47,7 +47,7 @@ class User extends controller {
                 if (userTemp.removeUserTemp(result.id)) {
 
                     // address creation
-                    userServices.addressCreation(user);
+                    apiServices.initAddressCreation(user);
 
                     return res.status(200).send(this.successFormat({
                         'message': `Congratulation!, Your account has been activated.`
@@ -59,6 +59,8 @@ class User extends controller {
                 }
             }
         });
+
+        return false;
     }
 
     createToken(user, id) {
@@ -92,7 +94,9 @@ class User extends controller {
     }
 
     login(req, res) {
-        users.findOne({ email: req.body.data.attributes.email })
+        users.findOne({
+                email: req.body.data.attributes.email
+            })
             .exec()
             .then((result) => {
                 if (!result) {
@@ -149,11 +153,15 @@ class User extends controller {
             region: Joi.string().allow('').optional(),
         });
 
-        return Joi.validate(req, schema, { abortEarly: false });
+        return Joi.validate(req, schema, {
+            abortEarly: false
+        });
     }
 
     removeUser(email, res) {
-        users.deleteOne({ email: email })
+        users.deleteOne({
+                email: email
+            })
             .then(result => {
                 if (result.deletedCount) {
                     return res.status(200).send(this.successFormat({
@@ -177,7 +185,14 @@ class User extends controller {
         try {
             let decoded = jwt.verify(token, config.get('secrete.key'));
             if (data === 'json') {
-                return res.status(200).json({ "code": 0, "message": 'Authorization successfully.', "data": { "user_id": decoded.user_id, "user":decoded.user } });
+                return res.status(200).json({
+                    "code": 0,
+                    "message": 'Authorization successfully.',
+                    "data": {
+                        "user_id": decoded.user_id,
+                        "user": decoded.user
+                    }
+                });
             } else {
                 return decoded.user;
             }
@@ -193,7 +208,9 @@ class User extends controller {
         var timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
 
         // Find some documents
-        deviceMangement.countDocuments({ user: userID }, async (err, count) => {
+        deviceMangement.countDocuments({
+            user: userID
+        }, async (err, count) => {
             if (!count) {
                 // insert new device records
 
@@ -201,7 +218,15 @@ class User extends controller {
                 const loginHistory = await this.insertLoginHistory(req, userID, device._id, timeNow)
 
                 // send email notification
-                this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code });
+                this.sendNotification({
+                    'ip': req.body.data.attributes.ip,
+                    'time': timeNow,
+                    'to_email': req.body.data.attributes.email,
+                    'browser': req.body.data.attributes.browser,
+                    'browser_version': req.body.data.attributes.browser_version,
+                    'os': req.body.data.attributes.os,
+                    'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code
+                });
 
                 return res.status(200).send(this.successFormat({
                     "token": this.createToken(user, loginHistory._id),
@@ -214,17 +239,39 @@ class User extends controller {
                 }, user._id));
 
             } else {
-                deviceMangement.findOne({ user: userID, ip: req.body.data.attributes.ip, verified: true, is_deleted:false })
+                deviceMangement.findOne({
+                        user: userID,
+                        ip: req.body.data.attributes.ip,
+                        verified: true,
+                        is_deleted: false
+                    })
                     .exec()
                     .then(async (result) => {
                         if (!result) {
                             // insert new device records
-                            this.insertDevice(req, userID).then(() => { });
-                            let urlHash = this.encryptHash({ "user_id": userID, "ip": req.body.data.attributes.ip, "verified": true });
+                            this.insertDevice(req, userID).then(() => {});
+                            let urlHash = this.encryptHash({
+                                "user_id": userID,
+                                "ip": req.body.data.attributes.ip,
+                                "verified": true
+                            });
 
                             // send email notification
-                            this.sendNotificationForAuthorize({ "to_email": req.body.data.attributes.email, "subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`, "email_for": "user-authorize", "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`, "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`, "ip": req.body.data.attributes.ip, "hash": urlHash, 'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code, "user_id": user._id })
-                            return res.status(401).send(this.errorMsgFormat({ 'msg': 'unauthorized', 'hash': urlHash }, 'users', 401));
+                            this.sendNotificationForAuthorize({
+                                "to_email": req.body.data.attributes.email,
+                                "subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
+                                "email_for": "user-authorize",
+                                "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`,
+                                "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`,
+                                "ip": req.body.data.attributes.ip,
+                                "hash": urlHash,
+                                'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code,
+                                "user_id": user._id
+                            })
+                            return res.status(401).send(this.errorMsgFormat({
+                                'msg': 'unauthorized',
+                                'hash': urlHash
+                            }, 'users', 401));
                         } else {
                             // insert new device records
 
@@ -232,7 +279,16 @@ class User extends controller {
                             const loginHistory = await this.insertLoginHistory(req, userID, device._id, timeNow)
 
                             // send email notification
-                            this.sendNotification({ 'ip': req.body.data.attributes.ip, 'time': timeNow, 'to_email': req.body.data.attributes.email, 'browser': req.body.data.attributes.browser, 'browser_version': req.body.data.attributes.browser_version, 'os': req.body.data.attributes.os, 'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code, "disableAccount": user._id });
+                            this.sendNotification({
+                                'ip': req.body.data.attributes.ip,
+                                'time': timeNow,
+                                'to_email': req.body.data.attributes.email,
+                                'browser': req.body.data.attributes.browser,
+                                'browser_version': req.body.data.attributes.browser_version,
+                                'os': req.body.data.attributes.os,
+                                'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code,
+                                "disableAccount": user._id
+                            });
 
                             return res.status(200).send(this.successFormat({
                                 "token": this.createToken(user, loginHistory._id),
@@ -251,7 +307,7 @@ class User extends controller {
 
     // send email notification to the authorize device
     sendNotificationForAuthorize(data) {
-        userServices.sendEmailNotification(data);
+        apiServices.sendEmailNotification(data);
     }
 
     // send email notification to the registered user
@@ -267,7 +323,7 @@ class User extends controller {
             "user_id": data.user_id
         };
 
-        userServices.sendEmailNotification(serviceData);
+        apiServices.sendEmailNotification(serviceData);
     }
 
     insertDevice(req, userID, verify = false, cb) {
@@ -305,7 +361,9 @@ class User extends controller {
         let size = parseInt(req.query.size)
         let query = {}
         if (pageNo < 0 || pageNo === 0) {
-            return res.status(404).json(this.errorMsgFormat({ "message": "invalid page number, should start with 1" }))
+            return res.status(404).json(this.errorMsgFormat({
+                "message": "invalid page number, should start with 1"
+            }))
         }
 
         query.skip = size * (pageNo - 1)
@@ -314,23 +372,38 @@ class User extends controller {
         let userID = this.getTokenToUserId(req, res, 'ID');
 
         // Find some documents
-        loginHistory.countDocuments({ user: userID }, (err, totalCount) => {
+        loginHistory.countDocuments({
+            user: userID
+        }, (err, totalCount) => {
             if (err) {
-                return res.status(404).json(this.errorMsgFormat({ "message": "No data found" }, 'loginHistory', 404))
+                return res.status(404).json(this.errorMsgFormat({
+                    "message": "No data found"
+                }, 'loginHistory', 404))
             } else {
                 loginHistory
-                    .find({ user: userID })
+                    .find({
+                        user: userID
+                    })
                     .select('-__v -_id')
                     .skip(query.skip)
                     .limit(query.limit)
-                    .populate({ path: 'device', select: '-_id -user -created_date -__v' })
+                    .populate({
+                        path: 'device',
+                        select: '-_id -user -created_date -__v'
+                    })
                     .exec()
                     .then((data) => {
                         if (!data.length) {
-                            return res.status(404).json(this.errorMsgFormat({ "message": "No data found" }, 'loginHistory', 404));
+                            return res.status(404).json(this.errorMsgFormat({
+                                "message": "No data found"
+                            }, 'loginHistory', 404));
                         } else {
                             var totalPages = Math.ceil(totalCount / size);
-                            return res.status(200).json(this.successFormat({ "data": data, "pages": totalPages, "totalCount": totalCount }, userID, 'loginHistory', 200));
+                            return res.status(200).json(this.successFormat({
+                                "data": data,
+                                "pages": totalPages,
+                                "totalCount": totalCount
+                            }, userID, 'loginHistory', 200));
                         }
                     });
             }
@@ -342,7 +415,9 @@ class User extends controller {
         let size = parseInt(req.query.size)
         let query = {}
         if (pageNo < 0 || pageNo === 0) {
-            return res.status(404).json(this.errorMsgFormat({ "message": "invalid page number, should start with 1" }))
+            return res.status(404).json(this.errorMsgFormat({
+                "message": "invalid page number, should start with 1"
+            }))
         }
 
         query.skip = size * (pageNo - 1)
@@ -351,16 +426,29 @@ class User extends controller {
         let userID = this.getTokenToUserId(req, res, 'ID');
 
         // Find some documents
-        deviceMangement.countDocuments({ user: userID }, (err, totalCount) => {
+        deviceMangement.countDocuments({
+            user: userID
+        }, (err, totalCount) => {
             if (err) {
-                return res.status(404).json(this.errorMsgFormat({ "message": "No data found" }, 'device', 404))
+                return res.status(404).json(this.errorMsgFormat({
+                    "message": "No data found"
+                }, 'device', 404))
             } else {
-                deviceMangement.find({ user: userID , is_deleted:false }, '-_id -__v -user', query, (err, data) => {
+                deviceMangement.find({
+                    user: userID,
+                    is_deleted: false
+                }, '-_id -__v -user', query, (err, data) => {
                     if (err || !data.length) {
-                        return res.status(404).json(this.errorMsgFormat({ "message": "No data found" }, 'device', 404));
+                        return res.status(404).json(this.errorMsgFormat({
+                            "message": "No data found"
+                        }, 'device', 404));
                     } else {
                         var totalPages = Math.ceil(totalCount / size);
-                        return res.status(200).json(this.successFormat({ "data": data, "pages": totalPages, "totalCount": totalCount }, userID, 'devices', 200));
+                        return res.status(200).json(this.successFormat({
+                            "data": data,
+                            "pages": totalPages,
+                            "totalCount": totalCount
+                        }, userID, 'devices', 200));
                     }
                 });
             }
@@ -394,7 +482,10 @@ class User extends controller {
         if (deviceHash.data.user_id) {
             let checkExpired = this.checkTimeExpired(deviceHash.data.datetime);
             if (checkExpired) {
-                deviceMangement.findOne({ ip: deviceHash.data.ip, user: deviceHash.data.user_id })
+                deviceMangement.findOne({
+                        ip: deviceHash.data.ip,
+                        user: deviceHash.data.user_id
+                    })
                     .exec()
                     .then((result) => {
                         if (!result) {
@@ -420,9 +511,16 @@ class User extends controller {
     updateWhiteListIP(hash, res) {
 
         // find and update the reccord
-        deviceMangement.updateMany({ 'ip': hash.data.ip, 'user': hash.data.user_id }, { verified: hash.data.verified }, (err, device) => {
+        deviceMangement.updateMany({
+            'ip': hash.data.ip,
+            'user': hash.data.user_id
+        }, {
+            verified: hash.data.verified
+        }, (err, device) => {
             if (err) {
-                return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid device.' }));
+                return res.status(404).send(this.errorMsgFormat({
+                    'message': 'Invalid device.'
+                }));
             } else {
                 return res.status(202).send(this.successFormat({
                     'message': 'Your IP address whitelisted Now you can able to login..'
@@ -443,7 +541,9 @@ class User extends controller {
             anti_spoofing_code: Joi.string().optional(),
         });
 
-        return Joi.validate(req, schema, { abortEarly: false });
+        return Joi.validate(req, schema, {
+            abortEarly: false
+        });
     }
 
     patchSettings(req, res) {
@@ -456,17 +556,25 @@ class User extends controller {
         if (req.body.data.id !== undefined && Object.keys(requestData).length) {
 
             // find and update the reccord
-            users.findOneAndUpdate({ _id: req.body.data.id }, { $set: requestData })
+            users.findOneAndUpdate({
+                    _id: req.body.data.id
+                }, {
+                    $set: requestData
+                })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'Your request is updated successfully.'
                     }, result._id, 'users', 202));
                 })
                 .catch(err => {
-                    return res.status(404).send(this.errorMsgFormat({ 'message': err.message }));
+                    return res.status(404).send(this.errorMsgFormat({
+                        'message': err.message
+                    }));
                 });
         } else {
-            return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }, 'users', 400));
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Invalid request.'
+            }, 'users', 400));
         }
     }
 
@@ -476,7 +584,9 @@ class User extends controller {
         if (userHash.is_active !== undefined) {
             this.patchSettings(req, res);
         } else {
-            return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request..' }, 'users', 400));
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Invalid request..'
+            }, 'users', 400));
         }
     }
 
@@ -565,61 +675,102 @@ class User extends controller {
         }
     }
 
-    async refreshToken(data)
-    {
+    async refreshToken(data) {
         try {
-            const user = await users.findOne({_id:data.user})
+            
+            const user = await users.findOne({
+                _id: data.user
+            })
 
-            if(user)
-            {
-                return { status: true, result:{
-                "token": this.createToken(user, data.login_id),
-                "refreshToken": this.createRefreshToken(user, data.login_id),
-                "google_auth": user.google_auth,
-                "sms_auth": user.sms_auth,
-                "anti_spoofing": user.anti_spoofing,
-                "expiresIn": config.get('secrete.expiry')
-                }, id: user._id };
+            if (user) {
+                return {
+                    status: true,
+                    result: {
+                        "token": this.createToken(user, data.login_id),
+                        "refreshToken": this.createRefreshToken(user, data.login_id),
+                        "google_auth": user.google_auth,
+                        "sms_auth": user.sms_auth,
+                        "anti_spoofing": user.anti_spoofing,
+                        "expiresIn": config.get('secrete.expiry')
+                    },
+                    id: user._id
+                };
             } else {
-                return { status: false, error:"NOT_FOUND", errorCode:404 }
+                return {
+                    status: false,
+                    error: "NOT_FOUND",
+                    errorCode: 404
+                }
             }
-        } catch(err) {
-            return { status: false, error: err, errorCode: 500 }
+        } catch (err) {
+            return {
+                status: false,
+                error: err,
+                errorCode: 500
+            }
         }
-     }
+    }
 
     async logout(user) {
         try {
 
-            const logout = await loginHistory.findOneAndUpdate({ user: user.user, logout_status: 1, _id: user.login_id }, { logout_status: 0, logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+            const logout = await loginHistory.findOneAndUpdate({
+                user: user.user,
+                logout_status: 1,
+                _id: user.login_id
+            }, {
+                logout_status: 0,
+                logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
+            });
             if (logout) {
-                return { status: true }
+                return {
+                    status: true
+                }
             }
-            return { status: false, error: "NOT_FOUND", errorCode: 404 }
-        }
-        catch (err) {
-            return { status: false, error: err, errorCode: 500 }
+            return {
+                status: false,
+                error: "NOT_FOUND",
+                errorCode: 404
+            }
+        } catch (err) {
+            return {
+                status: false,
+                error: err,
+                errorCode: 500
+            }
         }
     }
 
     async deleteWhitList(data) {
         try {
             const deleteWhitList = await deviceMangement.updateMany({
-                    browser: data.browser,
-                    browser_version:data.browser_version,
-                    os: data.os,
-                    user: data.user, 
-                    is_deleted: false
-            }, { is_deleted: true });
-            
-            if ( deleteWhitList.nModified != 0 ) {
-                return { status: true }
+                browser: data.browser,
+                browser_version: data.browser_version,
+                os: data.os,
+                user: data.user,
+                is_deleted: false
+            }, {
+                is_deleted: true
+            });
+
+            if (deleteWhitList.nModified != 0) {
+                return {
+                    status: true
+                }
             } else {
-                return { status: false, error: "NOT_FOUND", errorCode: 404 }
-            } 
-        
+                return {
+                    status: false,
+                    error: "NOT_FOUND",
+                    errorCode: 404
+                }
+            }
+
         } catch (error) {
-            return { status: false, error: err, errorCode: 500 }
+            return {
+                status: false,
+                error: err,
+                errorCode: 500
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 const Joi           = require('joi');
 const UserTemp      = require('../db/user-temp');
 const Users         = require('../db/users');
-const UserServices  = require('../services/users');
+const apiServices   = require('../services/api');
 const Controller    = require('../core/controller');
 const helpers       = require('../helpers/helper.functions');
 const password      = require('../core/password');
@@ -56,7 +56,7 @@ class Registration extends Controller {
                         return res.status(400).send(this.errorFormat({ 'email': 'This email address already exits.' }));
                     }
                     
-                    this.insertUser(req, res);
+                    return this.insertUser(req, res);
                 });
             }
         });
@@ -99,7 +99,7 @@ class Registration extends Controller {
         "email_for": "registration"
         };
         
-        UserServices.sendEmailNotification(serviceData);
+        return apiServices.sendEmailNotification(serviceData);
     }
     
     resendEmail (req, res) {
@@ -122,7 +122,7 @@ class Registration extends Controller {
                         }
                     });
             } else if (requestedData.type === 'forget-passwod' ) {
-                password.sendResetLink(req, res);
+                return password.sendResetLink(req, res);
             } else {
                 return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }));
             }
