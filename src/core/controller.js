@@ -1,17 +1,17 @@
 class Controller {
 
-    errorMsgFormat (error, type = 'users' , code = 400) {
-        return { 
+    errorMsgFormat(error, type = 'users', code = 400) {
+        return {
             "code": code,
             "errors": true,
-            "data": { 
+            "data": {
                 "type": type,
                 "attributes": error
             }
         };
     }
 
-    errorFormat (error) {
+    errorFormat(error) {
         let errors = {};
         if (error.details) {
             error.details.forEach((detail) => {
@@ -23,8 +23,8 @@ class Controller {
         return this.errorMsgFormat(errors);
     }
 
-    successFormat ( res, id = null, type = 'users' , code = 200 ) {
-        return { 
+    successFormat(res, id = null, type = 'users', code = 200) {
+        return {
             "code": code,
             "errors": false,
             "data": {
@@ -32,10 +32,10 @@ class Controller {
                 "type": type,
                 "attributes": res
             }
-        }; 
+        };
     }
 
-    requestDataFormat (data) {
+    requestDataFormat(data) {
         return {
             "lang": "en",
             "data": {

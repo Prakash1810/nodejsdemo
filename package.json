@@ -45,6 +45,7 @@
     "mongoose-auto-increment": "^5.0.1",
     "nodemon": "^1.18.11",
     "npm": "^6.9.0",
+    "wallet-address-validator": "^0.2.4",
     "winston": "^3.2.1"
   }
 }

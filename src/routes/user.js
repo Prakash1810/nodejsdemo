@@ -151,10 +151,7 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
 
 router.patch('/settings', auth, (req, res) => {
     try {
-        let {
-            error
-        } = user.settingsValidate(req.body.data.attributes);
-
+        let { error } = user.settingsValidate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
