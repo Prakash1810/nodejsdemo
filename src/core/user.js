@@ -539,6 +539,7 @@ class User extends controller {
             mobile_code: Joi.number().optional(),
             anti_spoofing: Joi.boolean().optional(),
             anti_spoofing_code: Joi.string().optional(),
+            white_list_address: Joi.boolean().optional()
         });
 
         return Joi.validate(req, schema, {
@@ -677,7 +678,7 @@ class User extends controller {
 
     async refreshToken(data) {
         try {
-            
+
             const user = await users.findOne({
                 _id: data.user
             })
