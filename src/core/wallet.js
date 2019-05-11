@@ -142,6 +142,11 @@ class Wallet extends controller {
         let size = parseInt(req.query.size)
         let query = {}
 
+        let payloads = {
+            is_deleted: false,
+            user: req.user.user
+        };
+
         if (pageNo < 0 || pageNo === 0) {
             return res.status(404).json(this.errorMsgFormat({
                 "message": "invalid page number, should start with 1"
@@ -152,20 +157,14 @@ class Wallet extends controller {
         query.limit = size
 
         // Find some documents
-        withdrawAddress.countDocuments({
-            is_deleted: false,
-            user: req.user.user
-        }, (err, totalCount) => {
+        withdrawAddress.countDocuments(payloads, (err, totalCount) => {
             if (err) {
                 return res.status(404).json(this.errorMsgFormat({
                     "message": "No data found"
                 }, 'address', 404))
             } else {
                 withdrawAddress
-                    .find({
-                        is_deleted: false,
-                        user: req.user.user
-                    })
+                    .find(payloads)
                     .select('-_id  address')
                     .skip(query.skip)
                     .limit(query.limit)
