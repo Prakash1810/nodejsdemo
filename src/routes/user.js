@@ -3,7 +3,7 @@ const user = require('../core/user');
 const password = require('../core/password');
 const Controller = require('../core/controller');
 const auth = require('../middlewares/authentication');
-const auth1 = require('../middlewares/auth')
+const refresh_auth = require('../middlewares/auth')
 const registration = require('../core/registration');
 const slide = require('../core/geetest-captcha');
 const router = express.Router();
@@ -21,7 +21,6 @@ router.get('/activation/:hash', (req, res) => {
 
 router.post('/login', (req, res) => {
     try {
-
         let {
             error
         } = user.validate(req.body.data.attributes);
@@ -152,7 +151,9 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
 
 router.patch('/settings', auth, (req, res) => {
     try {
-        let { error } = user.settingsValidate(req.body.data.attributes);
+        let {
+            error
+        } = user.settingsValidate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -224,7 +225,7 @@ router.post('/g2f-verify', auth, (req, res) => {
     }
 });
 
-router.post('/token', auth1, async (req, res) => {
+router.post('/token', refresh_auth, async (req, res) => {
     try {
         const result = await user.refreshToken(req.user);
         if (result.status) {

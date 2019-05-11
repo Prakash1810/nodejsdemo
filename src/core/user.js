@@ -72,11 +72,13 @@ class User extends controller {
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.expiry'),
         };
+        
         let issueToken = await jwt.sign({
             user: user._id,
             login_id: id,
             user_id: user.user_id,
         }, config.get('secrete.key'), jwtOptions);
+
         let data = {
             user: user._id,
             accesToken: issueToken,
