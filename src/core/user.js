@@ -72,20 +72,12 @@ class User extends controller {
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.expiry'),
         };
-        
-        let issueToken = await jwt.sign({
+
+        return await jwt.sign({
             user: user._id,
             login_id: id,
             user_id: user.user_id,
         }, config.get('secrete.key'), jwtOptions);
-
-        let data = {
-            user: user._id,
-            accesToken: issueToken,
-            createOn: Date.now()
-        }
-        await new token(data).save();
-        return issueToken;
     };
 
     async createRefreshToken(user, id) {
@@ -96,19 +88,26 @@ class User extends controller {
             expiresIn: config.get('secrete.refreshTokenExpiry'),
 
         };
-        const issueRefreshToken = await jwt.sign({
+        return await jwt.sign({
             user: user._id,
             login_id: id,
             user_id: user.user_id,
         }, config.get('secrete.refreshKey'), options);
 
+    }
+
+    async storeToken(user,loginHistory)
+    {
+        let accessToken = await this.createToken(user, loginHistory);
+        let refreshToken = await this.createRefreshToken(user, loginHistory);
         let data = {
             user: user._id,
-            refreshToken: issueRefreshToken,
-            createOn: Date.now()
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            created_date: Date.now()
         }
         await new token(data).save();
-        return issueRefreshToken;
+        return {accessToken : accessToken , refreshToken : refreshToken}
     }
 
     login(req, res) {
@@ -245,10 +244,10 @@ class User extends controller {
                     'os': req.body.data.attributes.os,
                     'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code
                 });
-
+                let tokens = await this.storeToken(user,loginHistory._id)
                 return res.status(200).send(this.successFormat({
-                    "token": await this.createToken(user, loginHistory._id),
-                    "refreshToken": await this.createRefreshToken(user, loginHistory._id),
+                    "token": tokens.accessToken,
+                    "refreshToken": tokens.refreshToken,
                     "google_auth": user.google_auth,
                     "sms_auth": user.sms_auth,
                     "anti_spoofing": user.anti_spoofing,
@@ -307,10 +306,10 @@ class User extends controller {
                                 'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code,
                                 "disableAccount": user._id
                             });
-
+                            let tokens = await this.storeToken(user,loginHistory._id)
                             return res.status(200).send(this.successFormat({
-                                "token": await this.createToken(user, loginHistory._id),
-                                "refreshToken": await this.createRefreshToken(user, loginHistory._id),
+                                "token": tokens.accessToken,
+                                "refreshToken":tokens.refreshToken,
                                 "google_auth": user.google_auth,
                                 "sms_auth": user.sms_auth,
                                 "anti_spoofing": user.anti_spoofing,
@@ -702,12 +701,13 @@ class User extends controller {
             })
 
             if (user) {
-                await token.updateMany({ user: user._id, isDeleted: false }, { isDeleted: true, updateOn: Date.now() });
+                await token.findOneAndUpdate({ user: user._id, is_deleted: false }, { is_deleted: true, modified_date: Date.now() });
+                let tokens = await this.storeToken(user,data.login_id)
                 return {
                     status: true,
                     result: {
-                        "token": await this.createToken(user, data.login_id),
-                        "refreshToken": await this.createRefreshToken(user, data.login_id),
+                        "token": tokens.accessToken,
+                        "refreshToken": tokens.refreshToken,
                         "google_auth": user.google_auth,
                         "sms_auth": user.sms_auth,
                         "anti_spoofing": user.anti_spoofing,
