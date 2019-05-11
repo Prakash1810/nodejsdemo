@@ -11,6 +11,7 @@ const Joi = require('joi');
 const bcrypt = require('bcrypt');
 const controller = require('../core/controller');
 const g2fa = require('2fa');
+const token = require('../db/management-token');
 
 class User extends controller {
 
@@ -63,7 +64,7 @@ class User extends controller {
         return false;
     }
 
-    createToken(user, id) {
+    async createToken(user, id) {
 
         let jwtOptions = {
             issuer: config.get('secrete.issuer'),
@@ -71,14 +72,21 @@ class User extends controller {
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.expiry'),
         };
-        return jwt.sign({
+        let issueToken = await jwt.sign({
             user: user._id,
             login_id: id,
             user_id: user.user_id,
         }, config.get('secrete.key'), jwtOptions);
+        let data = {
+            user: user._id,
+            accesToken: issueToken,
+            createOn: Date.now()
+        }
+        await new token(data).save();
+        return issueToken;
     };
 
-    createRefreshToken(user, id) {
+    async createRefreshToken(user, id) {
         let options = {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
@@ -86,17 +94,25 @@ class User extends controller {
             expiresIn: config.get('secrete.refreshTokenExpiry'),
 
         };
-        return jwt.sign({
+        const issueRefreshToken = await jwt.sign({
             user: user._id,
             login_id: id,
             user_id: user.user_id,
-        }, config.get('secrete.key'), options);
+        }, config.get('secrete.refreshKey'), options);
+
+        let data = {
+            user: user._id,
+            refreshToken: issueRefreshToken,
+            createOn: Date.now()
+        }
+        await new token(data).save();
+        return issueRefreshToken;
     }
 
     login(req, res) {
         users.findOne({
-                email: req.body.data.attributes.email
-            })
+            email: req.body.data.attributes.email
+        })
             .exec()
             .then((result) => {
                 if (!result) {
@@ -160,8 +176,8 @@ class User extends controller {
 
     removeUser(email, res) {
         users.deleteOne({
-                email: email
-            })
+            email: email
+        })
             .then(result => {
                 if (result.deletedCount) {
                     return res.status(200).send(this.successFormat({
@@ -229,8 +245,8 @@ class User extends controller {
                 });
 
                 return res.status(200).send(this.successFormat({
-                    "token": this.createToken(user, loginHistory._id),
-                    "refreshToken": this.createRefreshToken(user, loginHistory._id),
+                    "token": await this.createToken(user, loginHistory._id),
+                    "refreshToken": await this.createRefreshToken(user, loginHistory._id),
                     "google_auth": user.google_auth,
                     "sms_auth": user.sms_auth,
                     "anti_spoofing": user.anti_spoofing,
@@ -240,16 +256,16 @@ class User extends controller {
 
             } else {
                 deviceMangement.findOne({
-                        user: userID,
-                        ip: req.body.data.attributes.ip,
-                        verified: true,
-                        is_deleted: false
-                    })
+                    user: userID,
+                    ip: req.body.data.attributes.ip,
+                    verified: true,
+                    is_deleted: false
+                })
                     .exec()
                     .then(async (result) => {
                         if (!result) {
                             // insert new device records
-                            this.insertDevice(req, userID).then(() => {});
+                            this.insertDevice(req, userID).then(() => { });
                             let urlHash = this.encryptHash({
                                 "user_id": userID,
                                 "ip": req.body.data.attributes.ip,
@@ -291,8 +307,8 @@ class User extends controller {
                             });
 
                             return res.status(200).send(this.successFormat({
-                                "token": this.createToken(user, loginHistory._id),
-                                "refreshToken": this.createRefreshToken(user, loginHistory._id),
+                                "token": await this.createToken(user, loginHistory._id),
+                                "refreshToken": await this.createRefreshToken(user, loginHistory._id),
                                 "google_auth": user.google_auth,
                                 "sms_auth": user.sms_auth,
                                 "anti_spoofing": user.anti_spoofing,
@@ -483,9 +499,9 @@ class User extends controller {
             let checkExpired = this.checkTimeExpired(deviceHash.data.datetime);
             if (checkExpired) {
                 deviceMangement.findOne({
-                        ip: deviceHash.data.ip,
-                        user: deviceHash.data.user_id
-                    })
+                    ip: deviceHash.data.ip,
+                    user: deviceHash.data.user_id
+                })
                     .exec()
                     .then((result) => {
                         if (!result) {
@@ -515,18 +531,18 @@ class User extends controller {
             'ip': hash.data.ip,
             'user': hash.data.user_id
         }, {
-            verified: hash.data.verified
-        }, (err, device) => {
-            if (err) {
-                return res.status(404).send(this.errorMsgFormat({
-                    'message': 'Invalid device.'
-                }));
-            } else {
-                return res.status(202).send(this.successFormat({
-                    'message': 'Your IP address whitelisted Now you can able to login..'
-                }, device.user, 'users', 202));
-            }
-        });
+                verified: hash.data.verified
+            }, (err, device) => {
+                if (err) {
+                    return res.status(404).send(this.errorMsgFormat({
+                        'message': 'Invalid device.'
+                    }));
+                } else {
+                    return res.status(202).send(this.successFormat({
+                        'message': 'Your IP address whitelisted Now you can able to login..'
+                    }, device.user, 'users', 202));
+                }
+            });
     }
 
     settingsValidate(req) {
@@ -558,8 +574,8 @@ class User extends controller {
 
             // find and update the reccord
             users.findOneAndUpdate({
-                    _id: req.body.data.id
-                }, {
+                _id: req.body.data.id
+            }, {
                     $set: requestData
                 })
                 .then(result => {
@@ -684,11 +700,12 @@ class User extends controller {
             })
 
             if (user) {
+                await token.updateMany({ user: user._id, isDeleted: false }, { isDeleted: true, updateOn: Date.now() });
                 return {
                     status: true,
                     result: {
-                        "token": this.createToken(user, data.login_id),
-                        "refreshToken": this.createRefreshToken(user, data.login_id),
+                        "token": await this.createToken(user, data.login_id),
+                        "refreshToken": await this.createRefreshToken(user, data.login_id),
                         "google_auth": user.google_auth,
                         "sms_auth": user.sms_auth,
                         "anti_spoofing": user.anti_spoofing,
@@ -720,9 +737,9 @@ class User extends controller {
                 logout_status: 1,
                 _id: user.login_id
             }, {
-                logout_status: 0,
-                logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
-            });
+                    logout_status: 0,
+                    logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
+                });
             if (logout) {
                 return {
                     status: true
@@ -751,8 +768,8 @@ class User extends controller {
                 user: data.user,
                 is_deleted: false
             }, {
-                is_deleted: true
-            });
+                    is_deleted: true
+                });
 
             if (deleteWhitList.nModified != 0) {
                 return {
