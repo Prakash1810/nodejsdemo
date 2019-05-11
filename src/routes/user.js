@@ -2,7 +2,8 @@ const express = require('express');
 const user = require('../core/user');
 const password = require('../core/password');
 const Controller = require('../core/controller');
-const auth = require("../middlewares/authentication");
+const auth = require('../middlewares/authentication');
+const auth1 = require('../middlewares/auth')
 const registration = require('../core/registration');
 const slide = require('../core/geetest-captcha');
 const router = express.Router();
@@ -226,7 +227,7 @@ router.post('/g2f-verify', auth, (req, res) => {
     }
 });
 
-router.post('/token', auth, async (req, res) => {
+router.post('/token', auth1, async (req, res) => {
     try {
         const result = await user.refreshToken(req.user);
         if (result.status) {
