@@ -3,7 +3,10 @@ const assets = require('../db/assets');
 const userAddress = require('../db/user-address');
 const withdrawAddress = require('../db/withdrawal-addresses');
 const Joi = require('joi');
+const users = require('../db/users');
 const coinAddressValidator = require('wallet-address-validator');
+const apiServices = require('../services/api');
+
 
 class Wallet extends controller {
 
@@ -189,6 +192,48 @@ class Wallet extends controller {
                     });
             }
         });
+    }
+
+    async getAssetWithdrawAddress(req, res) {
+        
+        // fetch user whitelist setting
+        let isWhitelist = await users.findById(req.user.user).white_list_address;
+
+        // Find asset baseds withdraw address
+        let data = await withdrawAddress
+            .find({
+                is_deleted: false,
+                user: req.user.user,
+                asset: req.params.asset,
+                is_whitelist: (isWhitelist !== undefined ) ? isWhitelist : false
+            }, )
+            .select('-_id  address');
+
+        if (!data) {
+            return res.status(404).json(this.errorMsgFormat({
+                "message": "No data found"
+            }, 'withdrawAddress', 404));
+        } else {
+            let assetAddress = [];
+            data.forEach((withdraw) => {
+                assetAddress.push(withdraw.address);
+            });
+
+            return res.status(200).json(this.successFormat({
+                "data": {
+                    'asset': req.params.asset,
+                    'address': assetAddress
+                }
+            }, null, 'withdrawAddress', 200));
+        }
+    }
+
+    async getAssetsBalance (req, res) {
+        let payloads = {};
+        payloads.user_id = req.user.user_id;
+        if (req.query.asset_code !== undefined ) payloads.asset = req.query.asset_code.toUpperCase();
+        let apiResponse = await apiServices.matchingEngineRequest('balance/query', payloads);
+        return res.json(apiResponse);
     }
 }
 

@@ -53,6 +53,14 @@ class Api extends Controller {
             if (axiosError.response !== undefined) throw (axiosError.response)
         });
     }
+
+    async matchingEngineRequest(method, data) {
+        let axiosResponse = await axios.post(
+            `${config.get("matching-engine-api.url")}/api/${config.get('matching-engine-api.version')}/${method}`, this.requestDataFormat(data)
+        );
+
+        return axiosResponse.data;
+    }
 }
 
 module.exports = new Api();

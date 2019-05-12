@@ -32,5 +32,9 @@
 	"wallet-api": {
 		"url": "http://857d72e0.ngrok.io",
 		"version": "v1"
+	},
+	"matching-engine-api": {
+		"url": "http://0e9f7313.ngrok.io",
+		"version": "v1"
 	}
 }
