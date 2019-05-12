@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 
 const tokenSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
-    accesToken: { type: String },
-    refreshToken: { type: String },
-    isDeleted: { type: Boolean, default: false },
-    createOn: { type: Date },
-    updateOn: { type: Date }
+    access_token: { type: String },
+    refresh_token: { type: String },
+    is_deleted: { type: Boolean, default: false },
+    created_date: { type: Date },
+    modified_date: { type: Date }
 });
 
 module.exports = mongoose.model('management-token', tokenSchema)

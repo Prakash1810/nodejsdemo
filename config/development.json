@@ -14,7 +14,8 @@
 		"domain": "www.test.com",
 		"key": "privateKey",
 		"expiry": 300000,
-		"refreshTokenExpiry":420000
+		"refreshTokenExpiry":420000,
+		"refreshKey" : "secertKey"
 	},
 	"site": {
 		"url": "http://localhost:3000",

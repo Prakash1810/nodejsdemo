@@ -15,7 +15,7 @@ module.exports = async (req, res, next) => {
         const token = req.headers.authorization;
         const data = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
         const isChecked = await accesToken.findOne({
-            user: data.user, accesToken: token, isDeleted: true
+            user: data.user, access_token: token, is_deleted: true
         })
         if (isChecked) {
             throw error
