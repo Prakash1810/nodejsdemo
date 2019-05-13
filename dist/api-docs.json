@@ -9,7 +9,7 @@
             "email": "sathish.kumar@beldex.org"
         }
     },
-    "host": "localhost:3000",
+    "host": "35.185.71.25:3000",
     "basePath": "/api/v1/",
     "tags": [
         {
