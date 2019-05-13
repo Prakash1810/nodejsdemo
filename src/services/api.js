@@ -53,6 +53,18 @@ class Api extends Controller {
             if (axiosError.response !== undefined) throw (axiosError.response)
         });
     }
+
+    async matchingEngineRequest(method, data) {
+        let axiosResponse = await axios.post(
+            `${config.get("matching-engine-api.url")}/api/${config.get('matching-engine-api.version')}/${method}`, this.requestDataFormat(data)
+        );
+
+        return axiosResponse.data;
+    }
+
+    async marketPrice(assetsName, convertTo = 'usd,btc') {
+        return await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${assetsName}&vs_currencies=${convertTo}`);
+    }
 }
 
 module.exports = new Api();

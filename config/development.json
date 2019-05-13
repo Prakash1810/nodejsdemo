@@ -32,5 +32,17 @@
 	"wallet-api": {
 		"url": "http://857d72e0.ngrok.io",
 		"version": "v1"
+	},
+	"matching-engine-api": {
+		"url": "http://f17c132c.ngrok.io",
+		"version": "v1"
+	},
+	"assets": {
+		"bdx": "beldex",
+		"btc": "bitcoin",
+		"eth": "ethereum",
+		"ltc": "litecoin",
+		"bch": "bitcoin-cash",
+		"dash": "dash"
 	}
 }

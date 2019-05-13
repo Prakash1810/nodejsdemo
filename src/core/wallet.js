@@ -3,7 +3,12 @@ const assets = require('../db/assets');
 const userAddress = require('../db/user-address');
 const withdrawAddress = require('../db/withdrawal-addresses');
 const Joi = require('joi');
+const users = require('../db/users');
 const coinAddressValidator = require('wallet-address-validator');
+const apiServices = require('../services/api');
+const config = require('config');
+const _ = require('underscore');
+
 
 class Wallet extends controller {
 
@@ -189,6 +194,83 @@ class Wallet extends controller {
                     });
             }
         });
+    }
+
+    async getAssetWithdrawAddress(req, res) {
+        
+        // fetch user whitelist setting
+        let isWhitelist = await users.findById(req.user.user).white_list_address;
+
+        // Find asset baseds withdraw address
+        let data = await withdrawAddress
+            .find({
+                is_deleted: false,
+                user: req.user.user,
+                asset: req.params.asset,
+                is_whitelist: (isWhitelist !== undefined ) ? isWhitelist : false
+            }, )
+            .select('-_id  address');
+
+        if (!data) {
+            return res.status(404).json(this.errorMsgFormat({
+                "message": "No data found"
+            }, 'withdrawAddress', 404));
+        } else {
+            let assetAddress = [];
+            data.forEach((withdraw) => {
+                assetAddress.push(withdraw.address);
+            });
+
+            return res.status(200).json(this.successFormat({
+                "data": {
+                    'asset': req.params.asset,
+                    'address': assetAddress
+                }
+            }, null, 'withdrawAddress', 200));
+        }
+    }
+
+    async getAssetsBalance (req, res) {
+        let payloads = {}, assetNames;
+        payloads.user_id = 1 //req.user.user_id;
+        if (req.query.asset_code !== undefined ){
+            payloads.asset = req.query.asset_code.toUpperCase();
+            assetNames = config.get(`assets.${req.query.asset_code.toLowerCase()}`)
+        } else {
+            assetNames = 'beldex,bitcoin,ethereum,litecoin,bitcoin-cash,dash';
+        }
+
+        let apiResponse = await apiServices.matchingEngineRequest('balance/query', payloads);
+        let marketResponse = await apiServices.marketPrice(assetNames);
+        let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse);
+        
+        return res.status(200).json(this.successFormat({
+            "data": formatedResponse
+        }, null, 'asset-balance', 200));
+    }
+
+    currencyConversion(matchResponse, marketResponse) {
+        let assetsJson = config.get('assets'), formatedAssetBalnce = {};
+        
+        for (let result in matchResponse) {
+            let btc = marketResponse.data[assetsJson[result.toLowerCase()]].btc;
+            let usd = marketResponse.data[assetsJson[result.toLowerCase()]].usd;
+
+            formatedAssetBalnce[result] = {
+                'available': {
+                    'balance': Number(matchResponse[result].available),
+                    'btc': matchResponse[result].available * btc,
+                    'usd': matchResponse[result].available * usd
+                },
+                'freeze': {
+                    'balance': Number(matchResponse[result].freeze),
+                    'btc': matchResponse[result].freeze * btc,
+                    'usd': matchResponse[result].freeze * usd
+                },
+            }
+        }
+
+        return formatedAssetBalnce;
     }
 }
 

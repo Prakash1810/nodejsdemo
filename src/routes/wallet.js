@@ -52,4 +52,26 @@ router.get('/withdraw-address', auth, (req, res) => {
     }
 });
 
+router.get('/withdraw-address/:asset', auth, (req, res) => {
+    try {
+        return wallet.getAssetWithdrawAddress(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'wallet', 500));
+    }
+});
+
+router.get('/balance', auth, (req, res) => {
+    try {
+        return wallet.getAssetsBalance(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'wallet', 500));
+    }
+});
+
+
+
 module.exports = router;

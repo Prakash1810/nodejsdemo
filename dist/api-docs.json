@@ -1,877 +1,1020 @@
 {
-  "swagger": "2.0",
-  "info": {
-    "version": "1.0.0",
-    "title": "Beldex Exchange API",
-    "description": "Beldex Exchange Document",
-    "termsOfService": "http://swagger.io/terms/"
-  },
-  "basePath": "/",
-  "tags" : [
-    {
-      "name": "Tag1", 
-      "description": "Core - API List"
-    }
-  ],
-  "schemes": [
-    "http"
-  ],
-  "consumes": [
-    "application/json"
-  ],
-  "produces": [
-    "application/json"
-  ],
-  "paths": {
-    "/api/v1/user/registration": {
-       "post": {
-          "tags": ["Tag1"],
-          "description": "Registration and return to activation key",
-          "operationId": "save",
-          "produces": [
-            "application/json"
-          ],
-          "parameters": [
-              {
-                "name": "Parameters",
-                "in": "body",
-                "description": "Registration API",
-                "required": true,
-                "schema": {
-                  "$ref": "#/definitions/registration"
-                }
-            }
-          ]
+    "swagger": "2.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "Beldex Exchange",
+        "description": "This is a core api server endpoints.  You can find out more about Beldex at [https://beldex.io](https://beldex.io).",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "email": "sathish.kumar@beldex.org"
         }
     },
-    "/api/v1/user/activation/{Hash}": {
-      "get":{
-          "tags": [ "Tag1"],
-          "description": "Returns response based on hash key",
-          "operationId": "findById",
-          "produces": [
-            "application/json"
-          ],
-          "parameters": [
-              {
-                "name": "hash",
-                "in": "path",
-                "description": "Account activation",
-                "required": true,
-                "type": "string",               
-                "schema": {
-                  "$ref": "#/definitions/activation"
-                }
-              }
-            ]
-        }
-      },
-    "/api/v1/user/login": {
-      "post":{
-          "tags": [ "Tag1"],
-          "description": "Returns login credentials correct or not",
-          "operationId": "findById",
-          "produces": [
-            "application/json"
-          ],
-          "parameters": [
-              {
-                "name": "ID",
-                "in": "body",
-                "description": "Account login",
-                "required": true,
-                "type": "string",
-                "schema": {
-                  "$ref": "#/definitions/login"
-                  }
-              }
-            ]
-        }
-      },
-      "/api/v1/user/forget-password": {
-        "post":{
-            "tags": [ "Tag1"],
-            "description": "send link to your registered email address",
-            "operationId": "findById",
-            "produces": [
-              "application/json"
-            ],
-            "parameters": [
-                {
-                  "name": "ID",
-                  "in": "body",
-                  "description": "Forget password",
-                  "required": true,
-                  "type": "string",
-                  "schema": {
-                    "$ref": "#/definitions/forgotpassword"
-                    }
-                }
-              ]
-          }
+    "host": "35.185.71.25:3000",
+    "basePath": "/api/v1/",
+    "tags": [
+        {
+            "name": "users",
+            "description": "Users registration, login and profile settings",
+            "externalDocs": {
+                "description": "Users end point"
+            }
         },
-        "/api/v1/user/reset-password/{hash}": {
-          "get":{
-              "tags": [ "Tag1"],
-              "description": "Check correct hash",
-              "operationId": "findById",
-              "produces": [
-                "application/json"
-              ],
-              "parameters": [
-                  {
-                    "name": "hash",
-                    "in": "path",
-                    "description": "Reset password",
-                    "required": true,
-                    "type": "string",
-                    "schema": {
-                      "$ref": "#/definitions/resetpasswordhash"
-                      }
-                  }
-                ]
+        {
+            "name": "wallet",
+            "description": "Assets, balance and transactions ",
+            "externalDocs": {
+                "description": "Wallet end point"
             }
-          },
-        "/api/v1/user/reset-password": {
-          "patch":{
-              "tags": [ "Tag1"],
-              "description": "Reset password",
-              "operationId": "findById",
-              "produces": [
-                "application/json"
-              ],
-              "parameters": [
-                  {
-                    "name": "ID",
-                    "in": "body",
-                    "description": "Reset password",
-                    "required": true,
-                    "type": "string",
-                    "schema": {
-                      "$ref": "#/definitions/resetpassword"
-                      }
-                  }
-                ]
-            }
-          },
-          "/api/v1/user/whitelist-ip/{hash}": {
-            "patch":{
-                "tags": [ "Tag1"],
-                "description": "Working IP check",
-                "operationId": "findById",
+        }
+    ],
+    "schemes": [
+        "http"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+        "user/registration": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Registration and return to activation key",
+                "operationId": "save",
                 "produces": [
-                  "application/json"
+                    "application/json"
                 ],
                 "parameters": [
                     {
-                      "name": "hash",
-                      "in": "path",
-                      "description": "ID to fetch",
-                      "required": true,
-                      "type": "string",
-                      "schema": {
-                        "$ref": "#/definitions/whitelist"
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Registration API",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/registration"
                         }
                     }
-                  ]
-              }
-            },
-            "/api/v1/user/get-user-id": {
-              "post":{
-                  "tags": [ "Tag1"],
-                  "description": "Get user id",
-                  "operationId": "findById",
-                  "produces": [
+                ]
+            }
+        },
+        "user/activation/{Hash}": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Returns response based on hash key",
+                "operationId": "findById",
+                "produces": [
                     "application/json"
-                  ],
-                  "parameters": [
-                      {
+                ],
+                "parameters": [
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "description": "Account activation",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/activation"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/login": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Returns login credentials correct or not",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "ID",
+                        "in": "body",
+                        "description": "Account login",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/login"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/forget-password": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "send link to your registered email address",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "ID",
+                        "in": "body",
+                        "description": "Forget password",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/forgotpassword"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/reset-password/{hash}": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Check correct hash",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "description": "Reset password",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/resetpasswordhash"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/reset-password": {
+            "patch": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Reset password",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "ID",
+                        "in": "body",
+                        "description": "Reset password",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/resetpassword"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/whitelist-ip/{hash}": {
+            "patch": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Working IP check",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "description": "ID to fetch",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/whitelist"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/get-user-id": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Get user id",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
                         "name": "Authorization",
                         "in": "header",
                         "description": "Get user id",
                         "required": true,
-                        "type": "apikey",
+                        "type": "string",
                         "schema": {
-                          "$ref": "#/definitions/getuserid"
-                          }
-                      }
-                    ]
-                }
-              },
-              "/api/v1/user/device-history": {
-                "get":{
-                    "tags": [ "Tag1"],
-                    "description": "Get device history",
-                    "operationId": "findById",
-                    "produces": [
-                      "application/json"
-                    ],
-                    "parameters": [
-                        {
-                          "name": "Authorization",
-                          "in": "header",
-                          "description": "Get device history",
-                          "required": true,
-                          "type": "apikey",
-                          "schema": {
+                            "$ref": "#/definitions/getuserid"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/device-history": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Get device history",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Get device history",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
                             "$ref": "#/definitions/devicehistory"
-                            }
-                        }
-                      ]
-                  }
-                },
-                "/api/v1/user/login-history": {
-                  "get":{
-                      "tags": [ "Tag1"],
-                      "description": "Get login history",
-                      "operationId": "findById",
-                      "produces": [
-                        "application/json"
-                      ],
-                      "parameters": [
-                          {
-                            "name": "Authorization",
-                            "in": "header",
-                            "description": "Get login history",
-                            "required": true,
-                            "type": "apikey",
-                            "schema": {
-                              "$ref": "#/definitions/loginhistory"
-                              }
-                          }
-                        ]
-                    }
-                  },
-                  "/api/v1/user/gt/register-slide" : {
-                    "get" :{
-                      "tags": [ "Tag1"],
-                      "description": "Get register slide",
-                      "operationId": "findById",
-                      "produces": [
-                        "application/json"
-                      ],  
-                      "schema": {
-                        "$ref": "#/definitions/captchaslide"
                         }
                     }
-                  },
-                  "/api/v1/wallet/assets" : {
-                    "get" :{
-                      "tags": [ "Tag1"],
-                      "description": "Get wallet assets",
-                      "operationId": "findById",
-                      "produces": [
-                        "application/json"
-                      ],
-                      "parameters": [
-                        {
-                          "name": "Authorization",
-                          "in": "header",
-                          "description": "Assets",
-                          "required": true,
-                          "type": "apikey",
-                          "schema": {
-                            "$ref": "#/definitions/assets"
-                            }
+                ]
+            }
+        },
+        "user/login-history": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Get login history",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Get login history",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/loginhistory"
                         }
-                      ]
                     }
-                  },
-                  "/api/v1/user/resend-email" : {
-                    "post" : {
-                      "tags": [ "Tag1"],
-                      "description": "Resend Mail",
-                      "operationId": "findById",
-                      "produces": [
-                        "application/json"
-                      ],
-                      "parameters": [
-                        {
-                          "name": "Parameters",
-                          "in": "body",
-                          "description": "Resend mail",
-                          "required": true,
-                          "type": "apikey",
-                          "schema": {
+                ]
+            }
+        },
+        "user/gt/register-slide": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Get register slide",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "schema": {
+                    "$ref": "#/definitions/captchaslide"
+                }
+            }
+        },
+        "user/resend-email": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Resend Mail",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Resend mail",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
                             "$ref": "#/definitions/resendmail"
-                            }
                         }
-                      ]
                     }
-                  },
-                  "/api/v1/user/g2f-verify" : {
-                    "post" : {
-                      "tags": [ "Tag1"],
-                      "description": "g2f verify",
-                      "operationId": "findById",
-                      "produces": [
-                        "application/json"
-                      ],
-                      "parameters": [
-                        {
-                          "name": "Authorization",
-                          "in": "header",
-                          "description": "g2f verify",
-                          "required": true,
-                          "type": "apikey"
-                        },
-                        {
-                          "name": "Parameters",
-                          "in": "body",
-                          "description": "Assets",
-                          "required": true,
-                          "type": "apikey",
-                          "schema": {
+                ]
+            }
+        },
+        "user/g2f-verify": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "g2f verify",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "g2f verify",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Assets",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
                             "$ref": "#/definitions/g2f-verify"
-                          }
                         }
-                      ]
                     }
-                  },
-                  "/api/v1/user/g2f-settings" : {
-            
-                   "patch" : {
-                      "tags": [ "Tag1"],
-                      "description": "Get g2f settings",
-                      "operationId": "findById",
-                      "produces": [
-                        "application/json"
-                      ],
-                      "parameters": [
-                        {
-                          "name": "Authorization",
-                          "in": "header",
-                          "description": "g2f settings",
-                          "required": true,
-                          "type": "apikey"
-                        },
-                        {
-                          "name": "Parameters",
-                          "in": "body",
-                          "description": "g2f settings",
-                          "required": true,
-                          "type": "apikey",          
-                          "schema": {
+                ]
+            }
+        },
+        "user/g2f-settings": {
+            "patch": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Get g2f settings",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "g2f settings",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "g2f settings",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
                             "$ref": "#/definitions/g2f-settings"
-                            }
                         }
-                      ]
                     }
-                  },
-                  "/api/v1/user/settings" : {
-                    "patch" : {
-                      "tags": [ "Tag1"],
-                      "description": "Get user settings",
-                      "operationId": "findById",
-                      "produces": [
-                        "application/json"
-                      ],
-                      "parameters": [
-                        {
-                          "name": "Parameters",
-                          "in": "body",
-                          "description": "Setting",
-                          "required": true,
-                          "type": "apikey",
-                          "schema": {
+                ]
+            }
+        },
+        "user/settings": {
+            "patch": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Get user settings",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Setting",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
                             "$ref": "#/definitions/settings"
-                            }
                         }
-                      ]
                     }
-                  },
-                  "/api/v1/user/disable" : {
-                    "patch" : {
-                      "tags": [ "Tag1"],
-                      "description": "Get user settings",
-                      "operationId": "findById",
-                      "produces": [
-                        "application/json"
-                      ],
-                      "parameters": [
-                        {
-                          "name": "Parameters",
-                          "in": "body",
-                          "description": "Setting",
-                          "required": true,
-                          "type": "apikey",
-                          "schema": {
+                ]
+            }
+        },
+        "user/disable": {
+            "patch": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Get user settings",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Setting",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
                             "$ref": "#/definitions/disable"
-                            }
                         }
-                      ]
                     }
-                  },
-
-                  "/api/v1/user/token" : {
-                    "post" : {
-                      "tags": [ "Tag1"],
-                      "description": " Create Refresh Token",
-                      "operationId": "",
-                      "produces": [
-                        "application/json"
-                      ],
-                      "parameters": [
-                        {
-                          "name": "Authorization",
-                          "in": "header",
-                          "description": "Setting",
-                          "required": true,
-                          "type": "apikey",
-                          "schema": {
+                ]
+            }
+        },
+        "user/token": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": " Create Refresh Token",
+                "operationId": "",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Setting",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
                             "$ref": "#/definitions/refreshToken"
-                            }
                         }
-                      ]
                     }
-                  },
-
-                  "/api/v1/user/logout" : {
-                    "post" : {
-                      "tags": [ "Tag1"],
-                      "description": "User Logout and add logout time",
-                      "operationId": "findOneAndUpdate",
-                      "produces": [
-                        "application/json"
-                      ],
-                      "parameters": [
-                        {
-                          "name": "Authorization",
-                          "in": "header",
-                          "description": "Setting",
-                          "required": true,
-                          "type": "apikey",
-                          "schema": {
+                ]
+            }
+        },
+        "user/logout": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "User Logout and add logout time",
+                "operationId": "findOneAndUpdate",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Setting",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
                             "$ref": "#/definitions/logout"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/whitelist": {
+            "delete": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Delete whitelist user in Db",
+                "operationId": "updateMany",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/deleteWhitList"
+                        }
+                    }
+                ]
+            }
+        },
+        "wallet/assets": {
+            "get": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "Get wallet assets",
+                "operationId": "findById",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Assets",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/assets"
+                        }
+                    }
+                ]
+            }
+        },
+        "wallet/withdraw-address": {
+            "post": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "Withdraw address with whitelist option",
+                "operationId": "create",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "withdrawal",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/withdrawAddress"
+                        }
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "Withdraw address with whitelist option",
+                "operationId": "create",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                      "name": "page_no",
+                      "in": "query",
+                      "description": "Page No. <b>Ex:</b> 1/2/3/4",
+                      "required": false,
+                      "type": "integer"
+                  },
+                  {
+                    "name": "size",
+                    "in": "query",
+                    "description": "Size <b>Ex:</b> 5/10",
+                    "required": false,
+                    "type": "integer"
+                }
+                    
+                ]
+            }
+        },
+        "wallet/balance": {
+            "get": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "User balance for each assets",
+                "operationId": "create",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "asset_code",
+                        "in": "query",
+                        "description": "Asset code \n *refers to <b>`wallet/assets`</b>",
+                        "required": false,
+                        "type": "string"
+                    }
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "registration": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "email": "xyz@gmail.com",
+                            "password": "1234567S",
+                            "password_confirmation": "1234567S",
+                            "referral_code": "BELDEX_001"
+                        }
+                    }
+                }
+            }
+        },
+        "login": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "email": "satz2@mail.com",
+                            "password": "1234567S",
+                            "is_browser": true,
+                            "is_mobile": false,
+                            "os": "Linux",
+                            "os_byte": "x86_64",
+                            "browser": "Chrome",
+                            "browser_version": "71.0.3578.11",
+                            "ip": "171.78.139.181",
+                            "city": "Chennai",
+                            "region": "Tamil Nadu",
+                            "country": "India"
+                        }
+                    }
+                }
+            }
+        },
+        "forgotpassword": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "email": "xyz@gmail.com"
+                        }
+                    }
+                }
+            }
+        },
+        "resetpassword": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c90dd8e6410cd0378d8fd7e",
+                        "attributes": {
+                            "password": "tesR123456",
+                            "password_confirmation": "tesR123456"
+                        }
+                    }
+                }
+            }
+        },
+        "activation": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "required": true,
+                    "type": "string",
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "null",
+                        "type": "users",
+                        "attributes": {
+                            "message": "Congratulation!, Your account has been activated."
+                        }
+                    }
+                }
+            }
+        },
+        "resetpasswordhash": {
+            "properties": {
+                "code": {
+                    "example": 202
+                },
+                "errors": {
+                    "required": true,
+                    "type": "string",
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "your id",
+                        "type": "users",
+                        "attributes": {
+                            "message": "Your password updated successfully."
+                        }
+                    }
+                }
+            }
+        },
+        "getuserid": {
+            "properties": {
+                "code": {
+                    "example": 0
+                },
+                "message": {
+                    "example": "Authorization successfully."
+                },
+                "data": {
+                    "example": {
+                        "user_id": 1
+                    }
+                }
+            }
+        },
+        "whitelist": {
+            "properties": {
+                "code": {
+                    "example": 202
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "null",
+                        "type": "users",
+                        "attributes": {
+                            "message": "Your IP address whitelisted Now you can able to login.."
+                        }
+                    }
+                }
+            }
+        },
+        "deleteWhitList": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "browser": "Chrome",
+                            "browser_version": "71.0.3578.11",
+                            "os": "Linux"
+                        }
+                    }
+                }
+            }
+        },
+        "devicehistory": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c908652f83b10002f0f7478",
+                        "type": "devices",
+                        "attributes": {
+                            "data": []
+                        }
+                    }
+                }
+            }
+        },
+        "loginhistory": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c908652f83b10002f0f7478",
+                        "type": "loginHistory",
+                        "attributes": {
+                            "data": []
+                        }
+                    }
+                }
+            }
+        },
+        "logout": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                }
+            }
+        },
+        "refreshToken": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                }
+            }
+        },
+        "captchaslide": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "",
+                        "type": "users",
+                        "example": {
+                            "attributes": {
+                                "success": 1,
+                                "challenge": "aa2943c240dd4a535ad24faeaed9fa00",
+                                "gt": "91a05c40b919e5197ab228fc40f0a7f6",
+                                "new_captcha": true
                             }
                         }
-                      ]
                     }
-                  },
-
-                  "/api/v1/user/whitelist" : {
-                    "delete" : {
-                       "tags": [ "Tag1"],
-                       "description": "Delete whitelist user in Db",
-                       "operationId": "updateMany",
-                       "produces": [
-                         "application/json"
-                       ],
-                       "parameters": [
-                         {
-                           "name": "Authorization",
-                           "in": "header",
-                           "description": "settings",
-                           "required": true,
-                           "type": "apikey"
-                         },
-                         {
-                           "name": "Parameters",
-                           "in": "body",
-                           "description": "settings",
-                           "required": true,
-                           "type": "apikey",          
-                           "schema": {
-                             "$ref": "#/definitions/deleteWhitList"
-                             }
-                         }
-                       ]
-                     }
-                   }
-
-  },
-  "definitions": {
-    "registration": {
-      "properties": {
-        "lang": {
-          "required":true,
-          "type": "string",
-          "example": "en"
-        },
-      "data": {
-        "example":{
-          "attributes": {
-            "email": "xyz@gmail.com",
-            "password": "1234567S",
-            "password_confirmation": "1234567S",
-            "referral_code" : "BELDEX_001"
-        }
-        }  
-      }
-     }
-    },
-    "login": {
-        "properties": {
-          "lang": {
-            "required":true,
-            "type": "string",
-            "example": "en"
-          },
-          "data" :{
-            "example" :{
-              "attributes": {
-                "email": "satz2@mail.com",
-                "password": "1234567S",
-                "is_browser": true,
-                "is_mobile": false,
-                "os": "Linux",
-                "os_byte": "x86_64",
-                "browser": "Chrome",
-                "browser_version": "71.0.3578.11",
-                "ip": "171.78.139.181",
-                "city": "Chennai",
-                "region": "Tamil Nadu",
-                "country": "India"
-              }
+                }
             }
-          }
-      }
-    },
-    "forgotpassword": {
-      "properties": {
-        "lang": {
-          "required":true,
-          "type": "string",
-          "example": "en"
         },
-        "data" :{
-          "example" :{
-            "attributes": {
-              "email": "xyz@gmail.com"
+        "resendmail": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c960beebd528c10aae89c15",
+                        "attributes": {
+                            "type": "registration"
+                        }
+                    }
+                }
             }
-          }
+        },
+        "g2f-verify": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "{{user_id}}",
+                        "attributes": {
+                            "google_secrete_key": "dsa31dsae2132",
+                            "g2f_code": "1234567S"
+                        }
+                    }
+                }
+            }
+        },
+        "g2f-settings": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "{{user_id}}",
+                        "attributes": {
+                            "google_auth": "true",
+                            "g2f_code": "674145",
+                            "password": "Temp!123"
+                        }
+                    }
+                }
+            }
+        },
+        "settings": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "{{user_id}}",
+                        "attributes": {
+                            "anti_spoofing_code": "satz",
+                            "anti_spoofing": "true"
+                        }
+                    }
+                }
+            }
+        },
+        "disable": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "id": "{{user_id}}",
+                            "code": "a4a4592231744ef38a8c53b4355719f02dd28cadba505cd30574efbe61c597fbac22797e1b69238577044727d476b052cf81576ed10b18be2e2ccc0377a256f9"
+                        }
+                    }
+                }
+            }
+        },
+        "assets": {
+            "properties": {
+                "code": {
+                    "example": 404
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "",
+                        "type": "device",
+                        "example": {
+                            "attributes": {
+                                "message": ""
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "withdrawAddress": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "asset": "5c94e142de2b7100085e5296",
+                            "label": "Bitcoin",
+                            "address": "16P71aQ1VzWuDNL3YBkii9hLGb923Fm7LY"
+                        }
+                    }
+                }
+            }
+        },
+        "400error": {
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "400 Bad Request"
+                }
+            }
         }
     }
-  },
-  "resetpassword": {
-    "properties": {
-      "lang": {
-        "required":true,
-        "type": "string",
-        "example": "en"
-      },
-      "data" :{
-        "example" :{
-          "id": "5c90dd8e6410cd0378d8fd7e",
-          "attributes": {
-            "password": "tesR123456",
-            "password_confirmation": "tesR123456"
-          }
-        }
-      }
-  }
-},
-"activation": {
-  "properties": {
-    "code":{
-      "example": 200
-    },
-    "errors": {
-      "required":true,
-      "type": "string",
-      "example": "false"
-    },
-    "data" :{
-      "example" :{
-        "id": "null",
-        "type": "users",
-        "attributes": {
-          "message": "Congratulation!, Your account has been activated."
-        }
-      }
-    }
-}
-},
-
-"resetpasswordhash":{
-  "properties": {
-    "code":{
-      "example": 202
-    },
-    "errors": {
-      "required":true,
-      "type": "string",
-      "example": "false"
-    },
-    "data" :{
-      "example" :{
-        "id": "your id",
-        "type": "users",
-        "attributes": {
-          "message": "Your password updated successfully."
-        }
-      }
-    }
-}
-},
-
-"getuserid" : {
-  "properties": {
-    "code":{
-      "example": 0
-    },
-    "message": {
-      "example": "Authorization successfully."
-    },
-    "data" :{
-      "example" :{
-        "user_id": 1
-      }
-    }
-}
-},
-
-"whitelist" : {
-  "properties": {
-    "code":{
-      "example": 202
-    },
-    "errors": {
-      "example": "false"
-    },
-    "data" :{
-      "example" :{
-        "id": "null",
-        "type": "users",
-        "attributes": {
-          "message": "Your IP address whitelisted Now you can able to login.."
-        }
-      }
-    }
-}
-},
-
-"deleteWhitList": {
-  "properties": {
-    "code":{
-      "example": 200
-    },
-    "errors": {
-      "example": "false"
-    },
-    "data" :{
-      "example" :{
-        "attributes":
-			  {
-				"browser": "Chrome",
-				"browser_version": "71.0.3578.11",
-				"os": "Linux"
-				}
-      }
-    }
-}
-},
-
-"devicehistory": {
-  "properties": {
-    "code":{
-      "example": 200
-    },
-    "errors": {
-      "example": "false"
-    },
-    "data" :{
-      "example" :{
-        "id": "5c908652f83b10002f0f7478",
-        "type": "devices",
-        "attributes": {
-          "data": [
-        ]
-        }
-      }
-    }
-}
-},
-
-"loginhistory" : {
-  "properties": {
-    "code":{
-      "example": 200
-    },
-    "errors": {
-      "example": "false"
-    },
-    "data" :{
-      "example" :{
-        "id": "5c908652f83b10002f0f7478",
-        "type": "loginHistory",
-        "attributes": {
-          "data": [
-        ]
-        }
-      }
-    }
-}
-},
-
-"logout": {
-  "properties": {
-    "code":{
-      "example": 200
-    },
-    "errors": {
-      "example": "false"
-    }
-
-  }
-},
-
-"refreshToken": {
-  "properties": {
-    "code":{
-      "example": 200
-    },
-    "errors": {
-      "example": "false"
-    }
-
-  }
-},
-
-"captchaslide" : {
-  "properties": {
-    "code":{
-      "example": 200
-    },
-    "errors": {
-      "example": "false"
-    },
-    "data" :{
-      "example" :{
-        "id": "",
-        "type": "users",
-        "example" :{
-          "attributes": {
-            "success": 1,
-                "challenge": "aa2943c240dd4a535ad24faeaed9fa00",
-                "gt": "91a05c40b919e5197ab228fc40f0a7f6",
-                "new_captcha": true
-          }
-        }
-      }
-    }
-}
-},
-
-"assets" : {
-  "properties": {
-    "code":{
-      "example": 404
-    },
-    "errors": {
-      "example": "false"
-    },
-    "data" :{
-      "example" :{
-        "id": "",
-        "type": "device",
-        "example" :{
-          "attributes": {
-            "message": ""
-          }
-        }
-      }
-    }
-}
-},
-"resendmail" : {
-  "properties": {
-    "lang": {
-      "required":true,
-      "type": "string",
-      "example": "en"
-    },
-    "data" :{
-      "example" :{
-        "id": "5c960beebd528c10aae89c15",
-        "attributes": {
-            "type": "registration"
-        }
-      }
-    }
-}
-},
-
-"g2f-verify" : {
-  "properties": {
-    "lang": {
-      "required":true,
-      "type": "string",
-      "example": "en"
-    },
-    "data" :{
-      "example" :{
-        "id":  "{{user_id}}",
-        "attributes": {
-          "google_secrete_key": "dsa31dsae2132",
-          "g2f_code": "1234567S"
-        }
-      }
-    }
-}
-},
-"g2f-settings" : {
-  "properties": {
-    "lang": {
-      "required":true,
-      "type": "string",
-      "example": "en"
-    },
-    "data" :{
-      "example" :{
-        "id":  "{{user_id}}",
-        "attributes": {
-            "google_auth": "true",
-            "g2f_code": "674145",
-            "password": "Temp!123"
-        }
-      }
-    }
-}
-},
-"settings" : {
-  "properties": {
-    "lang": {
-      "required":true,
-      "type": "string",
-      "example": "en"
-    },
-    "data" :{
-      "example" :{
-        "id":  "{{user_id}}",
-        "attributes": {
-          "anti_spoofing_code": "satz",
-          "anti_spoofing": "true"
-        }
-      }
-    }
-}
-},
-"disable" : {
-  "properties": {
-    "lang": {
-      "required":true,
-      "type": "string",
-      "example": "en"
-    },
-    "data" :{
-      "example" :{
-        "attributes": {
-          "id": "{{user_id}}",
-          "code": "a4a4592231744ef38a8c53b4355719f02dd28cadba505cd30574efbe61c597fbac22797e1b69238577044727d476b052cf81576ed10b18be2e2ccc0377a256f9"
-        }
-      }
-    }
-}
-},
-"400error" : {
-  "properties": {
-    "message": {
-      "type": "string",
-      "example" : "400 Bad Request"
-    }
-  }
-}
-
-  }
 }
