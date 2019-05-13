@@ -6,6 +6,8 @@ const Joi = require('joi');
 const users = require('../db/users');
 const coinAddressValidator = require('wallet-address-validator');
 const apiServices = require('../services/api');
+const config = require('config');
+const _ = require('underscore');
 
 
 class Wallet extends controller {
@@ -229,11 +231,46 @@ class Wallet extends controller {
     }
 
     async getAssetsBalance (req, res) {
-        let payloads = {};
-        payloads.user_id = req.user.user_id;
-        if (req.query.asset_code !== undefined ) payloads.asset = req.query.asset_code.toUpperCase();
+        let payloads = {}, assetNames;
+        payloads.user_id = 1 //req.user.user_id;
+        if (req.query.asset_code !== undefined ){
+            payloads.asset = req.query.asset_code.toUpperCase();
+            assetNames = config.get(`assets.${req.query.asset_code.toLowerCase()}`)
+        } else {
+            assetNames = 'beldex,bitcoin,ethereum,litecoin,bitcoin-cash,dash';
+        }
+
         let apiResponse = await apiServices.matchingEngineRequest('balance/query', payloads);
-        return res.json(apiResponse);
+        let marketResponse = await apiServices.marketPrice(assetNames);
+        let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse);
+        
+        return res.status(200).json(this.successFormat({
+            "data": formatedResponse
+        }, null, 'asset-balance', 200));
+    }
+
+    currencyConversion(matchResponse, marketResponse) {
+        let assetsJson = config.get('assets'), formatedAssetBalnce = {};
+        
+        for (let result in matchResponse) {
+            let btc = marketResponse.data[assetsJson[result.toLowerCase()]].btc;
+            let usd = marketResponse.data[assetsJson[result.toLowerCase()]].usd;
+
+            formatedAssetBalnce[result] = {
+                'available': {
+                    'balance': Number(matchResponse[result].available),
+                    'btc': matchResponse[result].available * btc,
+                    'usd': matchResponse[result].available * usd
+                },
+                'freeze': {
+                    'balance': Number(matchResponse[result].freeze),
+                    'btc': matchResponse[result].freeze * btc,
+                    'usd': matchResponse[result].freeze * usd
+                },
+            }
+        }
+
+        return formatedAssetBalnce;
     }
 }
 

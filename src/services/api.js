@@ -61,6 +61,10 @@ class Api extends Controller {
 
         return axiosResponse.data;
     }
+
+    async marketPrice(assetsName, convertTo = 'usd,btc') {
+        return await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${assetsName}&vs_currencies=${convertTo}`);
+    }
 }
 
 module.exports = new Api();
