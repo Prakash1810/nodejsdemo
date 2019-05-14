@@ -33,7 +33,9 @@ class Api extends Controller {
             results.forEach((result) => {
                 let data = {
                     "coin": result.asset_code.toLowerCase(),
-                    "user_id": user.user_id
+                    "user_id": user.user_id,
+                    "user": user._id,
+                    "asset": result._id
                 };
                 return this.axiosAPI(data)
             });
