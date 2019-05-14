@@ -141,7 +141,7 @@ router.get('/device-history', auth, (req, res) => {
 
 router.patch('/whitelist-ip/:hash', (req, res) => {
     try {
-        user.patchWhiteListIP(req, res);
+        return user.patchWhiteListIP(req, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

@@ -60,13 +60,12 @@
                 ]
             }
         },
-        "user/activation/{Hash}": {
+        "user/activation/{hash}": {
             "get": {
                 "tags": [
                     "users"
                 ],
                 "description": "Returns response based on hash key",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -90,7 +89,6 @@
                     "users"
                 ],
                 "description": "Returns login credentials correct or not",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -114,7 +112,6 @@
                     "users"
                 ],
                 "description": "send link to your registered email address",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -138,7 +135,6 @@
                     "users"
                 ],
                 "description": "Check correct hash",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -162,7 +158,6 @@
                     "users"
                 ],
                 "description": "Reset password",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -186,7 +181,6 @@
                     "users"
                 ],
                 "description": "Working IP check",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -210,7 +204,6 @@
                     "users"
                 ],
                 "description": "Get user id",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -234,7 +227,6 @@
                     "users"
                 ],
                 "description": "Get device history",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -258,7 +250,6 @@
                     "users"
                 ],
                 "description": "Get login history",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -282,7 +273,6 @@
                     "users"
                 ],
                 "description": "Get register slide",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -297,7 +287,6 @@
                     "users"
                 ],
                 "description": "Resend Mail",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -321,7 +310,6 @@
                     "users"
                 ],
                 "description": "g2f verify",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -352,7 +340,6 @@
                     "users"
                 ],
                 "description": "Get g2f settings",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -383,7 +370,6 @@
                     "users"
                 ],
                 "description": "Get user settings",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -407,7 +393,6 @@
                     "users"
                 ],
                 "description": "Get user settings",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
@@ -510,22 +495,10 @@
                     "wallet"
                 ],
                 "description": "Get wallet assets",
-                "operationId": "findById",
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "name": "Authorization",
-                        "in": "header",
-                        "description": "Assets",
-                        "required": true,
-                        "type": "string",
-                        "schema": {
-                            "$ref": "#/definitions/assets"
-                        }
-                    }
-                ]
+                "parameters": []
             }
         },
         "wallet/withdraw-address": {
@@ -617,6 +590,36 @@
                         "description": "Asset code \n *refers to <b>`wallet/assets`</b>",
                         "required": false,
                         "type": "string"
+                    }
+                ]
+            }
+        },
+        "wallet/asset-address": {
+            "post": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "User deposit address for asset wise",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "address",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/assetAddress"
+                        }
                     }
                 ]
             }
@@ -713,15 +716,7 @@
                     "type": "string",
                     "example": "false"
                 },
-                "data": {
-                    "example": {
-                        "id": "null",
-                        "type": "users",
-                        "attributes": {
-                            "message": "Congratulation!, Your account has been activated."
-                        }
-                    }
-                }
+                "data": {}
             }
         },
         "resetpasswordhash": {
@@ -1003,6 +998,22 @@
                             "asset": "5c94e142de2b7100085e5296",
                             "label": "Bitcoin",
                             "address": "16P71aQ1VzWuDNL3YBkii9hLGb923Fm7LY"
+                        }
+                    }
+                }
+            }
+        },
+        "assetAddress": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "asset": "5c94e142de2b7100085e5296"
                         }
                     }
                 }
