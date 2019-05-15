@@ -1,11 +1,4 @@
 {
-	"database": {
-		"database": "admin",
-		"host": "database",
-		"port": "27017",
-		"user": "root",
-		"password": "beldex123"
-	},
 	"encryption": {
 		"key": "encryptionKey"
 	},

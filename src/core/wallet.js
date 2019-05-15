@@ -112,7 +112,6 @@ class Wallet extends controller {
 
         // check address already exists
         let checkAddress = await withdrawAddress.findOne({
-            'user': req.user.user,
             'address': requestData.address
         });
 
