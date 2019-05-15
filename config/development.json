@@ -23,11 +23,11 @@
 		"version": "v1"
 	},
 	"wallet-api": {
-		"url": "http://857d72e0.ngrok.io",
+		"url": "http://35.185.71.25:1100",
 		"version": "v1"
 	},
 	"matching-engine-api": {
-		"url": "http://f17c132c.ngrok.io",
+		"url": "http://35.185.71.25:8000",
 		"version": "v1"
 	},
 	"assets": {
