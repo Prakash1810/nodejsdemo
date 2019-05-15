@@ -623,6 +623,74 @@
                     }
                 ]
             }
+        },
+        "wallet/transactions/deposit": {
+            "get": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "User transactons for deposit balance",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "page_no",
+                        "in": "query",
+                        "description": "Pange No: 1/2/.../10",
+                        "required": false,
+                        "type": "integet"
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Page Size: 5/10/15",
+                        "required": false,
+                        "type": "integet"
+                    }
+                ]
+            }
+        },
+        "wallet/transactions/witdraw": {
+            "get": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "User transactons for withdraw balance",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "page_no",
+                        "in": "query",
+                        "description": "Pange No: 1/2/.../10",
+                        "required": false,
+                        "type": "integet"
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Page Size: 5/10/15",
+                        "required": false,
+                        "type": "integet"
+                    }
+                ]
+            }
         }
     },
     "definitions": {

@@ -7,6 +7,8 @@ const users = require('../db/users');
 const coinAddressValidator = require('wallet-address-validator');
 const apiServices = require('../services/api');
 const config = require('config');
+const transactionHistory = require('../db/tranaction-history');
+
 
 
 class Wallet extends controller {
@@ -207,7 +209,7 @@ class Wallet extends controller {
                 asset: req.params.asset,
                 is_whitelist: (isWhitelist !== undefined) ? isWhitelist : false
             }, )
-            .select('-_id  address');
+            .select('-_id  address label is_whitelist');
 
         if (!data) {
             return res.status(404).json(this.errorMsgFormat({
@@ -271,6 +273,69 @@ class Wallet extends controller {
         }
 
         return formatedAssetBalnce;
+    }
+
+    async getTransactionsHistory(req, res) {
+        let typeParam = req.params.type;
+        if (typeParam !== undefined) {
+            let pageNo = parseInt(req.query.page_no)
+            let size = parseInt(req.query.size)
+            let query = {}
+
+            let payloads = {
+                type: (typeParam === 'withdraw') ? 1 : 2,
+                user: req.user.user
+            };
+
+            if (pageNo < 0 || pageNo === 0) {
+                return res.status(404).json(this.errorMsgFormat({
+                    "message": "invalid page number, should start with 1"
+                }))
+            }
+
+            query.skip = size * (pageNo - 1)
+            query.limit = size
+
+            // Find some documents
+            transactionHistory.countDocuments(payloads, (err, totalCount) => {
+                if (err) {
+                    return res.status(404).json(this.errorMsgFormat({
+                        "message": "No data found"
+                    }, 'address', 404))
+                } else {
+                    transactionHistory
+                        .find(payloads)
+                        .select('-_id  address amount final_amount date')
+                        .skip(query.skip)
+                        .limit(query.limit)
+                        .populate({
+                            path: 'asset',
+                            select: 'asset_name asset_code -_id'
+                        })
+                        .exec()
+                        .then((data) => {
+                            if (!data.length) {
+                                return res.status(404).json(this.errorMsgFormat({
+                                    "message": "No data found"
+                                }, 'transactions', 404));
+                            } else {
+                                var totalPages = Math.ceil(totalCount / size);
+                                return res.status(200).json(this.successFormat({
+                                    "data": data,
+                                    "pages": totalPages,
+                                    "totalCount": totalCount
+                                }, null, 'transactions', 200));
+                            }
+                        });
+                }
+            });
+        } else {
+            return res.status(200).json(this.successFormat({
+                "data": {
+                    'type': type
+                }
+            }, null, 'asset-balance', 200));
+        }
     }
 }
 
