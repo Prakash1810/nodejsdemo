@@ -1,22 +1,20 @@
 const mongoose   = require('mongoose');
-const config     = require('config');
-const user       = config.get('database.user');
-const password   = config.get('database.password');
-const host       = config.get('database.host');
-const port       = config.get('database.port');
-const database   = config.get('database.database');
+const dotenv     = require('dotenv');
+
+// init environment configuration
+dotenv.config();
 
 // set mongoose Promise to Bluebird
 mongoose.Promise = Promise;
 
 // Exit application on error
 mongoose.connection.on('error', (err) => {
-  // console.log(`MongoDB connection error: ${err}`);
-  // process.exit(-1);
+  console.log(`MongoDB connection error: ${err}`);
+  process.exit(-1);
 });
 
 // print mongoose logs in dev env
-if (process.env.NODE_ENV === 'development') {
+if (process.env.APP_ENV === 'development') {
   mongoose.set('debug', true);
 }
 
@@ -27,7 +25,7 @@ if (process.env.NODE_ENV === 'development') {
 * @public
 */
 exports.connect = () => {
-  mongoose.connect(`mongodb://${user}:${password}@${host}:${port}/${database}`, {
+  mongoose.connect(`mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`, {
     keepAlive: 1,
     useNewUrlParser: true,
     autoIndex: false
