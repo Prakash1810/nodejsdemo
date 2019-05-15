@@ -1,13 +1,23 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'), Schema = mongoose.Schema;
 
 const transHistorySchema = mongoose.Schema({
-    user_id: { type: Schema.Types.ObjectId, ref: 'Users' },
-    asset_id: { type: Schema.Types.ObjectId, ref: 'Assets' },
-    type: String,
+    user: { type: Schema.Types.ObjectId, ref: 'Users' },
+    asset: { type: Schema.Types.ObjectId, ref: 'assets' },
+    address: String,
+    type: Number,
     amount: Number,
-    status: String,
-    created_date: { type: Date, default: Date.now }
+    tx_hash: { type: String, default: null },
+    fee: { type: Number, default: null },
+    final_amount: { type: Number, default: null },
+    status: { type: Number, default: 1 },
+    date: { 
+        type: Date,
+        default: Date.now,
+        alias: 'created_date'
+    },
+    updated_date: Date,
+    is_deleted: { type: Boolean, default: false }
+
 });
 
-TransactionHistory = mongoose.model('transaction-history', transHistorySchema); 
-module.exports = TransactionHistory;
+module.exports = mongoose.model('transaction-history', transHistorySchema);

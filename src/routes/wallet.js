@@ -72,6 +72,14 @@ router.get('/balance', auth, (req, res) => {
     }
 });
 
-
+router.get('/transactions/:type', auth, (req, res) => {
+    try {
+       return wallet.getTransactionsHistory(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'wallet', 500));
+    }
+});
 
 module.exports = router;
