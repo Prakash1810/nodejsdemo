@@ -114,7 +114,8 @@ class Wallet extends controller {
 
         // check address already exists
         let checkAddress = await withdrawAddress.findOne({
-            'address': requestData.address
+            'address': requestData.address,
+            'is_deleted': false
         });
 
         if (checkAddress) {
@@ -139,6 +140,64 @@ class Wallet extends controller {
                     }, address._id));
                 }
             });
+        }
+    }
+
+    async patchWithdrawAddress(req, res) {
+        let requestData = req.body.data.attributes;
+        if (req.body.data.id !== undefined && requestData.is_whitelist !== undefined) {
+
+            // find and update the reccord
+            await withdrawAddress.findOneAndUpdate({
+                    _id: req.body.data.id
+                }, {
+                    $set: {
+                        is_whitelist: requestData.is_whitelist
+                    }
+                })
+                .then(result => {
+                    return res.status(202).send(this.successFormat({
+                        'message': 'Your request is updated successfully.'
+                    }, result._id, 'withdrawAddress', 202));
+                })
+                .catch(err => {
+                    return res.status(404).send(this.errorMsgFormat({
+                        'message': err.message
+                    }));
+                });
+        } else {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Invalid request.'
+            }, 'withdrawAddress', 400));
+        }
+    }
+
+    async deleteWithdrawAddress(req, res) {
+        let ID = req.params.id;
+        if (ID !== undefined) {
+
+            // find and update the reccord
+            await withdrawAddress.findOneAndUpdate({
+                    _id: ID
+                }, {
+                    $set: {
+                        is_deleted: true
+                    }
+                })
+                .then(result => {
+                    return res.status(202).send(this.successFormat({
+                        'message': 'Your requested record deletedd successfully.'
+                    }, result._id, 'withdrawAddress', 202));
+                })
+                .catch(err => {
+                    return res.status(404).send(this.errorMsgFormat({
+                        'message': err.message
+                    }));
+                });
+        } else {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Invalid request.'
+            }, 'withdrawAddress', 400));
         }
     }
 
@@ -170,7 +229,7 @@ class Wallet extends controller {
             } else {
                 withdrawAddress
                     .find(payloads)
-                    .select('-_id  address')
+                    .select('_id  address label is_whitelist')
                     .skip(query.skip)
                     .limit(query.limit)
                     .populate({

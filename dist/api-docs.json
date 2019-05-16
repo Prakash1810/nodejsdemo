@@ -564,6 +564,61 @@
                 }
                     
                 ]
+            },
+            "patch": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "Withdraw address with whitelist add / remove options",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Withdrawal patch update",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/patchWithdrawAddress"
+                        }
+                    }
+                ]
+            }
+        },
+        "wallet/withdraw-address/{id}": {
+            "delete": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "Withdraw address delete options",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Withdrawal address id",
+                        "required": true,
+                        "type": "string"
+                    }
+                ]
             }
         },
         "wallet/balance": {
@@ -1082,6 +1137,22 @@
                     "example": {
                         "attributes": {
                             "asset": "5c94e142de2b7100085e5296"
+                        }
+                    }
+                }
+            }
+        },
+        "patchWithdrawAddress": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "is_whitelist": true
                         }
                     }
                 }
