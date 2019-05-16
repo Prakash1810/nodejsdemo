@@ -234,7 +234,7 @@ class Wallet extends controller {
                     .limit(query.limit)
                     .populate({
                         path: 'asset',
-                        select: 'asset_name asset_code -_id'
+                        select: 'asset_name asset_code logo_url -_id'
                     })
                     .exec()
                     .then((data) => {
