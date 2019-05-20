@@ -19,7 +19,7 @@ class Wallet extends controller {
         let query = {}
 
         if (pageNo < 0 || pageNo === 0) {
-            return res.status(404).json(this.errorMsgFormat({
+            return res.status(400).json(this.errorMsgFormat({
                 "message": "invalid page number, should start with 1"
             }))
         }
@@ -32,17 +32,21 @@ class Wallet extends controller {
             is_suspend: false
         }, (err, totalCount) => {
             if (err) {
-                return res.status(404).json(this.errorMsgFormat({
-                    "message": "No data found"
-                }, 'assets', 404))
+                return res.status(200).json(this.successFormat({
+                    "data": [],
+                    "pages": 0,
+                    "totalCount": 0
+                }, null, 'assets', 200));
             } else {
                 assets.find({
                     is_suspend: false
                 }, '_id asset_name asset_code logo_url', query, (err, data) => {
                     if (err || !data.length) {
-                        return res.status(404).json(this.errorMsgFormat({
-                            "message": "No data found"
-                        }, 'assets', 404));
+                        return res.status(200).json(this.successFormat({
+                            "data": [],
+                            "pages": 0,
+                            "totalCount": 0
+                        }, null, 'assets', 200));
                     } else {
                         var totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
@@ -65,7 +69,7 @@ class Wallet extends controller {
             });
             if (!getAddress) {
                 return res.status(400).json(this.errorMsgFormat({
-                    "message": "No records found."
+                    "message": "Invalid request."
                 }, 'assets', 400));
             } else {
                 return res.status(200).json(this.successFormat({
@@ -161,9 +165,9 @@ class Wallet extends controller {
                     }, result._id, 'withdrawAddress', 202));
                 })
                 .catch(err => {
-                    return res.status(404).send(this.errorMsgFormat({
+                    return res.status(500).send(this.errorMsgFormat({
                         'message': err.message
-                    }));
+                    }, 'withdrawAddress', 500));
                 });
         } else {
             return res.status(400).send(this.errorMsgFormat({
@@ -190,9 +194,9 @@ class Wallet extends controller {
                     }, result._id, 'withdrawAddress', 202));
                 })
                 .catch(err => {
-                    return res.status(404).send(this.errorMsgFormat({
+                    return res.status(500).send(this.errorMsgFormat({
                         'message': err.message
-                    }));
+                    }, 'withdrawAddress', 500));
                 });
         } else {
             return res.status(400).send(this.errorMsgFormat({
@@ -212,7 +216,7 @@ class Wallet extends controller {
         };
 
         if (pageNo < 0 || pageNo === 0) {
-            return res.status(404).json(this.errorMsgFormat({
+            return res.status(400).json(this.errorMsgFormat({
                 "message": "invalid page number, should start with 1"
             }))
         }
@@ -223,9 +227,11 @@ class Wallet extends controller {
         // Find some documents
         withdrawAddress.countDocuments(payloads, (err, totalCount) => {
             if (err) {
-                return res.status(404).json(this.errorMsgFormat({
-                    "message": "No data found"
-                }, 'address', 404))
+                return res.status(200).json(this.successFormat({
+                    "data": [],
+                    "pages": 0,
+                    "totalCount": 0
+                }, null, 'withdrawAddress', 200));
             } else {
                 withdrawAddress
                     .find(payloads)
@@ -239,9 +245,11 @@ class Wallet extends controller {
                     .exec()
                     .then((data) => {
                         if (!data.length) {
-                            return res.status(404).json(this.errorMsgFormat({
-                                "message": "No data found"
-                            }, 'withdrawAddress', 404));
+                            return res.status(200).json(this.successFormat({
+                                "data": [],
+                                "pages": 0,
+                                "totalCount": 0
+                            }, null, 'withdrawAddress', 200));
                         } else {
                             var totalPages = Math.ceil(totalCount / size);
                             return res.status(200).json(this.successFormat({
@@ -271,9 +279,12 @@ class Wallet extends controller {
             .select('-_id  address label is_whitelist');
 
         if (!data) {
-            return res.status(404).json(this.errorMsgFormat({
-                "message": "No data found"
-            }, 'withdrawAddress', 404));
+            return res.status(200).json(this.successFormat({
+                "data": {
+                    'asset': req.params.asset,
+                    'address': []
+                }
+            }, null, 'withdrawAddress', 200));
         } else {
             let assetAddress = [];
             data.forEach((withdraw) => {
@@ -347,7 +358,7 @@ class Wallet extends controller {
             };
 
             if (pageNo < 0 || pageNo === 0) {
-                return res.status(404).json(this.errorMsgFormat({
+                return res.status(400).json(this.errorMsgFormat({
                     "message": "invalid page number, should start with 1"
                 }))
             }
@@ -358,9 +369,11 @@ class Wallet extends controller {
             // Find some documents
             transactionHistory.countDocuments(payloads, (err, totalCount) => {
                 if (err) {
-                    return res.status(404).json(this.errorMsgFormat({
-                        "message": "No data found"
-                    }, 'address', 404))
+                    return res.status(200).json(this.successFormat({
+                        "data": [],
+                        "pages": 0,
+                        "totalCount": 0
+                    }, null, 'transactions', 200));
                 } else {
                     transactionHistory
                         .find(payloads)
@@ -374,9 +387,11 @@ class Wallet extends controller {
                         .exec()
                         .then((data) => {
                             if (!data.length) {
-                                return res.status(404).json(this.errorMsgFormat({
-                                    "message": "No data found"
-                                }, 'transactions', 404));
+                                return res.status(200).json(this.successFormat({
+                                    "data": [],
+                                    "pages": 0,
+                                    "totalCount": 0
+                                }, null, 'transactions', 200));
                             } else {
                                 var totalPages = Math.ceil(totalCount / size);
                                 return res.status(200).json(this.successFormat({

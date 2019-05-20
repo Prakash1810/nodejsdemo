@@ -259,6 +259,7 @@ class User extends controller {
                 deviceMangement.findOne({
                     user: userID,
                     ip: req.body.data.attributes.ip,
+                    browser: req.body.data.attributes.browser,
                     verified: true,
                     is_deleted: false
                 })
@@ -270,6 +271,7 @@ class User extends controller {
                             let urlHash = this.encryptHash({
                                 "user_id": userID,
                                 "ip": req.body.data.attributes.ip,
+                                "browser": req.body.data.attributes.browser,
                                 "verified": true
                             });
 
@@ -378,7 +380,7 @@ class User extends controller {
         let size = parseInt(req.query.size)
         let query = {}
         if (pageNo < 0 || pageNo === 0) {
-            return res.status(404).json(this.errorMsgFormat({
+            return res.status(400).json(this.errorMsgFormat({
                 "message": "invalid page number, should start with 1"
             }))
         }
@@ -393,9 +395,11 @@ class User extends controller {
             user: userID
         }, (err, totalCount) => {
             if (err) {
-                return res.status(404).json(this.errorMsgFormat({
-                    "message": "No data found"
-                }, 'loginHistory', 404))
+                return res.status(200).json(this.successFormat({
+                    "data": [],
+                    "pages": 0,
+                    "totalCount": 0
+                }, userID, 'loginHistory', 200));
             } else {
                 loginHistory
                     .find({
@@ -411,9 +415,11 @@ class User extends controller {
                     .exec()
                     .then((data) => {
                         if (!data.length) {
-                            return res.status(404).json(this.errorMsgFormat({
-                                "message": "No data found"
-                            }, 'loginHistory', 404));
+                            return res.status(200).json(this.successFormat({
+                                "data": [],
+                                "pages": 0,
+                                "totalCount": 0
+                            }, userID, 'loginHistory', 200));
                         } else {
                             var totalPages = Math.ceil(totalCount / size);
                             return res.status(200).json(this.successFormat({
@@ -432,7 +438,7 @@ class User extends controller {
         let size = parseInt(req.query.size)
         let query = {}
         if (pageNo < 0 || pageNo === 0) {
-            return res.status(404).json(this.errorMsgFormat({
+            return res.status(400).json(this.errorMsgFormat({
                 "message": "invalid page number, should start with 1"
             }))
         }
@@ -447,18 +453,22 @@ class User extends controller {
             user: userID
         }, (err, totalCount) => {
             if (err) {
-                return res.status(404).json(this.errorMsgFormat({
-                    "message": "No data found"
-                }, 'device', 404))
+                return res.status(200).json(this.successFormat({
+                    "data": [],
+                    "pages": 0,
+                    "totalCount": 0
+                }, userID, 'device', 200));
             } else {
                 deviceMangement.find({
                     user: userID,
                     is_deleted: false
                 }, '-_id -__v -user', query, (err, data) => {
                     if (err || !data.length) {
-                        return res.status(404).json(this.errorMsgFormat({
-                            "message": "No data found"
-                        }, 'device', 404));
+                        return res.status(200).json(this.successFormat({
+                            "data": [],
+                            "pages": 0,
+                            "totalCount": 0
+                        }, userID, 'device', 200));
                     } else {
                         var totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
@@ -501,18 +511,19 @@ class User extends controller {
             if (checkExpired) {
                 deviceMangement.findOne({
                     ip: deviceHash.data.ip,
+                    browser: deviceHash.data.browser,
                     user: deviceHash.data.user_id
                 })
-                    .exec()
-                    .then((result) => {
-                        if (!result) {
-                            return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Invalid token. may be token as expired!'
-                            }));
-                        } else {
-                            this.updateWhiteListIP(deviceHash, res);
-                        }
-                    });
+                .exec()
+                .then((result) => {
+                    if (!result) {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Invalid token. may be token as expired!'
+                        }));
+                    } else {
+                        this.updateWhiteListIP(deviceHash, res);
+                    }
+                });
             } else {
                 return res.status(404).send(this.errorMsgFormat({
                     'message': 'invalid token or token is expired.'
@@ -530,7 +541,8 @@ class User extends controller {
         // find and update the reccord
         deviceMangement.updateMany({
             'ip': hash.data.ip,
-            'user': hash.data.user_id
+            'browser': hash.data.browser,
+            'user': hash.data.user_id,
         }, {
                 verified: hash.data.verified
             }, (err, device) => {
@@ -585,9 +597,9 @@ class User extends controller {
                     }, result._id, 'users', 202));
                 })
                 .catch(err => {
-                    return res.status(404).send(this.errorMsgFormat({
+                    return res.status(500).send(this.errorMsgFormat({
                         'message': err.message
-                    }));
+                    }, 'users', 500));
                 });
         } else {
             return res.status(400).send(this.errorMsgFormat({
