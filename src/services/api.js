@@ -16,7 +16,7 @@ class Api extends Controller {
             data.disable_code = helpers.encrypt(disableData);
         }
 
-        axios.post(`${config.get("notification-api.url")}/api/${config.get('notification-api.version')}/email-notification`, this.requestDataFormat(data))
+        axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
             .then((res) => {})
             .catch((err) => {
                 throw (err.message)
@@ -47,7 +47,7 @@ class Api extends Controller {
 
     axiosAPI(data) {
         axios.post(
-            `${config.get("wallet-api.url")}/api/${config.get('wallet-api.version')}/address/generate`, this.requestDataFormat(data)
+            `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {
             if (axiosResponse.data !== undefined) return axiosResponse.data;
         }).catch(axiosError => {
@@ -58,7 +58,7 @@ class Api extends Controller {
 
     async matchingEngineRequest(method, data) {
         let axiosResponse = await axios.post(
-            `${config.get("matching-engine-api.url")}/api/${config.get('matching-engine-api.version')}/${method}`, this.requestDataFormat(data)
+            `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${method}`, this.requestDataFormat(data)
         );
 
         return axiosResponse.data;

@@ -25,7 +25,7 @@ if (process.env.APP_ENV === 'development') {
 * @public
 */
 exports.connect = () => {
-  mongoose.connect(`mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`, {
+  mongoose.connect(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`, {
     keepAlive: 1,
     useNewUrlParser: true,
     autoIndex: false
