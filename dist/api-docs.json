@@ -701,14 +701,14 @@
                         "in": "query",
                         "description": "Pange No: 1/2/.../10",
                         "required": false,
-                        "type": "integet"
+                        "type": "integer"
                     },
                     {
                         "name": "size",
                         "in": "query",
                         "description": "Page Size: 5/10/15",
                         "required": false,
-                        "type": "integet"
+                        "type": "integer"
                     }
                 ]
             }
@@ -735,14 +735,14 @@
                         "in": "query",
                         "description": "Pange No: 1/2/.../10",
                         "required": false,
-                        "type": "integet"
+                        "type": "integer"
                     },
                     {
                         "name": "size",
                         "in": "query",
                         "description": "Page Size: 5/10/15",
                         "required": false,
-                        "type": "integet"
+                        "type": "integer"
                     }
                 ]
             }
