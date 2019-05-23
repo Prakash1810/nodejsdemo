@@ -304,7 +304,7 @@ class Wallet extends controller {
     async getAssetsBalance(req, res) {
         let payloads = {},
             assetNames;
-        payloads.user_id = 1 //req.user.user_id;
+        payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
             payloads.asset = req.query.asset_code.toUpperCase();
             assetNames = config.get(`assets.${req.query.asset_code.toLowerCase()}`)
