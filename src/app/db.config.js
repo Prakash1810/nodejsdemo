@@ -13,8 +13,8 @@ mongoose.connection.on('error', (err) => {
   process.exit(-1);
 });
 
-// print mongoose logs in dev env
-if (process.env.APP_ENV === 'development') {
+// print mongoose logs in debug env
+if (process.env.DEBUG === 'true') {
   mongoose.set('debug', true);
 }
 

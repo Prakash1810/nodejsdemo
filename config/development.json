@@ -22,8 +22,10 @@
 		"bdx": "beldex",
 		"btc": "bitcoin",
 		"eth": "ethereum",
+		"etc": "ethereum-clasic",
 		"ltc": "litecoin",
 		"bch": "bitcoin-cash",
-		"dash": "dash"
+		"dash": "dash",
+		"doge": "dogecoin"
 	}
 }
