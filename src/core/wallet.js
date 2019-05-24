@@ -102,7 +102,16 @@ class Wallet extends controller {
 
     async coinAddressValidate(address, asset) {
         let getAsset = await assets.findById(asset);
-        return coinAddressValidator.validate(address, getAsset.asset_code.toLowerCase());
+        if (getAsset) {
+            let asset_code = getAsset.asset_code;
+
+            // check if bdx
+            if ( asset_code.toLowerCase() === 'bdx' )  return true;
+        
+            return coinAddressValidator.validate(address, asset_code.toLowerCase());
+        } else {
+            return false;
+        }
     }
 
     async postWithdrawAddress(req, res) {
