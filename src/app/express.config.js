@@ -38,14 +38,15 @@ app.use(`/api/${config.get('site.version')}`, cors() , (req, res, next) => {
 
   lang = new i18n(requestedLang, `./../../lang/${requestedLang}.json`);
 
-  AuditLog.collection.insert({
-    user_id : (req.body.data.user_id !== undefined) ? req.body.data.user_id : '',
-    request: req.body,
-    response: null,
-    path: req.path,
-    ip_address: req.body.data.attributes.ip
-  });
-    
+  if( Object.keys(req.body).length !== 0 ) {
+    AuditLog.collection.insert({
+      user_id : (req.body.data.user_id !== undefined) ? req.body.data.user_id : '',
+      request: req.body,
+      response: null,
+      path: req.path,
+      ip_address: req.body.data.attributes.ip
+    });
+  } 
   next();
   }, routes);
 
