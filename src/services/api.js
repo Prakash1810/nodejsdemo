@@ -32,7 +32,7 @@ class Api extends Controller {
 
             results.forEach((result) => {
                 let data = {
-                    "coin": result.asset_code.toLowerCase(),
+                    "coin": result.asset_code.toUpperCase(),
                     "user_id": user.user_id,
                     "user": user._id,
                     "asset": result._id

@@ -19,7 +19,7 @@ var options = {
 };
 
 // instantiate a new Winston Logger with the settings defined above
-new winston.createLogger({
+module.exports = new winston.createLogger({
   transports: [
     new winston.transports.File(options.file),
     new winston.transports.Console(options.console)
