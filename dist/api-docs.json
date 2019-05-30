@@ -9,7 +9,7 @@
             "email": "sathish.kumar@beldex.org"
         }
     },
-    "host": "35.185.71.25:3000",
+    "host": "coreapialpha.beldex.io",
     "basePath": "/api/v1/",
     "tags": [
         {
@@ -28,7 +28,7 @@
         }
     ],
     "schemes": [
-        "http"
+        "https"
     ],
     "consumes": [
         "application/json"
@@ -170,6 +170,29 @@
                         "type": "string",
                         "schema": {
                             "$ref": "#/definitions/resetpassword"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/change-password": {
+            "patch": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Change password",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "JSON data",
+                        "in": "body",
+                        "description": "Change password",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/changepassword"
                         }
                     }
                 ]
@@ -822,6 +845,25 @@
                     "example": {
                         "id": "5c90dd8e6410cd0378d8fd7e",
                         "attributes": {
+                            "password": "tesR123456",
+                            "password_confirmation": "tesR123456"
+                        }
+                    }
+                }
+            }
+        },
+        "changepassword": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c90dd8e6410cd0378d8fd7e",
+                        "attributes": {
+                            "old_password":"1234567S",
                             "password": "tesR123456",
                             "password_confirmation": "tesR123456"
                         }

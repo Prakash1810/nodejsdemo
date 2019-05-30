@@ -412,6 +412,7 @@ class User extends controller {
                         path: 'device',
                         select: '-_id -user -created_date -__v'
                     })
+                    .sort({ _id: 'desc' })
                     .exec()
                     .then((data) => {
                         if (!data.length) {

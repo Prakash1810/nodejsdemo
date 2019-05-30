@@ -1,6 +1,6 @@
 const mongoose = require('mongoose'), Schema = mongoose.Schema;
 
-const transHistorySchema = mongoose.Schema({
+const transactionSchema = mongoose.Schema({
     user: { type: Schema.Types.ObjectId, ref: 'Users' },
     asset: { type: Schema.Types.ObjectId, ref: 'assets' },
     address: String,
@@ -20,4 +20,4 @@ const transHistorySchema = mongoose.Schema({
 
 });
 
-module.exports = mongoose.model('transaction-history', transHistorySchema);
+module.exports = mongoose.model('transaction', transactionSchema);

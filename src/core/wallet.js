@@ -7,7 +7,8 @@ const users = require('../db/users');
 const coinAddressValidator = require('wallet-address-validator');
 const apiServices = require('../services/api');
 const config = require('config');
-const transactionHistory = require('../db/tranaction-history');
+const _ = require('lodash');
+const transactions = require('../db/tranactions');
 
 
 
@@ -106,8 +107,8 @@ class Wallet extends controller {
             let asset_code = getAsset.asset_code;
 
             // check if bdx
-            if ( asset_code.toLowerCase() === 'bdx' )  return true;
-        
+            if (asset_code.toLowerCase() === 'bdx') return true;
+
             return coinAddressValidator.validate(address, asset_code.toLowerCase());
         } else {
             return false;
@@ -318,7 +319,7 @@ class Wallet extends controller {
             payloads.asset = req.query.asset_code.toUpperCase();
             assetNames = config.get(`assets.${req.query.asset_code.toLowerCase()}`)
         } else {
-            assetNames = 'beldex,bitcoin,ethereum,litecoin,bitcoin-cash,dash';
+            assetNames = _.values(_.reverse(config.get(`assets`))).join(',');
         }
 
         let apiResponse = await apiServices.matchingEngineRequest('balance/query', payloads);
@@ -377,7 +378,7 @@ class Wallet extends controller {
             query.limit = size
 
             // Find some documents
-            transactionHistory.countDocuments(payloads, (err, totalCount) => {
+            transactions.countDocuments(payloads, (err, totalCount) => {
                 if (err) {
                     return res.status(200).json(this.successFormat({
                         "data": [],
@@ -385,7 +386,7 @@ class Wallet extends controller {
                         "totalCount": 0
                     }, null, 'transactions', 200));
                 } else {
-                    transactionHistory
+                    transactions
                         .find(payloads)
                         .select('-_id  address amount final_amount date')
                         .skip(query.skip)
@@ -419,6 +420,103 @@ class Wallet extends controller {
                     'type': type
                 }
             }, null, 'asset-balance', 200));
+        }
+    }
+
+    postWithdrawValidation(req) {
+        let schema = Joi.object().keys({
+            asset: Joi.string().required(),
+            amount: Joi.number().positive().required()
+        });
+
+        return Joi.validate(req, schema, {
+            abortEarly: false,
+            language: {
+                escapeHtml: true
+            }
+        });
+    }
+
+    async withdrawValidate(requestData) {
+        let getAsset = await assets.findById(requestData.asset);
+        let amount = Number(requestData.amount)
+        if (getAsset) {
+            if (getAsset.is_suspend) {
+                return {
+                    status: false,
+                    type: 'suspend'
+                };
+            } else if (getAsset.minimum_withdraw > amount || getAsset.maximum_withdraw < amount) {
+                return {
+                    status: false,
+                    type: 'balance'
+                };
+            } else {
+                let payloads = {};
+                payloads.user_id = 1 //req.user.user_id;
+                payloads.asset = getAsset.asset_code.toUpperCase();
+
+                let apiResponse = await apiServices.matchingEngineRequest('balance/query', payloads);
+                let available = apiResponse.data.attributes[payloads.asset].available
+                if (available !== undefined && amount < available) {
+                    return {
+                        status: true
+                    };
+                } else {
+                    return {
+                        status: false,
+                        type: 'balance'
+                    };
+                }
+            }
+        } else {
+            return {
+                status: false,
+                type: 'invalid'
+            };
+        }
+    }
+
+    async postWithdraw(req, res) {
+        let requestData = req.body.data.attributes;
+        if (req.body.data.id !== undefined || requestData.asset != undefined) {
+            let validateWithdraw = await this.withdrawValidate(requestData);
+            if (validateWithdraw.status) {
+                let withdraw = await withdrawAddress.findOne({ '_id': req.body.data.id, 'asset': requestData.asset });
+                if (withdraw.address !== undefined) {
+                    let data = {
+                        user: req.user.user,
+                        asset: requestData.asset,
+                        address: withdraw.address,
+                        type: 1,
+                        amount: requestData.amount,
+                        final_amount: requestData.amount,
+                        status: 4,
+                    }
+
+                    let trans = await new transactions(data).save();
+                    return res.status(200).json(trans);
+                } else {
+                    return res.status(400).json(this.errorMsgFormat({
+                        "message": "invalid address id"
+                    }, 'withdraw'));
+                }
+            } else {
+                let msg = 'Invalid request';
+                if (validateWithdraw.type === 'balance') {
+                    msg = 'Your balance is too low Please check.'
+                } else if(validateWithdraw.type === 'suspend') {
+                    msg = 'This coin has suspended. Please contact support@beldex.io'
+                }
+
+                return res.status(400).json(this.errorMsgFormat({
+                    "message": msg
+                }, 'withdraw'));
+            }
+        } else {
+            return res.status(400).json(this.errorMsgFormat({
+                "message": "invalid request"
+            }, 'withdraw'));
         }
     }
 }

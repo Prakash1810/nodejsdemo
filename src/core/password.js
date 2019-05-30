@@ -153,13 +153,6 @@ class Password extends Controller {
 
     changePasswordValidate (req) {
         let schema = Joi.object().keys({
-            id: Joi.string().required().options({
-                language:{
-                    string:{
-                        required: '{{label}} field is required'
-                    }
-                }
-            }).label('id'),
             old_password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
                 language:{
                     string:{
