@@ -3,6 +3,7 @@ const config = require('config');
 const Controller = require('../core/controller');
 const helpers = require('../helpers/helper.functions');
 const assets = require('../db/assets');
+const controller = new Controller;
 
 class Api extends Controller {
 
@@ -17,7 +18,7 @@ class Api extends Controller {
         }
 
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
-            .then((res) => {})
+            .then((res) => { })
             .catch((err) => {
                 throw (err.message)
             });
@@ -51,17 +52,50 @@ class Api extends Controller {
         ).then(axiosResponse => {
             if (axiosResponse.data !== undefined) return axiosResponse.data;
         }).catch(axiosError => {
-            console.log(axiosError)
             if (axiosError.response !== undefined) throw (axiosError.response)
         });
     }
 
-    async matchingEngineRequest(method, data) {
-        let axiosResponse = await axios.post(
-            `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${method}`, this.requestDataFormat(data)
-        );
+    async matchingEngineGetRequest(path, res) {
 
-        return axiosResponse.data;
+        let axiosResponse = await axios['get'](
+            `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`);
+        let result = axiosResponse.data;
+        if (result.status) {
+            return res.status(200).send(controller.successFormat(result.result.result, result.result.id))
+        }
+        else {
+            return res.status(result.errorCode).send(controller.errorMsgFormat({
+                'message': result.error
+            }, 'order-matching', result.errorCode));
+        }
+    }
+    async matchingEngineQueryRequest(path, data, res) {
+        let value = Object.values(data);
+        let axiosResponse = await axios.get(
+            `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}?${Object.keys(data)}=${value[0]}`);
+        let result = axiosResponse.data;
+        if (result.status) {
+            return res.status(200).send(controller.successFormat(result.result.result, result.result.id))
+        }
+        else {
+            return res.status(result.errorCode).send(controller.errorMsgFormat({
+                'message': result.error
+            }, 'order-matching', result.errorCode));
+        }
+    }
+    async matchingEngineRequest(method, path, data, res) {
+        const axiosResponse = await axios[method](
+            `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
+        const result = axiosResponse.data;
+        if (result.status) {
+            return res.status(200).send(controller.successFormat(result.result.result, result.result.id));
+        }
+        else {
+            return res.status(result.errorCode).send(controller.errorMsgFormat({
+                'message': result.error
+            }, 'order-matching', result.errorCode));
+        }
     }
 
     async marketPrice(assetsName, convertTo = 'usd,btc') {
