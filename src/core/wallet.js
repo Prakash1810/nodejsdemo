@@ -1,3 +1,4 @@
+const moment = require('moment');
 const controller = require('../core/controller');
 const assets = require('../db/assets');
 const userAddress = require('../db/user-address');
@@ -8,9 +9,12 @@ const coinAddressValidator = require('wallet-address-validator');
 const apiServices = require('../services/api');
 const config = require('config');
 const _ = require('lodash');
-const transactions = require('../db/tranactions');
+const transactions = require('../db/transactions');
+const beldexNotification = require('../db/beldex-notifications');
+const mongoose = require('mongoose');
+const Fawn = require("fawn");
 
-
+Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
 
 class Wallet extends controller {
 
@@ -322,7 +326,7 @@ class Wallet extends controller {
             assetNames = _.values(_.reverse(config.get(`assets`))).join(',');
         }
 
-        let apiResponse = await apiServices.matchingEngineRequest('balance/query', payloads);
+        let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse);
 
@@ -426,7 +430,8 @@ class Wallet extends controller {
     postWithdrawValidation(req) {
         let schema = Joi.object().keys({
             asset: Joi.string().required(),
-            amount: Joi.number().positive().required()
+            amount: Joi.number().positive().required(),
+            ip: Joi.string().required()
         });
 
         return Joi.validate(req, schema, {
@@ -437,7 +442,8 @@ class Wallet extends controller {
         });
     }
 
-    async withdrawValidate(requestData) {
+    async withdrawValidate(req, res) {
+        let requestData = req.body.data.attributes;
         let getAsset = await assets.findById(requestData.asset);
         let amount = Number(requestData.amount)
         if (getAsset) {
@@ -453,10 +459,10 @@ class Wallet extends controller {
                 };
             } else {
                 let payloads = {};
-                payloads.user_id = 1 //req.user.user_id;
+                payloads.user_id = req.user.user_id;
                 payloads.asset = getAsset.asset_code.toUpperCase();
 
-                let apiResponse = await apiServices.matchingEngineRequest('balance/query', payloads);
+                let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available
                 if (available !== undefined && amount < available) {
                     return {
@@ -480,22 +486,33 @@ class Wallet extends controller {
     async postWithdraw(req, res) {
         let requestData = req.body.data.attributes;
         if (req.body.data.id !== undefined || requestData.asset != undefined) {
-            let validateWithdraw = await this.withdrawValidate(requestData);
+            let validateWithdraw = await this.withdrawValidate(req, res);
             if (validateWithdraw.status) {
-                let withdraw = await withdrawAddress.findOne({ '_id': req.body.data.id, 'asset': requestData.asset });
+                let withdraw = await withdrawAddress.findOne({
+                    '_id': req.body.data.id,
+                    'asset': requestData.asset
+                });
                 if (withdraw.address !== undefined) {
-                    let data = {
-                        user: req.user.user,
-                        asset: requestData.asset,
-                        address: withdraw.address,
-                        type: 1,
-                        amount: requestData.amount,
-                        final_amount: requestData.amount,
-                        status: 4,
+                    try {
+                        let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
+                        let data = {
+                            user: req.user.user,
+                            asset: requestData.asset,
+                            address: withdraw.address,
+                            type: 1,
+                            amount: requestData.amount,
+                            ip: requestData.ip,
+                            final_amount: requestData.amount,
+                            status: 4,
+                            created_date: timeNow
+                        };
+                        let returnId = await this.insertNotification(data);
+                        return res.status(200).json(this.successFormat({
+                            'message': 'Your withdrawal request posted successfully. Waiting for your confirmation. Please check your email'
+                        }, returnId, 'withdraw', 200));
+                    } catch (err) {
+                        return res.status(500).send(err.message);
                     }
-
-                    let trans = await new transactions(data).save();
-                    return res.status(200).json(trans);
                 } else {
                     return res.status(400).json(this.errorMsgFormat({
                         "message": "invalid address id"
@@ -505,7 +522,7 @@ class Wallet extends controller {
                 let msg = 'Invalid request';
                 if (validateWithdraw.type === 'balance') {
                     msg = 'Your balance is too low Please check.'
-                } else if(validateWithdraw.type === 'suspend') {
+                } else if (validateWithdraw.type === 'suspend') {
                     msg = 'This coin has suspended. Please contact support@beldex.io'
                 }
 
@@ -518,6 +535,126 @@ class Wallet extends controller {
                 "message": "invalid request"
             }, 'withdraw'));
         }
+    }
+    async insertNotification(data) {
+        let asset = await assets.findById(data.asset),
+            transactions = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date']),
+            fawnResults = await Fawn.Task()
+            .save('transactions', transactions)
+            .save('beldex-notifications', {
+                user: new mongoose.Types.ObjectId(transactions.user),
+                type: 1,
+                notify_type: 'withdrawConfirmation',
+                notify_data: null,
+                status: 1,
+                created_date: transactions.created_date
+            })
+            .run();
+
+        let notifyId = fawnResults[1].insertedId,
+            transactionsId = fawnResults[0].insertedId,
+            emailData = {
+                user_id: new mongoose.Types.ObjectId(transactions.user),
+                verification_code: notifyId,
+                amount: transactions.amount,
+                asset_code: asset.asset_code,
+                address: transactions.address,
+                ip: data.ip,
+                time: data.created_date
+            };
+        await Fawn.Task()
+            .update('beldex-notifications', {
+                '_id': notifyId
+            }, {
+                'notify_data': {
+                    'transactions': transactionsId,
+                    'email_data': emailData
+                }
+            }).run();
+
+        // send an confirmation notification
+        this.sendWithdrawNotification(emailData);
+        return notifyId;
+    }
+
+    sendWithdrawNotification(data) {
+        let serviceData = {
+            "subject": `Confirm Your Withdraw Request From ${data.ip} ( ${data.time} )`,
+            "email_for": "wallet-withdraw",
+            "user_id": data.user_id,
+            'amount': data.amount,
+            'asset_code': data.asset_code,
+            'address': data.address,
+            'verification_code': data.verification_code
+        };
+
+        return apiServices.sendEmailNotification(serviceData);
+    }
+
+    patchWithdrawConfirmationValidation(req) {
+        let schema = Joi.object().keys({
+            verification_code: Joi.string().required(),
+            accept: Joi.boolean().required()
+        });
+
+        return Joi.validate(req, schema, {
+            abortEarly: false,
+            language: {
+                escapeHtml: true
+            }
+        });
+    }
+
+    async patchWithdrawConfirmation(req, res) {
+        let requestData = req.body.data.attributes;
+        if (requestData.verification_code !== undefined && requestData.verification_code !== null && requestData.accept !== undefined && requestData.accept !== null) {
+            let notify = await beldexNotification.findOne({
+                _id: requestData.verification_code
+            });
+            if (notify.status === 1) {
+
+                // update the details to matching engine and transactions
+                this.updateWithdrawRequest(notify, req, res)
+
+                return res.status(200).json(this.errorMsgFormat({
+                    "message": "Your confirmation request processed successfully."
+                }, 'withdraw'));
+            } else {
+                return res.status(400).json(this.errorMsgFormat({
+                    "message": "This request alreay processed."
+                }, 'withdraw'));
+            }
+        } else {
+            return res.status(400).json(this.errorMsgFormat({
+                "message": "invalid request"
+            }, 'withdraw'));
+        }
+    }
+
+    async updateWithdrawRequest(withdraw, req, res) {
+        let requestData = req.body.data.attributes;
+
+        // change the withdraw notificaiton status
+        withdraw.status = 2;
+        withdraw.save();
+
+        // update the transaction status
+        let transaction = await transactions.findByIdAndUpdate(withdraw.notify_data.transactions, {
+            $set: {
+                status: 2
+            }
+        }).populate('asset');
+        let asset = transaction.asset;
+        let payloads = {
+            "user_id": req.user.user_id,
+            "asset": asset.asset_code,
+            "business": (requestData.accept) ? "withdraw" : "deposit",
+            "business_id": Math.floor(Math.random() * Math.floor(10000000)),
+            "change": (requestData.accept) ? -transaction.amount : transaction.amount,
+            "detial": {}
+        }
+        let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+        console.log(response)
     }
 }
 

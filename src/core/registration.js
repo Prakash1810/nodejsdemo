@@ -104,13 +104,12 @@ class Registration extends Controller {
     
     resendEmail (req, res) {
         let requestedData = req.body.data.attributes;
-
         if ( requestedData.id !== undefined ) {
             if ( requestedData.type === 'registration' ) {
                 UserTemp.findById(requestedData.id).exec()
                     .then((user) => {
                         if (user === null) {
-                            return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid requested.' }));
+                            return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }));
                         } else {
 
                             // send activation email
@@ -121,10 +120,10 @@ class Registration extends Controller {
                             }, user._id));
                         }
                     });
-            } else if (requestedData.type === 'forget-passwod' ) {
+            } else if (requestedData.type === 'forget-password') {
                 return password.sendResetLink(req, res);
             } else {
-                return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }));
+                return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid type request.' }));
             }
         } else {
             return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }));
