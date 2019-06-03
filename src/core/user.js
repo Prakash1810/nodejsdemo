@@ -238,12 +238,11 @@ class User extends controller {
                 this.sendNotification({
                     'ip': req.body.data.attributes.ip,
                     'time': timeNow,
-                    'to_email': req.body.data.attributes.email,
                     'browser': req.body.data.attributes.browser,
                     'browser_version': req.body.data.attributes.browser_version,
                     'os': req.body.data.attributes.os,
-                    'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code
                 });
+
                 let tokens = await this.storeToken(user,loginHistory._id)
                 return res.status(200).send(this.successFormat({
                     "token": tokens.accessToken,
@@ -277,14 +276,12 @@ class User extends controller {
 
                             // send email notification
                             this.sendNotificationForAuthorize({
-                                "to_email": req.body.data.attributes.email,
                                 "subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
                                 "email_for": "user-authorize",
                                 "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`,
                                 "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`,
                                 "ip": req.body.data.attributes.ip,
                                 "hash": urlHash,
-                                'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code,
                                 "user_id": user._id
                             })
                             return res.status(401).send(this.errorMsgFormat({
@@ -301,13 +298,11 @@ class User extends controller {
                             this.sendNotification({
                                 'ip': req.body.data.attributes.ip,
                                 'time': timeNow,
-                                'to_email': req.body.data.attributes.email,
                                 'browser': req.body.data.attributes.browser,
                                 'browser_version': req.body.data.attributes.browser_version,
-                                'os': req.body.data.attributes.os,
-                                'anti_spoofing_code': (user.anti_spoofing_code === null) ? false : user.anti_spoofing_code,
-                                "disableAccount": user._id
+                                'os': req.body.data.attributes.os
                             });
+
                             let tokens = await this.storeToken(user,loginHistory._id)
                             return res.status(200).send(this.successFormat({
                                 "token": tokens.accessToken,
@@ -326,23 +321,21 @@ class User extends controller {
 
     // send email notification to the authorize device
     sendNotificationForAuthorize(data) {
-        apiServices.sendEmailNotification(data);
+        return apiServices.sendEmailNotification(data);
     }
 
     // send email notification to the registered user
     sendNotification(data) {
         let serviceData = {
-            "to_email": data.to_email,
             "subject": `Successful Login From New IP ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
             "email_for": "user-login",
             "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
             "time": data.time,
             "ip": data.ip,
-            'anti_spoofing_code': data.anti_spoofing_code,
             "user_id": data.user_id
         };
 
-        apiServices.sendEmailNotification(serviceData);
+        return apiServices.sendEmailNotification(serviceData);
     }
 
     insertDevice(req, userID, verify = false, cb) {
@@ -746,7 +739,6 @@ class User extends controller {
 
     async logout(user) {
         try {
-
             const logout = await loginHistory.findOneAndUpdate({
                 user: user.user,
                 logout_status: 1,

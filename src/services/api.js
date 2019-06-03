@@ -1,13 +1,13 @@
 const axios = require('axios');
-const config = require('config');
 const Controller = require('../core/controller');
 const helpers = require('../helpers/helper.functions');
 const assets = require('../db/assets');
+const users = require('../db/users');
 const controller = new Controller;
 
 class Api extends Controller {
 
-    sendEmailNotification(data) {
+    async sendEmailNotification(data) {
         if (data.email_for !== 'registration') {
             let disableData = JSON.stringify({
                 'user_id': data.user_id,
@@ -15,10 +15,16 @@ class Api extends Controller {
             });
 
             data.disable_code = helpers.encrypt(disableData);
+
+            let user = await users.findById(data.user_id);
+            data.to_email = user.email
+            data.anti_spoofing_code = (user.anti_spoofing) ? user.anti_spoofing_code : false
         }
 
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
-            .then((res) => { })
+            .then((res) => {
+                console.log(res.data);
+            })
             .catch((err) => {
                 throw (err.message)
             });
@@ -57,19 +63,18 @@ class Api extends Controller {
     }
 
     async matchingEngineGetRequest(path, res) {
-
         let axiosResponse = await axios['get'](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`);
         let result = axiosResponse.data;
         if (result.status) {
             return res.status(200).send(controller.successFormat(result.result.result, result.result.id))
-        }
-        else {
+        } else {
             return res.status(result.errorCode).send(controller.errorMsgFormat({
                 'message': result.error
             }, 'order-matching', result.errorCode));
         }
     }
+
     async matchingEngineQueryRequest(path, data, res) {
         let value = Object.values(data);
         let axiosResponse = await axios.get(
@@ -77,21 +82,24 @@ class Api extends Controller {
         let result = axiosResponse.data;
         if (result.status) {
             return res.status(200).send(controller.successFormat(result.result.result, result.result.id))
-        }
-        else {
+        } else {
             return res.status(result.errorCode).send(controller.errorMsgFormat({
                 'message': result.error
             }, 'order-matching', result.errorCode));
         }
     }
-    async matchingEngineRequest(method, path, data, res) {
+
+    async matchingEngineRequest(method, path, data, res, type = 'json') {
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;
         if (result.status) {
-            return res.status(200).send(controller.successFormat(result.result.result, result.result.id));
-        }
-        else {
+            if (type === 'json') {
+                return res.status(200).send(controller.successFormat(result.result.result, result.result.id));
+            } else {
+                return controller.successFormat(result.result.result, result.result.id);
+            }
+        } else {
             return res.status(result.errorCode).send(controller.errorMsgFormat({
                 'message': result.error
             }, 'order-matching', result.errorCode));

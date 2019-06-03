@@ -52,10 +52,8 @@ class Password extends Controller {
                 // send email notification to the registered user
                 let serviceData   = {
                     'hash' : encryptedHash,
-                    'to_email': req.body.data.attributes.email,
                     'subject': `Password Reset From ${req.body.data.attributes.ip} - ${moment().format('YYYY-MM-DD HH:mm:ss')} (${config.get('settings.timeZone')})`,
                     'email_for': 'forget-password',
-                    'anti_spoofing_code': (user.anti_spoofing) ? user.anti_spoofing_code : false,
                     'user_id': user._id
                 };
 
