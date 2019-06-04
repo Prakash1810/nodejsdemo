@@ -289,8 +289,8 @@ class User extends controller {
                                 'hash': urlHash
                             }, 'users', 401));
                         } else {
+                            
                             // insert new device records
-
                             const device = await this.insertDevice(req, userID, true);
                             const loginHistory = await this.insertLoginHistory(req, userID, device._id, timeNow)
 
@@ -310,6 +310,7 @@ class User extends controller {
                                 "google_auth": user.google_auth,
                                 "sms_auth": user.sms_auth,
                                 "anti_spoofing": user.anti_spoofing,
+                                "anti_spoofing_code": user.anti_spoofing_code,
                                 "loggedIn": timeNow,
                                 "expiresIn": config.get('secrete.expiry')
                             }, user._id));

@@ -614,11 +614,16 @@ class Wallet extends controller {
             if (notify.status === 1) {
 
                 // update the details to matching engine and transactions
-                this.updateWithdrawRequest(notify, req, res)
-
-                return res.status(200).json(this.errorMsgFormat({
-                    "message": "Your confirmation request processed successfully."
-                }, 'withdraw'));
+                let response = await this.updateWithdrawRequest(notify, req, res)
+                if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
+                    return res.status(200).json(this.successFormat({
+                        "message": "Your confirmation request processed successfully."
+                    }, 'withdraw'));
+                } else {
+                    return res.status(400).json(this.errorMsgFormat({
+                        "message": (response.data.attributes.status !== undefined) 
+                    }, 'withdraw'));
+                }                
             } else {
                 return res.status(400).json(this.errorMsgFormat({
                     "message": "This request alreay processed."
@@ -650,11 +655,11 @@ class Wallet extends controller {
             "asset": asset.asset_code,
             "business": (requestData.accept) ? "withdraw" : "deposit",
             "business_id": Math.floor(Math.random() * Math.floor(10000000)),
-            "change": (requestData.accept) ? -transaction.amount : transaction.amount,
+            "change": (requestData.accept) ? `-${transaction.amount}` : `${transaction.amount}`,
             "detial": {}
         }
         let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-        console.log(response)
+        return response;
     }
 }
 
