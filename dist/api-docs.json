@@ -572,20 +572,19 @@
                         "type": "string"
                     },
                     {
-                      "name": "page_no",
-                      "in": "query",
-                      "description": "Page No. <b>Ex:</b> 1/2/3/4",
-                      "required": false,
-                      "type": "integer"
-                  },
-                  {
-                    "name": "size",
-                    "in": "query",
-                    "description": "Size <b>Ex:</b> 5/10",
-                    "required": false,
-                    "type": "integer"
-                }
-                    
+                        "name": "page_no",
+                        "in": "query",
+                        "description": "Page No. <b>Ex:</b> 1/2/3/4",
+                        "required": false,
+                        "type": "integer"
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Size <b>Ex:</b> 5/10",
+                        "required": false,
+                        "type": "integer"
+                    }
                 ]
             },
             "patch": {
@@ -736,7 +735,7 @@
                 ]
             }
         },
-        "wallet/transactions/withdraw": {
+        "wallet/transactions/witdraw": {
             "get": {
                 "tags": [
                     "wallet"
@@ -770,31 +769,501 @@
                 ]
             }
         },
-        "wallet/withdraw": {
-            "post": {
+        "matching/asset/list": {
+            "get": {
                 "tags": [
-                    "wallet"
+                    "matching"
                 ],
-                "description": "User withdraw request to asset wise",
+                "description": "List of asset",
+                "produces": [
+                    "application/json"
+                ]
+            }
+        },
+        "matching/asset/summary": {
+            "get": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Asset Summary",
                 "produces": [
                     "application/json"
                 ],
                 "parameters": [
                     {
-                        "name": "Authorization",
-                        "in": "header",
-                        "description": "access_token",
-                        "required": true,
-                        "type": "string"
-                    },
+                        "name": "asset",
+                        "in": "query",
+                        "description": "Asset name",
+                        "required": false,
+                        "type": "String"
+                    }
+                ]
+            }
+        },
+        "matching/balance/history": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "List of balance history",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
                     {
                         "name": "Parameters",
                         "in": "body",
-                        "description": "address",
+                        "description": "balance history",
                         "required": true,
                         "type": "string",
                         "schema": {
-                            "$ref": "#/definitions/postWithdraw"
+                            "$ref": "#/definitions/balanceHistory"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/balance/query": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "balance query",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "balance query",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/balanceQuery"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/balance/update": {
+            "patch": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "balance update",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "balance update",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/balanceUpdate"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/put-market": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order putMarket",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order putMarket",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderPutMarket"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/put-limit": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order putLimit",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order putLimit",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderPutLimit"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/cancel": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order cancel",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Cancel",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderCancel"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/book": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order book",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Book",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderBook"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/depth": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order depth",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Depth",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderDepth"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/pending": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order pending",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Pending",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderPending"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/pending-detials": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order pendingDetials",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order PendingDetials",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderPendingDetials"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/deals": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order deals",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Deals",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderDeals"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/finished": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order finished",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Finished",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderFinished"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/finished-detials": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order finished-detials",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Finished-detials",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderFinishedDetials"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/list": {
+            "get": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market list",
+                "produces": [
+                    "application/json"
+                ]
+
+            }
+        },
+        "matching/market/summary": {
+            "get": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market summary",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "query",
+                        "description": "Asset name",
+                        "required": false,
+                        "type": "String"
+                    }
+                ]
+            }
+        },
+        "matching/market/status": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market status",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market Status",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketStatus"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/status-today": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market statusToday",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market StatusToday",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketStatusToday"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/last": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market last",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market Last",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketLast"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/deals": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market deals",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market Deals",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketDeals"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/user-deals": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market userDeals",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market UserDeals",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketUserDeals"
+                        }
+                    }
+                ]
+            }
+        }, 
+        "matching/market/kline": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market kline",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market Kline",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketKline"
                         }
                     }
                 ]
@@ -893,7 +1362,7 @@
                     "example": {
                         "id": "5c90dd8e6410cd0378d8fd7e",
                         "attributes": {
-                            "old_password":"1234567S",
+                            "old_password": "1234567S",
                             "password": "tesR123456",
                             "password_confirmation": "tesR123456"
                         }
@@ -1159,6 +1628,362 @@
                 }
             }
         },
+        "balanceHistory": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id": 1,
+                            "asset": "BDX",
+                            "business": "ETH ",
+                            "start_time": 0,
+                            "end_time": 0,
+                            "offset": 3,
+                            "limit": 2
+                        }
+                    }
+                }
+            }
+        },
+        "balanceQuery": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id": 1,
+                            "asset": "ETH"
+                        }
+                    }
+                }
+            }
+        },
+        "balanceUpdate": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id": 1,
+                            "asset": "LTC",
+                            "business": "deposit",
+                            "business_id": 10,
+                            "change": "2000",
+                            "detial": {}
+                        }
+                    }
+                }
+            }
+        },
+        "orderPutMarket": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id": 1,
+                            "market": "BDXBTC",
+                            "side": 1,
+                            "amount": "1000",
+                            "takerFeeRate": "0.002",
+                            "source": "source added"
+                        }
+                    }
+                }
+            }
+        },
+        "orderPutLimit": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id": 1,
+                            "market": "BDXBTC",
+                            "side": 1,
+                            "amount": "2",
+                            "pride": "0.0005",
+                            "takerFeeRate": "0.00001",
+                            "makerFeeRate": "0.000005",
+                            "source": "source added"
+                        }
+                    }
+                }
+            }
+        },
+        "orderCancel": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id": 1,
+                            "market": "BDXBTC",
+                            "order_id": 2
+                        }
+                    }
+                }
+            }
+        },
+        "orderBook": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market": "BDXBTC",
+                            "side": 1,
+                            "offset": 0,
+                            "limit": 2
+                        }
+                    }
+                }
+            }
+        },
+        "orderDepth": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market": "BDXBTC",
+                            "limit": 5,
+                            "interval": "1"
+                        }
+                    }
+                }
+            }
+        },
+        "orderPending": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id": 1,
+                            "market": "BDXBTC",
+                            "offset": 1,
+                            "limit": 2
+                        }
+                    }
+                }
+            }
+        },
+        "orderPendingDetials": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market": "BDXBTC",
+                            "order_id": 2
+                        }
+                    }
+                }
+            }
+        },
+        "orderDeals": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "order_id": 1,
+                            "offset": "1",
+                            "limit": 3
+                        }
+                    }
+                }
+            }
+        },
+        "orderFinished": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id": 1,
+                            "market": "BDXBTC",
+                            "start_time": 0,
+                            "end_time": 0,
+                            "side": 1,
+                            "offset": 0,
+                            "limit": 1
+                        }
+                    }
+                }
+            }
+        },
+        "orderFinishedDetials": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "order_id" :1
+                        }
+                    }
+                }
+            }
+        },
+        "marketStatus": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market":"ETHBTC",
+			                "period" : 86400
+                        }
+                    }
+                }
+            }
+        },
+        "marketStatusToday": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market":"ETHBTC"
+                        }
+                    }
+                }
+            }
+        },
+        "marketLast": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market":"ETHBTC"
+                        }
+                    }
+                }
+            }
+        },
+        "marketDeals": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market":"ETHBTC",
+                            "limit": 3,
+                            "last_id": 2
+                        }
+                    }
+                }
+            }
+        },
+        "marketUserDeals": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id":1 ,
+                            "market":"BDXBTC",
+                            "offset" :1,
+                            "limit" : 1
+                        }
+                    }
+                }
+            }
+        },
+        "marketKline": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market":"BDXBTC",
+                            "start" :1,
+                            "end" : 2,
+                            "interval":10
+                        }
+                    }
+                }
+            }
+        },
         "assets": {
             "properties": {
                 "code": {
@@ -1223,27 +2048,8 @@
                 },
                 "data": {
                     "example": {
-                        "id": "{{address_id}}",
                         "attributes": {
                             "is_whitelist": true
-                        }
-                    }
-                }
-            }
-        },
-        "postWithdraw": {
-            "properties": {
-                "lang": {
-                    "required": true,
-                    "type": "string",
-                    "example": "en"
-                },
-                "data": {
-                    "example": {
-                        "id": "5cd535d18d28a601d8efad5b",
-                        "attributes": {
-                            "asset": "5c94e142de2b7100085e5296",
-	    	                "amount": 1
                         }
                     }
                 }
@@ -1258,4 +2064,5 @@
             }
         }
     }
+    
 }
