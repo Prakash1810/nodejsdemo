@@ -572,19 +572,20 @@
                         "type": "string"
                     },
                     {
-                        "name": "page_no",
-                        "in": "query",
-                        "description": "Page No. <b>Ex:</b> 1/2/3/4",
-                        "required": false,
-                        "type": "integer"
-                    },
-                    {
-                        "name": "size",
-                        "in": "query",
-                        "description": "Size <b>Ex:</b> 5/10",
-                        "required": false,
-                        "type": "integer"
-                    }
+                      "name": "page_no",
+                      "in": "query",
+                      "description": "Page No. <b>Ex:</b> 1/2/3/4",
+                      "required": false,
+                      "type": "integer"
+                  },
+                  {
+                    "name": "size",
+                    "in": "query",
+                    "description": "Size <b>Ex:</b> 5/10",
+                    "required": false,
+                    "type": "integer"
+                }
+                    
                 ]
             },
             "patch": {
@@ -735,7 +736,7 @@
                 ]
             }
         },
-        "wallet/transactions/witdraw": {
+        "wallet/transactions/withdraw": {
             "get": {
                 "tags": [
                     "wallet"
@@ -765,6 +766,36 @@
                         "description": "Page Size: 5/10/15",
                         "required": false,
                         "type": "integer"
+                    }
+                ]
+            }
+        },
+        "wallet/withdraw": {
+            "post": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "User withdraw request to asset wise",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "address",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/postWithdraw"
+                        }
                     }
                 ]
             }
@@ -1362,7 +1393,7 @@
                     "example": {
                         "id": "5c90dd8e6410cd0378d8fd7e",
                         "attributes": {
-                            "old_password": "1234567S",
+                            "old_password":"1234567S",
                             "password": "tesR123456",
                             "password_confirmation": "tesR123456"
                         }
@@ -2048,8 +2079,27 @@
                 },
                 "data": {
                     "example": {
+                        "id": "{{address_id}}",
                         "attributes": {
                             "is_whitelist": true
+                        }
+                    }
+                }
+            }
+        },
+        "postWithdraw": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "5cd535d18d28a601d8efad5b",
+                        "attributes": {
+                            "asset": "5c94e142de2b7100085e5296",
+	    	                "amount": 1
                         }
                     }
                 }
@@ -2064,5 +2114,4 @@
             }
         }
     }
-    
 }
