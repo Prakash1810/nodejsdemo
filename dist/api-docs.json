@@ -1394,6 +1394,7 @@
                 },
                 "data": {
                     "example": {
+                        "id": "{{user_id}}",
                         "attributes": {
                             "email": "xyz@gmail.com",
                             "password": "1234567S",
