@@ -229,8 +229,8 @@ class User extends controller {
             user: userID
         }, async (err, count) => {
             if (!count) {
+                
                 // insert new device records
-
                 const device = await this.insertDevice(req, userID, true);
                 const loginHistory = await this.insertLoginHistory(req, userID, device._id, timeNow)
 
@@ -241,6 +241,7 @@ class User extends controller {
                     'browser': req.body.data.attributes.browser,
                     'browser_version': req.body.data.attributes.browser_version,
                     'os': req.body.data.attributes.os,
+                    'user_id': userID
                 });
 
                 let tokens = await this.storeToken(user,loginHistory._id)
@@ -250,6 +251,7 @@ class User extends controller {
                     "google_auth": user.google_auth,
                     "sms_auth": user.sms_auth,
                     "anti_spoofing": user.anti_spoofing,
+                    "anti_spoofing_code": user.anti_spoofing_code,
                     "loggedIn": timeNow,
                     "expiresIn": config.get('secrete.expiry')
                 }, user._id));
@@ -300,7 +302,8 @@ class User extends controller {
                                 'time': timeNow,
                                 'browser': req.body.data.attributes.browser,
                                 'browser_version': req.body.data.attributes.browser_version,
-                                'os': req.body.data.attributes.os
+                                'os': req.body.data.attributes.os,
+                                'user_id': userID
                             });
 
                             let tokens = await this.storeToken(user,loginHistory._id)
