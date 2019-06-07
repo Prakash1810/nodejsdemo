@@ -3,7 +3,6 @@ const Controller = require('../core/controller');
 const wallet = require('../core/wallet');
 const auth = require("../middlewares/authentication");
 const router = express.Router();
-
 const controller = new Controller;
 
 router.get('/assets', (req, res) => {
@@ -124,6 +123,26 @@ router.patch('/withdraw', auth, (req, res) => {
         } else {
             return wallet.patchWithdrawConfirmation(req, res);
         }
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'wallet', 500));
+    }
+});
+
+router.post('/resend-withdraw', auth, (req, res) => {
+    try {
+        return wallet.resendWithdrawNotification(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'wallet', 500));
+    }
+});
+
+router.delete('/withdraw/:id', auth, (req, res) => {
+    try {
+        return wallet.deleteWithdraw(req, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

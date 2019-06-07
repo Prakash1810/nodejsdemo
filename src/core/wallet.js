@@ -369,7 +369,8 @@ class Wallet extends controller {
 
             let payloads = {
                 type: (typeParam === 'withdraw') ? 1 : 2,
-                user: req.user.user
+                user: req.user.user,
+                is_deleted: false
             };
 
             if (pageNo < 0 || pageNo === 0) {
@@ -392,7 +393,7 @@ class Wallet extends controller {
                 } else {
                     transactions
                         .find(payloads)
-                        .select('-_id  address amount final_amount date')
+                        .select('address amount final_amount date')
                         .skip(query.skip)
                         .limit(query.limit)
                         .populate({
@@ -455,7 +456,9 @@ class Wallet extends controller {
             } else if (getAsset.minimum_withdraw > amount || getAsset.maximum_withdraw < amount) {
                 return {
                     status: false,
-                    type: 'balance'
+                    type: 'minimum_maximum',
+                    minimum_withdraw: getAsset.minimum_withdraw,
+                    maximum_withdraw: getAsset.maximum_withdraw,
                 };
             } else {
                 let payloads = {};
@@ -485,7 +488,7 @@ class Wallet extends controller {
 
     async postWithdraw(req, res) {
         let requestData = req.body.data.attributes;
-        if (req.body.data.id !== undefined || requestData.asset != undefined) {
+        if (req.body.data.id !== undefined && requestData.asset != undefined) {
             let validateWithdraw = await this.withdrawValidate(req, res);
             if (validateWithdraw.status) {
                 let withdraw = await withdrawAddress.findOne({
@@ -496,14 +499,15 @@ class Wallet extends controller {
                     try {
                         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
                         let data = {
-                            user: req.user.user,
-                            asset: requestData.asset,
+                            user: new mongoose.Types.ObjectId(req.user.user),
+                            asset: new mongoose.Types.ObjectId(requestData.asset),
                             address: withdraw.address,
                             type: 1,
                             amount: requestData.amount,
                             ip: requestData.ip,
                             final_amount: requestData.amount,
                             status: 4,
+                            is_deleted: false,
                             created_date: timeNow
                         };
                         let returnId = await this.insertNotification(data);
@@ -524,6 +528,8 @@ class Wallet extends controller {
                     msg = 'Your balance is too low Please check.'
                 } else if (validateWithdraw.type === 'suspend') {
                     msg = 'This coin has suspended. Please contact support@beldex.io'
+                } else if (validateWithdraw.type === 'minimum_maximum') {
+                    msg = `Please request withdraw ${validateWithdraw.minimum_withdraw} to ${validateWithdraw.maximum_withdraw}`
                 }
 
                 return res.status(400).json(this.errorMsgFormat({
@@ -538,7 +544,7 @@ class Wallet extends controller {
     }
     async insertNotification(data) {
         let asset = await assets.findById(data.asset),
-            transactions = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date']),
+            transactions = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']),
             fawnResults = await Fawn.Task()
             .save('transactions', transactions)
             .save('beldex-notifications', {
@@ -574,6 +580,7 @@ class Wallet extends controller {
 
         // send an confirmation notification
         this.sendWithdrawNotification(emailData);
+
         return notifyId;
     }
 
@@ -589,6 +596,29 @@ class Wallet extends controller {
         };
 
         return apiServices.sendEmailNotification(serviceData);
+    }
+
+    async resendWithdrawNotification(req, res) {
+        if (req.body.data.id !== undefined && req.body.data.id !== null) {
+            let data = await beldexNotification.findOne({
+                'notify_data.transactions': new mongoose.Types.ObjectId(req.body.data.id)
+            });
+            if (data && data.notify_data.email_data !== undefined && data.status === 1) {
+                // send an confirmation notification
+                this.sendWithdrawNotification(data.notify_data.email_data);
+                return res.status(200).json(this.successFormat({
+                    "message": "Mail resended successfully"
+                }, 'withdraw'));
+            } else {
+                return res.status(404).json(this.errorMsgFormat({
+                    "message": "Request already processed / invalid request"
+                }, 'withdraw'));
+            }
+        } else {
+            return res.status(400).json(this.errorMsgFormat({
+                "message": "invalid request"
+            }, 'withdraw'));
+        }
     }
 
     patchWithdrawConfirmationValidation(req) {
@@ -621,9 +651,9 @@ class Wallet extends controller {
                     }, 'withdraw'));
                 } else {
                     return res.status(400).json(this.errorMsgFormat({
-                        "message": (response.data.attributes.status !== undefined) 
+                        "message": (response.data.attributes.status !== undefined)
                     }, 'withdraw'));
-                }                
+                }
             } else {
                 return res.status(400).json(this.errorMsgFormat({
                     "message": "This request alreay processed."
@@ -644,22 +674,58 @@ class Wallet extends controller {
         withdraw.save();
 
         // update the transaction status
-        let transaction = await transactions.findByIdAndUpdate(withdraw.notify_data.transactions, {
+        let transaction = await transactions.findOneAndUpdate({
+            _id: withdraw.notify_data.transactions,
+            is_deleted: false
+        }, {
             $set: {
                 status: 2
             }
         }).populate('asset');
-        let asset = transaction.asset;
-        let payloads = {
-            "user_id": req.user.user_id,
-            "asset": asset.asset_code,
-            "business": (requestData.accept) ? "withdraw" : "deposit",
-            "business_id": Math.floor(Math.random() * Math.floor(10000000)),
-            "change": (requestData.accept) ? `-${transaction.amount}` : `${transaction.amount}`,
-            "detial": {}
+        if (transaction) {
+            let asset = transaction.asset;
+            let payloads = {
+                "user_id": req.user.user_id,
+                "asset": asset.asset_code,
+                "business": (requestData.accept) ? "withdraw" : "deposit",
+                "business_id": Math.floor(Math.random() * Math.floor(10000000)),
+                "change": (requestData.accept) ? `-${transaction.amount}` : `${transaction.amount}`,
+                "detial": {}
+            }
+            let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+            return response;
+        } else {
+            return false;
         }
-        let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-        return response;
+    }
+
+    async deleteWithdraw(req, res) {
+        let ID = req.params.id;
+        if (ID !== undefined) {
+            // find and update the reccord
+            await transactions.findOneAndUpdate({
+                    _id: ID,
+                    status: 4
+                }, {
+                    $set: {
+                        is_deleted: true
+                    }
+                })
+                .then(result => {
+                    return res.status(202).send(this.successFormat({
+                        'message': 'Your requested record deletedd successfully.'
+                    }, result._id, 'withdraw', 202));
+                })
+                .catch(err => {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Invalid request / Request is processing.'
+                    }, 'withdraw'));
+                });
+        } else {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Invalid request.'
+            }, 'withdraw', 400));
+        }
     }
 }
 

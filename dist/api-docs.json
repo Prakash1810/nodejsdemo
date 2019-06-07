@@ -9,7 +9,7 @@
             "email": "sathish.kumar@beldex.org"
         }
     },
-    "host": "localhost:3000",
+    "host": "coreapialpha.beldex.io",
     "basePath": "/api/v1/",
     "tags": [
         {
@@ -572,20 +572,19 @@
                         "type": "string"
                     },
                     {
-                      "name": "page_no",
-                      "in": "query",
-                      "description": "Page No. <b>Ex:</b> 1/2/3/4",
-                      "required": false,
-                      "type": "integer"
-                  },
-                  {
-                    "name": "size",
-                    "in": "query",
-                    "description": "Size <b>Ex:</b> 5/10",
-                    "required": false,
-                    "type": "integer"
-                }
-                    
+                        "name": "page_no",
+                        "in": "query",
+                        "description": "Page No. <b>Ex:</b> 1/2/3/4",
+                        "required": false,
+                        "type": "integer"
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Size <b>Ex:</b> 5/10",
+                        "required": false,
+                        "type": "integer"
+                    }
                 ]
             },
             "patch": {
@@ -798,6 +797,896 @@
                         }
                     }
                 ]
+            },
+            "patch": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "Withdraw confitmation",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Withdrawal patch update",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/patchWithdraw"
+                        }
+                    }
+                ]
+            }
+        },
+        "wallet/withdraw/{id}": {
+            "delete": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "Withdraw delete options",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Withdrawal id",
+                        "required": true,
+                        "type": "string"
+                    }
+                ]
+            }
+        },
+        "wallet/resend-withdraw": {
+            "post": {
+                "tags": [
+                    "wallet"
+                ],
+                "description": "Withdraw confirmation mail resend option",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Withdrawal patch update",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/posthWithdrawResend"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/asset/list": {
+            "get": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "List of asset",
+                "produces": [
+                    "application/json"
+                ]
+            }
+        },
+        "matching/asset/summary": {
+            "get": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Asset Summary",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "query",
+                        "description": "Asset name",
+                        "required": false,
+                        "type": "String"
+                    }
+                ]
+            }
+        },
+        "matching/balance/history": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "List of balance history",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "balance history",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/balanceHistory"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/balance/query": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "balance query",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "balance query",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/balanceQuery"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/balance/update": {
+            "patch": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "balance update",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "balance update",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/balanceUpdate"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/put-market": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order putMarket",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order putMarket",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderPutMarket"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/put-limit": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order putLimit",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order putLimit",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderPutLimit"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/cancel": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order cancel",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Cancel",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderCancel"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/book": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order book",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Book",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderBook"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/depth": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order depth",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Depth",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderDepth"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/pending": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order pending",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Pending",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderPending"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/pending-detials": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order pendingDetials",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order PendingDetials",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderPendingDetials"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/deals": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order deals",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Deals",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderDeals"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/finished": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order finished",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Finished",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderFinished"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/order/finished-detials": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Order finished-detials",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Order Finished-detials",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/orderFinishedDetials"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/list": {
+            "get": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market list",
+                "produces": [
+                    "application/json"
+                ]
+            }
+        },
+        "matching/market/summary": {
+            "get": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market summary",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "query",
+                        "description": "Asset name",
+                        "required": false,
+                        "type": "String"
+                    }
+                ]
+            }
+        },
+        "matching/market/status": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market status",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market Status",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketStatus"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/status-today": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market statusToday",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market StatusToday",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketStatusToday"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/last": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market last",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market Last",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketLast"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/deals": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market deals",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market Deals",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketDeals"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/user-deals": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market userDeals",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market UserDeals",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketUserDeals"
+                        }
+                    }
+                ]
+            }
+        },
+        "matching/market/kline": {
+            "post": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "Market kline",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Market Kline",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/marketKline"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "registration": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "{{user_id}}",
+                        "attributes": {
+                            "email": "xyz@gmail.com",
+                            "password": "1234567S",
+                            "password_confirmation": "1234567S",
+                            "referral_code": "BELDEX_001"
+                        }
+                    }
+                }
+            }
+        },
+        "login": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "email": "satz2@mail.com",
+                            "password": "1234567S",
+                            "is_browser": true,
+                            "is_mobile": false,
+                            "os": "Linux",
+                            "os_byte": "x86_64",
+                            "browser": "Chrome",
+                            "browser_version": "71.0.3578.11",
+                            "ip": "171.78.139.181",
+                            "city": "Chennai",
+                            "region": "Tamil Nadu",
+                            "country": "India"
+                        }
+                    }
+                }
+            }
+        },
+        "forgotpassword": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "email": "xyz@gmail.com"
+                        }
+                    }
+                }
+            }
+        },
+        "resetpassword": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c90dd8e6410cd0378d8fd7e",
+                        "attributes": {
+                            "password": "tesR123456",
+                            "password_confirmation": "tesR123456"
+                        }
+                    }
+                }
+            }
+        },
+        "changepassword": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c90dd8e6410cd0378d8fd7e",
+                        "attributes": {
+                            "old_password": "1234567S",
+                            "password": "tesR123456",
+                            "password_confirmation": "tesR123456"
+                        }
+                    }
+                }
+            }
+        },
+        "activation": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "required": true,
+                    "type": "string",
+                    "example": "false"
+                },
+                "data": {}
+            }
+        },
+        "resetpasswordhash": {
+            "properties": {
+                "code": {
+                    "example": 202
+                },
+                "errors": {
+                    "required": true,
+                    "type": "string",
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "your id",
+                        "type": "users",
+                        "attributes": {
+                            "message": "Your password updated successfully."
+                        }
+                    }
+                }
+            }
+        },
+        "getuserid": {
+            "properties": {
+                "code": {
+                    "example": 0
+                },
+                "message": {
+                    "example": "Authorization successfully."
+                },
+                "data": {
+                    "example": {
+                        "user_id": 1
+                    }
+                }
+            }
+        },
+        "whitelist": {
+            "properties": {
+                "code": {
+                    "example": 202
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "null",
+                        "type": "users",
+                        "attributes": {
+                            "message": "Your IP address whitelisted Now you can able to login.."
+                        }
+                    }
+                }
+            }
+        },
+        "deleteWhitList": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "browser": "Chrome",
+                            "browser_version": "71.0.3578.11",
+                            "os": "Linux"
+                        }
+                    }
+                }
+            }
+        },
+        "devicehistory": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c908652f83b10002f0f7478",
+                        "type": "devices",
+                        "attributes": {
+                            "data": []
+                        }
+                    }
+                }
+            }
+        },
+        "loginhistory": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c908652f83b10002f0f7478",
+                        "type": "loginHistory",
+                        "attributes": {
+                            "data": []
+                        }
+                    }
+                }
+            }
+        },
+        "logout": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                }
+            }
+        },
+        "refreshToken": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                }
+            }
+        },
+        "captchaslide": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "id": "",
+                        "type": "users",
+                        "example": {
+                            "attributes": {
+                                "success": 1,
+                                "challenge": "aa2943c240dd4a535ad24faeaed9fa00",
+                                "gt": "91a05c40b919e5197ab228fc40f0a7f6",
+                                "new_captcha": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "resendmail": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "5c960beebd528c10aae89c15",
+                        "attributes": {
+                            "type": "registration"
+                        }
+                    }
+                }
+            }
+        },
+        "g2f-verify": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "{{user_id}}",
+                        "attributes": {
+                            "google_secrete_key": "dsa31dsae2132",
+                            "g2f_code": "1234567S"
+                        }
+                    }
+                }
             }
         },
         "matching/asset/list": {
@@ -1311,6 +2200,7 @@
                 },
                 "data": {
                     "example": {
+                        "id": "{{user_id}}",
                         "attributes": {
                             "email": "xyz@gmail.com",
                             "password": "1234567S",
@@ -2099,8 +2989,41 @@
                         "id": "5cd535d18d28a601d8efad5b",
                         "attributes": {
                             "asset": "5c94e142de2b7100085e5296",
-	    	                "amount": 1
+                            "amount": 1,
+                            "ip": "27.5.230.172"
                         }
+                    }
+                }
+            }
+        },
+        "patchWithdraw": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "verification_code": "{{ code }}",
+                            "active": true,
+                            "ip": "27.5.230.172"
+                        }
+                    }
+                }
+            }
+        },
+        "posthWithdrawResend": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "id": "5cfa0ffc730bc101460462d8"
                     }
                 }
             }
