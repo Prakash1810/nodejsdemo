@@ -96,8 +96,7 @@ class User extends controller {
 
     }
 
-    async storeToken(user,loginHistory)
-    {
+    async storeToken(user, loginHistory) {
         let accessToken = await this.createToken(user, loginHistory);
         let refreshToken = await this.createRefreshToken(user, loginHistory);
         let data = {
@@ -107,7 +106,7 @@ class User extends controller {
             created_date: Date.now()
         }
         await new token(data).save();
-        return {accessToken : accessToken , refreshToken : refreshToken}
+        return { accessToken: accessToken, refreshToken: refreshToken }
     }
 
     login(req, res) {
@@ -229,7 +228,7 @@ class User extends controller {
             user: userID
         }, async (err, count) => {
             if (!count) {
-                
+
                 // insert new device records
                 const device = await this.insertDevice(req, userID, true);
                 const loginHistory = await this.insertLoginHistory(req, userID, device._id, timeNow)
@@ -244,7 +243,7 @@ class User extends controller {
                     'user_id': userID
                 });
 
-                let tokens = await this.storeToken(user,loginHistory._id)
+                let tokens = await this.storeToken(user, loginHistory._id)
                 return res.status(200).send(this.successFormat({
                     "token": tokens.accessToken,
                     "refreshToken": tokens.refreshToken,
@@ -291,7 +290,7 @@ class User extends controller {
                                 'hash': urlHash
                             }, 'users', 401));
                         } else {
-                            
+
                             // insert new device records
                             const device = await this.insertDevice(req, userID, true);
                             const loginHistory = await this.insertLoginHistory(req, userID, device._id, timeNow)
@@ -306,10 +305,10 @@ class User extends controller {
                                 'user_id': userID
                             });
 
-                            let tokens = await this.storeToken(user,loginHistory._id)
+                            let tokens = await this.storeToken(user, loginHistory._id)
                             return res.status(200).send(this.successFormat({
                                 "token": tokens.accessToken,
-                                "refreshToken":tokens.refreshToken,
+                                "refreshToken": tokens.refreshToken,
                                 "google_auth": user.google_auth,
                                 "sms_auth": user.sms_auth,
                                 "anti_spoofing": user.anti_spoofing,
@@ -475,7 +474,7 @@ class User extends controller {
                             "totalCount": totalCount
                         }, userID, 'devices', 200));
                     }
-                });
+                }).sort({ _id: 'desc' })
             }
         });
     }
@@ -512,16 +511,16 @@ class User extends controller {
                     browser: deviceHash.data.browser,
                     user: deviceHash.data.user_id
                 })
-                .exec()
-                .then((result) => {
-                    if (!result) {
-                        return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Invalid token. may be token as expired!'
-                        }));
-                    } else {
-                        this.updateWhiteListIP(deviceHash, res);
-                    }
-                });
+                    .exec()
+                    .then((result) => {
+                        if (!result) {
+                            return res.status(400).send(this.errorMsgFormat({
+                                'message': 'Invalid token. may be token as expired!'
+                            }));
+                        } else {
+                            this.updateWhiteListIP(deviceHash, res);
+                        }
+                    });
             } else {
                 return res.status(404).send(this.errorMsgFormat({
                     'message': 'invalid token or token is expired.'
@@ -712,7 +711,7 @@ class User extends controller {
 
             if (user) {
                 await token.findOneAndUpdate({ user: user._id, is_deleted: false }, { is_deleted: true, modified_date: Date.now() });
-                let tokens = await this.storeToken(user,data.login_id)
+                let tokens = await this.storeToken(user, data.login_id)
                 return {
                     status: true,
                     result: {
