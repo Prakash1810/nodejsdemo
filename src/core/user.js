@@ -203,10 +203,9 @@ class User extends controller {
             if (data === 'json') {
                 return res.status(200).json({
                     "code": 0,
-                    "message": 'Authorization successfully.',
+                    "message": null,
                     "data": {
-                        "user_id": decoded.user_id,
-                        "user": decoded.user
+                        "user_id": decoded.user_id
                     }
                 });
             } else {
