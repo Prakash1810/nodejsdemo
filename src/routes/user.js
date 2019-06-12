@@ -103,13 +103,14 @@ router.patch('/change-password', auth, (req, res) => {
     }
 });
 
-router.post('/get-user-id', (req, res) => {
+router.get('/get-user-id', (req, res) => {
     try {
-        if (req.headers.authorization) {
-            user.getTokenToUserId(req, res);
+        if (req.headers.Authorization) {
+            return user.getTokenToUserId(req, res);
         } else {
             return res.status(401).json(controller.errorMsgFormat({
-                message: "Invalid authentication"
+                message: "Invalid authentication",
+                data:req.headers
             }, 'users', 500));
         }
     } catch (err) {
