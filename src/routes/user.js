@@ -103,13 +103,14 @@ router.patch('/change-password', auth, (req, res) => {
     }
 });
 
-router.post('/get-user-id', (req, res) => {
+router.get('/get-user-id', (req, res) => {
     try {
-        if (req.headers.authorization) {
-            user.getTokenToUserId(req, res);
+        if (req.headers.Authorization) {
+            return user.getTokenToUserId(req, res);
         } else {
             return res.status(401).json(controller.errorMsgFormat({
-                message: "Invalid authentication"
+                message: "Invalid authentication",
+                data:req.headers
             }, 'users', 500));
         }
     } catch (err) {
@@ -227,32 +228,22 @@ router.post('/g2f-verify', auth, (req, res) => {
 
 router.post('/token', refresh_auth, async (req, res) => {
     try {
-        const result = await user.refreshToken(req.user);
-        if (result.status) {
-            return res.status(200).send(controller.successFormat(result.result, result.id))
-        }
-        throw result
+            await user.refreshToken(req.user,res);
     } catch (err) {
-        return res.status(err.errorCode).send(controller.errorMsgFormat({
+        return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
-        }, 'users', err.errorCode));
+        }, 'users', 500));
     }
 })
 
 
 router.post('/logout', auth, async (req, res) => {
     try {
-        const result = await user.logout(req.user);
-        if (result.status) {
-            return res.status(200).send(controller.successFormat({
-                'message': 'Logout Success',
-            }))
-        }
-        throw result
+         await user.logout(req.user,res);
     } catch (err) {
-        return res.status(err.errorCode).send(controller.errorMsgFormat({
+        return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
-        }, 'users', err.errorCode));
+        }, 'users',500));
     }
 })
 
@@ -260,18 +251,11 @@ router.delete('/whitelist', auth, async (req, res) => {
     try {
         let data = req.body.data.attributes;
         data.user = req.user.user;
-        const result = await user.deleteWhitList(data);
-        if (result.status) {
-            return res.status(200).send(controller.successFormat({
-                'message': 'Delete WhiteList Success ',
-            }))
-        } else {
-            throw result
-        }
+        await user.deleteWhitList(data,res);
     } catch (err) {
-        return res.status(err.errorCode).send(controller.errorMsgFormat({
+        return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
-        }, 'users', err.errorCode));
+        }, 'users', 500));
     }
 })
 

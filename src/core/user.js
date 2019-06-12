@@ -710,36 +710,29 @@ class User extends controller {
 
             if (user) {
                 await token.findOneAndUpdate({ user: user._id, is_deleted: false }, { is_deleted: true, modified_date: Date.now() });
-                let tokens = await this.storeToken(user, data.login_id)
-                return {
-                    status: true,
-                    result: {
-                        "token": tokens.accessToken,
-                        "refreshToken": tokens.refreshToken,
-                        "google_auth": user.google_auth,
-                        "sms_auth": user.sms_auth,
-                        "anti_spoofing": user.anti_spoofing,
-                        "expiresIn": config.get('secrete.expiry')
-                    },
-                    id: user._id
+                let tokens = await this.storeToken(user, data.login_id);
+                let result = {
+                    "token": tokens.accessToken,
+                    "refreshToken": tokens.refreshToken,
+                    "google_auth": user.google_auth,
+                    "sms_auth": user.sms_auth,
+                    "anti_spoofing": user.anti_spoofing,
+                    "expiresIn": config.get('secrete.expiry')
                 };
+                return res.status(200).send(controller.successFormat(result, tokens.id))
             } else {
-                return {
-                    status: false,
-                    error: "NOT_FOUND",
-                    errorCode: 404
-                }
+                return res.status(404).send(this.errorMsgFormat({
+                    'message': 'User not found'
+                }, 'users', 404))
             }
         } catch (err) {
-            return {
-                status: false,
-                error: err,
-                errorCode: 500
-            }
+            return res.status(500).send(this.errorMsgFormat({
+                'message': err.message
+            }, 'users', 500));
         }
     }
 
-    async logout(user) {
+    async logout(user,res) {
         try {
             const logout = await loginHistory.findOneAndUpdate({
                 user: user.user,
@@ -750,25 +743,24 @@ class User extends controller {
                     logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
                 });
             if (logout) {
-                return {
-                    status: true
-                }
+                return res.status(200).send(this.successFormat({
+                    'message': 'Logout Success',
+                }))
             }
-            return {
-                status: false,
-                error: "NOT_FOUND",
-                errorCode: 404
+            else{
+                return res.status(404).send(this.errorMsgFormat({
+                    'message': 'User not found'
+                }, 'users', 404))
             }
+            
         } catch (err) {
-            return {
-                status: false,
-                error: err,
-                errorCode: 500
-            }
+            return res.status(500).send(this.errorMsgFormat({
+                'message': err.message
+            }, 'users', 500));
         }
     }
 
-    async deleteWhitList(data) {
+    async deleteWhitList(data,res) {
         try {
             const deleteWhitList = await deviceMangement.updateMany({
                 browser: data.browser,
@@ -781,23 +773,19 @@ class User extends controller {
                 });
 
             if (deleteWhitList.nModified != 0) {
-                return {
-                    status: true
-                }
+                return res.status(200).send(this.successFormat({
+                    'message': 'Delete WhiteList Success',
+                }));
             } else {
-                return {
-                    status: false,
-                    error: "NOT_FOUND",
-                    errorCode: 404
-                }
+                return res.status(404).send(this.errorMsgFormat({
+                    'message': 'User not found'
+                }, 'users', 404));
             }
 
         } catch (error) {
-            return {
-                status: false,
-                error: err,
-                errorCode: 500
-            }
+            return res.status(500).send(this.errorMsgFormat({
+                'message': err.message
+            }, 'users', 500));
         }
     }
 }
