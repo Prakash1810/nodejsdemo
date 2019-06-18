@@ -239,7 +239,7 @@ router.post('/token', refresh_auth, async (req, res) => {
 
 router.post('/logout', auth, async (req, res) => {
     try {
-         await user.logout(req.user,res);
+         await user.logout(req.user,req.headers.authorization,res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

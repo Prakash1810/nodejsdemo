@@ -222,7 +222,7 @@
             }
         },
         "user/get-user-id": {
-            "post": {
+            "get": {
                 "tags": [
                     "users"
                 ],
