@@ -743,6 +743,9 @@ class User extends controller {
                     logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
                 });
             if (logout) {
+                await token.findOneAndUpdate({
+                    user: data.user, access_token: token, is_deleted: true
+                })
                 return res.status(200).send(this.successFormat({
                     'message': 'Logout Success',
                 }))
