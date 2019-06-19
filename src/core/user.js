@@ -732,7 +732,7 @@ class User extends controller {
         }
     }
 
-    async logout(user,token,res) {
+    async logout(user,accessToken,res) {
         try {
             const logout = await loginHistory.findOneAndUpdate({
                 user: user.user,
@@ -744,7 +744,7 @@ class User extends controller {
                 });
             if (logout) {
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: token, is_deleted: true
+                    user: user.user, access_token: accessToken, is_deleted: true
                 })
                 return res.status(200).send(this.successFormat({
                     'message': 'Logout Success',
