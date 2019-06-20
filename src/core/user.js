@@ -257,7 +257,6 @@ class User extends controller {
             } else {
                 deviceMangement.findOne({
                     user: userID,
-                    ip: req.body.data.attributes.ip,
                     browser: req.body.data.attributes.browser,
                     verified: true,
                     is_deleted: false
@@ -370,7 +369,7 @@ class User extends controller {
         return new loginHistory(data).save();
     }
 
-    getLoginHistory(req, res) {
+        getLoginHistory(req, res) {
         let pageNo = parseInt(req.query.page_no)
         let size = parseInt(req.query.size)
         let query = {}
@@ -506,7 +505,6 @@ class User extends controller {
             let checkExpired = this.checkTimeExpired(deviceHash.data.datetime);
             if (checkExpired) {
                 deviceMangement.findOne({
-                    ip: deviceHash.data.ip,
                     browser: deviceHash.data.browser,
                     user: deviceHash.data.user_id
                 })
@@ -536,7 +534,6 @@ class User extends controller {
 
         // find and update the reccord
         deviceMangement.updateMany({
-            'ip': hash.data.ip,
             'browser': hash.data.browser,
             'user': hash.data.user_id,
         }, {
@@ -701,7 +698,7 @@ class User extends controller {
         }
     }
 
-    async refreshToken(data) {
+    async refreshToken(data,res) {
         try {
 
             const user = await users.findOne({
@@ -744,8 +741,8 @@ class User extends controller {
                 });
             if (logout) {
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: accessToken, is_deleted: true
-                })
+                    user: user.user, access_token: accessToken,is_deleted:false
+                },{is_deleted:true})
                 return res.status(200).send(this.successFormat({
                     'message': 'Logout Success',
                 }))

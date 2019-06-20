@@ -8,7 +8,6 @@ const deviceSchema = mongoose.Schema({
     os_byte: String,
     browser: String,
     browser_version: String,
-    ip: String,
     city: String,
     region: String,
     country: String,
