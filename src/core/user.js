@@ -716,7 +716,7 @@ class User extends controller {
                     "anti_spoofing": user.anti_spoofing,
                     "expiresIn": config.get('secrete.expiry')
                 };
-                return res.status(200).send(controller.successFormat(result, tokens.id))
+                return res.status(200).send(this.successFormat(result, tokens.id))
             } else {
                 return res.status(404).send(this.errorMsgFormat({
                     'message': 'User not found'
