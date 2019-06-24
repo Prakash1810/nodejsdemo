@@ -315,7 +315,7 @@ class Wallet extends controller {
         }
     }
 
-    async getAssetsBalance(req, res) {
+    async  getAssetsBalance(req, res) {
         let payloads = {},
             assetNames;
         payloads.user_id = req.user.user_id;

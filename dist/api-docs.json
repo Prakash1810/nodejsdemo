@@ -9,7 +9,7 @@
             "email": "sathish.kumar@beldex.org"
         }
     },
-    "host": "coreapialpha.beldex.io",
+    "host": "localhost:3000",
     "basePath": "/api/v1/",
     "tags": [
         {
@@ -28,7 +28,7 @@
         }
     ],
     "schemes": [
-        "https"
+        "http"
     ],
     "consumes": [
         "application/json"
@@ -1416,7 +1416,7 @@
                     "example": {
                         "attributes": {
                             "email": "saradaparamasivan@gmail.com",
-                            "password": "Jebasingh1995",
+                            "password": "1234567S",
                             "is_browser": true,
                             "is_mobile": false,
                             "os": "Linux",
@@ -1817,7 +1817,6 @@
                             "market": "BDXBTC",
                             "side": 1,
                             "amount": "1000",
-                            "takerFeeRate": "0.002",
                             "source": "source added"
                         }
                     }
@@ -1839,8 +1838,6 @@
                             "side": 1,
                             "amount": "2",
                             "pride": "0.0005",
-                            "takerFeeRate": "0.00001",
-                            "makerFeeRate": "0.000005",
                             "source": "source added"
                         }
                     }
