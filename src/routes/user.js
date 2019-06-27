@@ -36,6 +36,27 @@ router.post('/login', (req, res) => {
     }
 });
 
+
+router.post('/validate/otp', (req, res) => {
+    try {
+        user.validateOtpForEmail(req, res);
+
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+router.post('/resend/otp', (req, res) => {
+    try {
+        user.resendOtpForEmail(req, res);
+
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
 router.delete('/', (req, res) => {
     user.removeUser(req.body.data.attributes.email, res);
 });
@@ -110,7 +131,7 @@ router.get('/get-user-id', (req, res) => {
         } else {
             return res.status(401).json(controller.errorMsgFormat({
                 message: "Invalid authentication",
-                data:req.headers
+                data: req.headers
             }, 'users', 500));
         }
     } catch (err) {
@@ -228,7 +249,7 @@ router.post('/g2f-verify', auth, (req, res) => {
 
 router.post('/token', refresh_auth, async (req, res) => {
     try {
-            await user.refreshToken(req.user,res);
+        await user.refreshToken(req.user, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -239,11 +260,11 @@ router.post('/token', refresh_auth, async (req, res) => {
 
 router.post('/logout', auth, async (req, res) => {
     try {
-         await user.logout(req.user,req.headers.authorization,res);
+        await user.logout(req.user, req.headers.authorization, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
-        }, 'users',500));
+        }, 'users', 500));
     }
 })
 
@@ -251,7 +272,7 @@ router.delete('/whitelist', auth, async (req, res) => {
     try {
         let data = req.body.data.attributes;
         data.user = req.user.user;
-        await user.deleteWhitList(data,res);
+        await user.deleteWhitList(data, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

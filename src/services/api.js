@@ -8,6 +8,7 @@ const controller = new Controller;
 class Api extends Controller {
 
     async sendEmailNotification(data) {
+        console.log('Data:',data);
         if (data.email_for !== 'registration') {
             let disableData = JSON.stringify({
                 'user_id': data.user_id,

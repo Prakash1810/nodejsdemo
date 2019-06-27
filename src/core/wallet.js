@@ -713,7 +713,7 @@ class Wallet extends controller {
                 })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
-                        'message': 'Your requested record deletedd successfully.'
+                        'message': 'Your requested record deleted successfully.'
                     }, result._id, 'withdraw', 202));
                 })
                 .catch(err => {

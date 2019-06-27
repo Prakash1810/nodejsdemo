@@ -1,3 +1,4 @@
+
 {
     "swagger": "2.0",
     "info": {
@@ -103,6 +104,55 @@
                             "$ref": "#/definitions/login"
                         }
                     }
+                ]
+            }
+        },
+        "user/validate/otp": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "ValidateOtp",
+                "operationId": "find",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/validate"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/resend/otp": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "resendOtp",
+                "operationId": "findOneAndUpdate",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/resend"
+                        }
+                    }
+                    
                 ]
             }
         },
@@ -1416,7 +1466,7 @@
                     "example": {
                         "attributes": {
                             "email": "saradaparamasivan@gmail.com",
-                            "password": "Jebasingh1995",
+                            "password": "1234567S",
                             "is_browser": true,
                             "is_mobile": false,
                             "os": "Linux",
@@ -1427,6 +1477,40 @@
                             "city": "Chennai",
                             "region": "Tamil Nadu",
                             "country": "India"
+                        }
+                    }
+                }
+            }
+        },
+        "validate": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "otp":12345,
+                            "device_id":"123456789",
+                            "user_id":"123456789"
+                        }
+                    }
+                }
+            }
+        },
+        "resend": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id":"123456789"
                         }
                     }
                 }
@@ -1817,7 +1901,7 @@
                             "market": "BDXBTC",
                             "side": 1,
                             "amount": "1000",
-                            "takerFeeRate": "0.002",
+                            
                             "source": "source added"
                         }
                     }
@@ -1839,8 +1923,6 @@
                             "side": 1,
                             "amount": "2",
                             "pride": "0.0005",
-                            "takerFeeRate": "0.00001",
-                            "makerFeeRate": "0.000005",
                             "source": "source added"
                         }
                     }
