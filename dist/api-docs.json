@@ -1,3 +1,4 @@
+
 {
     "swagger": "2.0",
     "info": {
@@ -9,7 +10,7 @@
             "email": "sathish.kumar@beldex.org"
         }
     },
-    "host": "localhost:3000",
+    "host": "coreapialpha.beldex.io",
     "basePath": "/api/v1/",
     "tags": [
         {
@@ -28,7 +29,7 @@
         }
     ],
     "schemes": [
-        "http"
+        "https"
     ],
     "consumes": [
         "application/json"
@@ -103,6 +104,55 @@
                             "$ref": "#/definitions/login"
                         }
                     }
+                ]
+            }
+        },
+        "user/validate/otp": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "ValidateOtp",
+                "operationId": "find",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/validate"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/resend/otp": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "resendOtp",
+                "operationId": "findOneAndUpdate",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/resend"
+                        }
+                    }
+                    
                 ]
             }
         },
@@ -1432,6 +1482,40 @@
                 }
             }
         },
+        "validate": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "otp":12345,
+                            "device_id":"123456789",
+                            "user_id":"123456789"
+                        }
+                    }
+                }
+            }
+        },
+        "resend": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "user_id":"123456789"
+                        }
+                    }
+                }
+            }
+        },
         "forgotpassword": {
             "properties": {
                 "lang": {
@@ -1817,6 +1901,7 @@
                             "market": "BDXBTC",
                             "side": 1,
                             "amount": "1000",
+                            
                             "source": "source added"
                         }
                     }

@@ -315,7 +315,7 @@ class Wallet extends controller {
         }
     }
 
-    async  getAssetsBalance(req, res) {
+    async getAssetsBalance(req, res) {
         let payloads = {},
             assetNames;
         payloads.user_id = req.user.user_id;
@@ -713,7 +713,7 @@ class Wallet extends controller {
                 })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
-                        'message': 'Your requested record deletedd successfully.'
+                        'message': 'Your requested record deleted successfully.'
                     }, result._id, 'withdraw', 202));
                 })
                 .catch(err => {

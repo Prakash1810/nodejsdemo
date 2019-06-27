@@ -7,7 +7,8 @@ const loginHistorySchema = mongoose.Schema({
     auth_type: { type: Number, default: 1 },
     logout_status: { type: Number, default: 1 },
     login_date_time: { type: Date },
-    logout_date_time: Date
+    logout_date_time: Date,
+    
 });
 
 module.exports = mongoose.model('login-history', loginHistorySchema);
