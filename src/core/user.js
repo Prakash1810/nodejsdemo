@@ -414,7 +414,7 @@ class User extends controller {
             else {
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': ` Valid only for ${config.get('otpForEmail.hmt')} time `
+                    'message': ` OTP resent request exceeded, please login again `
                 }, 'users', 400));
             }
         }
