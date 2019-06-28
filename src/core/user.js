@@ -352,7 +352,7 @@ class User extends controller {
                         });
                         let checkUser = await users.findOne({ _id: data.user_id })
                         let tokens = await this.storeToken(checkUser, loginHistory._id);
-                        await otpHistory.findOneAndUpdate({ _id: isChecked._id }, { is_active: true })
+                        await otpHistory.findOneAndUpdate({ _id: isChecked._id }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
                         return res.status(200).send(this.successFormat({
                             "token": tokens.accessToken,
                             "refreshToken": tokens.refreshToken,
@@ -366,6 +366,7 @@ class User extends controller {
                     }
                 }
                 else {
+                    await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry:'Yes' })
                     return res.status(404).send(this.errorMsgFormat({
                         'message': 'invalid Otp or Otp is expired.'
                     }));
