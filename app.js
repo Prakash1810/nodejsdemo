@@ -3,7 +3,7 @@ const mongoose   = require('./src/app/db.config');
 const swagger    = require('./docs');
 
 // mongodb connect
-mongoose.connect();
+mongoose.mongooseConnection();
 
 // swagger api documentation
 app.use('/doc', swagger);
