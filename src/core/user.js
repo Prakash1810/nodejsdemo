@@ -151,7 +151,6 @@ class User extends controller {
         })
             .exec()
             .then((result) => {
-                console.log('Res:',result);
                 if (!result) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Invalid credentials'
@@ -265,7 +264,6 @@ class User extends controller {
         }, async (err, count) => {
             if (!count) {
                 const device = await this.insertDevice(req, userID, true);
-                console.log()
                 const isChecked = await this.generatorOtpforEmail(userID);
                 if (isChecked.status) {
                     res.status(200).send(this.successFormat({
