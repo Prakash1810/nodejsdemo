@@ -33,7 +33,7 @@ const usersSchema = mongoose.Schema({
     is_deleted: { type: Boolean, default: false }
 });
 
-autoIncrement.initialize(mongooseConnect.connect());
+autoIncrement.initialize(mongooseConnect.mongooseConnection());
 usersSchema.plugin(autoIncrement.plugin, { model: 'Users', field: 'user_id', startAt: 1 });
 
 module.exports = mongoose.model('Users', usersSchema);

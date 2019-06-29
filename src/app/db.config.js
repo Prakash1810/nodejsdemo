@@ -24,8 +24,8 @@ if (process.env.DEBUG === 'true') {
 * @returns {object} Mongoose connection
 * @public
 */
-exports.connect = () => {
-  mongoose.createConnection(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`, {
+exports.mongooseConnection = () => {
+  mongoose.connect(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`, {
     keepAlive: 1,
     useNewUrlParser: true,
     autoIndex: false
