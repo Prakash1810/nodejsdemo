@@ -27,9 +27,6 @@
 		"bch": "bitcoin-cash",
 		"dash": "dash",
 		"doge": "dogecoin"
-	},
-	"otpForEmail":{
-		"hmt":3,
-		"timeExpiry":40000
 	}
+
 }

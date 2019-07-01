@@ -1,9 +1,11 @@
 const app        = require('./src/app/express.config');
-const mongoose   = require('./src/app/db.config');
+const mongoose = require('./src/app/db.config');
 const swagger    = require('./docs');
 
 // mongodb connect
-mongoose.mongooseConnection();
+
+
+mongoose.connect()
 
 // swagger api documentation
 app.use('/doc', swagger);
