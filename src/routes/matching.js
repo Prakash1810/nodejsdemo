@@ -3,7 +3,7 @@ const router = express.Router();
 const matching = require('../services/api');
 const Controller = require('../core/controller');
 const controller = new Controller;
-const getFee = require("../db/matching-engine-config");
+//const getFee = require("../db/matching-engine-config");
 //ASSET
 
 router.get('/asset/list', async (req, res) => {
@@ -67,9 +67,7 @@ router.patch('/balance/update', async (req, res) => {
 
 router.post('/order/put-market', async (req, res) => {
     try {
-        const fee = await getFee.findOne({config:"takerFeeRate"});
-        req.body.data.attributes[fee.config]=fee.value;
-        console.log("Value:",req.body.data.attributes)
+     
         await matching.matchingEngineRequest('post', 'order/put-market', req.body, res);
 
     } catch (err) {
@@ -81,12 +79,7 @@ router.post('/order/put-market', async (req, res) => {
 
 router.post('/order/put-limit', async (req, res) => {
     try {
-        const fee = await getFee.find({config:{$in:['takerFeeRate' ,'makerFeeRate']}})
-        for(var i=0;i<fee.length;i++)
-        {
-            req.body.data.attributes[fee[i].config]=fee[i].value
-        }
-       
+      
         await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
