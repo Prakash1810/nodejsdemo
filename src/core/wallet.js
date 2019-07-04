@@ -12,9 +12,9 @@ const _ = require('lodash');
 const transactions = require('../db/transactions');
 const beldexNotification = require('../db/beldex-notifications');
 const mongoose = require('mongoose');
-const Fawn = require("fawn");
+// const Fawn = require("fawn");
 
-Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
+// Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
 
 class Wallet extends controller {
 
@@ -543,45 +543,45 @@ class Wallet extends controller {
         }
     }
     async insertNotification(data) {
-        let asset = await assets.findById(data.asset),
-            transactions = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']),
-            fawnResults = await Fawn.Task()
-            .save('transactions', transactions)
-            .save('beldex-notifications', {
-                user: new mongoose.Types.ObjectId(transactions.user),
-                type: 1,
-                notify_type: 'withdrawConfirmation',
-                notify_data: null,
-                status: 1,
-                created_date: transactions.created_date
-            })
-            .run();
+        // let asset = await assets.findById(data.asset),
+        //     transactions = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']),
+        //     fawnResults = await Fawn.Task()
+        //     .save('transactions', transactions)
+        //     .save('beldex-notifications', {
+        //         user: new mongoose.Types.ObjectId(transactions.user),
+        //         type: 1,
+        //         notify_type: 'withdrawConfirmation',
+        //         notify_data: null,
+        //         status: 1,
+        //         created_date: transactions.created_date
+        //     })
+        //     .run();
 
-        let notifyId = fawnResults[1].insertedId,
-            transactionsId = fawnResults[0].insertedId,
-            emailData = {
-                user_id: new mongoose.Types.ObjectId(transactions.user),
-                verification_code: notifyId,
-                amount: transactions.amount,
-                asset_code: asset.asset_code,
-                address: transactions.address,
-                ip: data.ip,
-                time: data.created_date
-            };
-        await Fawn.Task()
-            .update('beldex-notifications', {
-                '_id': notifyId
-            }, {
-                'notify_data': {
-                    'transactions': transactionsId,
-                    'email_data': emailData
-                }
-            }).run();
+        // let notifyId = fawnResults[1].insertedId,
+        //     transactionsId = fawnResults[0].insertedId,
+        //     emailData = {
+        //         user_id: new mongoose.Types.ObjectId(transactions.user),
+        //         verification_code: notifyId,
+        //         amount: transactions.amount,
+        //         asset_code: asset.asset_code,
+        //         address: transactions.address,
+        //         ip: data.ip,
+        //         time: data.created_date
+        //     };
+        // await Fawn.Task()
+        //     .update('beldex-notifications', {
+        //         '_id': notifyId
+        //     }, {
+        //         'notify_data': {
+        //             'transactions': transactionsId,
+        //             'email_data': emailData
+        //         }
+        //     }).run();
 
-        // send an confirmation notification
-        this.sendWithdrawNotification(emailData);
+        // // send an confirmation notification
+        // this.sendWithdrawNotification(emailData);
 
-        return notifyId;
+        // return notifyId;
     }
 
     sendWithdrawNotification(data) {
