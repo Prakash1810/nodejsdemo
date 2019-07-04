@@ -265,7 +265,6 @@ class User extends controller {
         }, async (err, count) => {
             if (!count) {
                 const device = await this.insertDevice(req, userID, true);
-                console.log()
                 const isChecked = await this.generatorOtpforEmail(userID);
                 if (isChecked.status) {
                     res.status(200).send(this.successFormat({
