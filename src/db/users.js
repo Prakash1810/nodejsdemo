@@ -1,6 +1,6 @@
-const mongooseConnect  = require('../app/db.config');
+//const mongooseConnect  = require('../app/db.config');
 const mongoose         = require('mongoose');
-const autoIncrement    = require('mongoose-auto-increment');
+// const autoIncrement    = require('mongoose-auto-increment');
 
 const usersSchema = mongoose.Schema({
     user_id: { type: Number, default: 0 },
@@ -33,7 +33,7 @@ const usersSchema = mongoose.Schema({
     is_deleted: { type: Boolean, default: false }
 });
 
-autoIncrement.initialize(mongooseConnect.connect());
-usersSchema.plugin(autoIncrement.plugin, { model: 'Users', field: 'user_id', startAt: 1 });
+// autoIncrement.initialize(mongooseConnect.connect());
+// usersSchema.plugin(autoIncrement.plugin, { model: 'Users', field: 'user_id', startAt: 1 });
 
 module.exports = mongoose.model('Users', usersSchema);
