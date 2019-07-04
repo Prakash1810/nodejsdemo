@@ -14,6 +14,7 @@ const g2fa = require('2fa');
 const token = require('../db/management-token');
 const otpType = require("../db/otp-types");
 const otpHistory = require('../db/otp-history');
+const sequence = require('../db/sequence');
 
 class User extends controller {
 
@@ -37,12 +38,19 @@ class User extends controller {
         }
     }
 
-    insertUser(result, res) {
+   async insertUser(result, res) {
+    
+    let inc = await sequence.findOneAndUpdate({},{
+        $inc: {
+         login_seq: 1
+        }
+      });
         users.create({
             email: result.email,
             password: result.password,
             referral_code: result.referral_code,
-            created_date: result.created_date
+            created_date: result.created_date,
+            user_id:inc.login_seq
         }, (err, user) => {
             if (err) {
                 return res.status(500).send(this.errorMsgFormat(err))
