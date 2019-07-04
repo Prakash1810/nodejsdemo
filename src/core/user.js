@@ -219,6 +219,41 @@ class User extends controller {
             }, 'user', 401));
         }
     }
+    async generatorOtpforEmail(user) {
+		try {
+		    const rand = Math.random() * (999999 - 100000) + 100000;
+		    const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
+		    const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
+		    const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
+		    if (!isChecked) {
+		        let data =
+		        {
+		            otp_type: getOtpType._id,
+		            user_id: user,
+		            otp: otp,
+		            create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'),
+
+		        }
+		        await new otpHistory(data).save();
+		    }
+
+
+		    let serviceData =
+		    {
+		        subject: `Successful Login From Otp`,
+		        email_for: "otp-login",
+		        otp: otp,
+		        user_id: user
+		    }
+
+		    await apiServices.sendEmailNotification(serviceData);
+		    return { status: true }
+		}
+		catch (err) {
+		    return { status: false, error: err.message }
+		}
+
+	    }
 
     async checkDevice(req, res, user) {
         var userID = user._id;
@@ -297,6 +332,109 @@ class User extends controller {
             }
         });
     }
+    async validateOtpForEmail(req, res) {
+        try {
+            let data = req.body.data.attributes;
+            let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
+            const isChecked = await otpHistory.findOne({ user_id: data.user_id, otp: data.otp, is_active: false });
+            if (isChecked) {
+                let duration = moment.duration(moment().diff(isChecked.create_date_time));
+                if (config.get('otpForEmail.timeExpiry') > duration.asSeconds()) {
+                    let isCheckedDevice = await deviceMangement.findOne({ _id: data.device_id })
+                    if (isCheckedDevice) {
+                        const loginHistory = await this.insertLoginHistory(req, data.user_id, isCheckedDevice._id, timeNow);
+                        // send email notification
+                        this.sendNotification({
+                            'ip': isCheckedDevice.ip,
+                            'time': timeNow,
+                            'browser': isCheckedDevice.browser,
+                            'browser_version': isCheckedDevice.browser_version,
+                            'os': isCheckedDevice.os,
+                            'user_id': data.user_id
+                        });
+                        let checkUser = await users.findOne({ _id: data.user_id })
+                        let tokens = await this.storeToken(checkUser, loginHistory._id);
+                        await otpHistory.findOneAndUpdate({ _id: isChecked._id }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
+                        return res.status(200).send(this.successFormat({
+                            "token": tokens.accessToken,
+                            "refreshToken": tokens.refreshToken,
+                            "google_auth": checkUser.google_auth,
+                            "sms_auth": checkUser.sms_auth,
+                            "anti_spoofing": checkUser.anti_spoofing,
+                            "anti_spoofing_code": checkUser.anti_spoofing_code,
+                            "loggedIn": timeNow,
+                            "expiresIn": config.get('secrete.expiry')
+                        }, checkUser._id));
+                    }
+                }
+                else {
+                    await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry:'Yes' })
+                    return res.status(404).send(this.errorMsgFormat({
+                        'message': 'invalid Otp or Otp is expired.'
+                    }));
+                }
+
+
+            }
+            else {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid otp'
+                }));
+            }
+        }
+        catch (err) {
+            return res.status(500).send(this.errorMsgFormat({
+                'message': err.message
+            }, 'users', 500));
+        }
+
+
+    }
+    async resendOtpForEmail(req, res) {
+        let data = req.body.data.attributes;
+        const isChecked = await otpHistory.findOne({ user_id: data.user_id, is_active: false });
+        if (isChecked) {
+            if (isChecked.count < config.get('otpForEmail.hmt')) {
+                let count = isChecked.count++;
+                let inCount = ++count;
+                const rand = Math.random() * (999999 - 100000) + 100000
+                const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
+                let serviceData =
+                {
+                    subject: `Successful Login From Otp ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
+                    email_for: "otp-login",
+                    otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`,
+                    user_id: data.user_id
+                }
+                await apiServices.sendEmailNotification(serviceData);
+                await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false }, { count: inCount, otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+
+                res.status(200).send(this.successFormat({
+                    'message': "Send a otp on your email"
+                }, data.user_id))
+            }
+            else {
+                await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': ` OTP resent request exceeded, please login again `
+                }, 'users', 400));
+            }
+        }
+        else {
+            let isChecked = await this.generatorOtpforEmail(data.user_id)
+            if (isChecked.status) {
+                res.status(200).send(this.successFormat({
+                    'message': "Send a otp on your email"
+                }, data.user_id))
+            }
+            else {
+                return res.status(500).send(this.errorMsgFormat({
+                    'message': isChecked.error
+                }, 'users', 500));
+            }
+        }
+    }
+
    
     // send email notification to the authorize device
     sendNotificationForAuthorize(data) {

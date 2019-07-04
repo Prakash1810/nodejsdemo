@@ -36,7 +36,26 @@ router.post('/login', (req, res) => {
     }
 });
 
+router.post('/validate/otp', (req, res) => {
+    try {
+        user.validateOtpForEmail(req, res);
 
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+router.post('/resend/otp', (req, res) => {
+    try {
+        user.resendOtpForEmail(req, res);
+
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
 
 
 router.delete('/', (req, res) => {
