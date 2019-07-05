@@ -38,42 +38,40 @@ class User extends controller {
         }
     }
 
-   async insertUser(result, res) {
+    async insertUser(result, res) {
     
-    let inc = await sequence.findOneAndUpdate({},{
-        $inc: {
-         login_seq: 1
-        }
-      });
-        users.create({
-            email: result.email,
-            password: result.password,
-            referral_code: result.referral_code,
-            created_date: result.created_date,
-            user_id:inc.login_seq
-        }, (err, user) => {
-            if (err) {
-                return res.status(500).send(this.errorMsgFormat(err))
-            } else {
-                if (userTemp.removeUserTemp(result.id)) {
-
-                    // address creation
-                    apiServices.initAddressCreation(user);
-
-                    return res.status(200).send(this.successFormat({
-                        'message': `Congratulation!, Your account has been activated.`
-                    }));
-                } else {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Invalid token. may be token as expired!'
-                    }));
-                }
+        let inc = await sequence.findOneAndUpdate({sequence_type:"users"},{
+            $inc: {
+             login_seq: 1
             }
-        });
-
-        return false;
-    }
-
+          });
+          try {
+           let user= await  users.create({
+                email: result.email,
+                password: result.password,
+                referral_code: result.referral_code,
+                created_date: result.created_date,
+                user_id:inc.login_seq
+            });
+            if (userTemp.removeUserTemp(result.id)) {
+    
+                // address creation
+                await apiServices.initAddressCreation(user);
+    
+                return res.status(200).send(this.successFormat({
+                    'message': `Congratulation!, Your account has been activated.`
+                }));
+            } else {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid token. may be token as expired!'
+                }));
+            }
+          }
+          catch(err)
+          {
+            return res.status(500).send(this.errorMsgFormat(err))
+          }
+        }
     async createToken(user, id) {
 
         let jwtOptions = {

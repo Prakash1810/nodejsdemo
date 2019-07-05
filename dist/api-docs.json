@@ -1860,7 +1860,7 @@
                     "example": {
                         "attributes": {
                             "user_id": 1,
-                            "asset": "ETH"
+                            "asset": ["ETH"]
                         }
                     }
                 }
