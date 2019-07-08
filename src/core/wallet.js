@@ -73,9 +73,16 @@ class Wallet extends controller {
                 user: req.user.user
             });
             if (!getAddress) {
-                return res.status(400).json(this.errorMsgFormat({
-                    "message": "Invalid request."
-                }, 'assets', 400));
+                let isChecked =  await assets.findOne({_id:asset})
+                let data =
+                {
+                    coin : isChecked.asset_code,
+                    user_id: req.user.user_id,
+                    user: req.user.user,
+                    asset: asset
+                }
+                
+                let response = apiServices.axiosAPI(data);
             } else {
                 return res.status(200).json(this.successFormat({
                     'asset_code': getAddress.asset_code,
