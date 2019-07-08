@@ -246,9 +246,9 @@ class User extends controller {
 
 		    let serviceData =
 		    {
-		        subject: `Successful Login From Otp`,
+		        subject: `Beldex login verification code ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
 		        email_for: "otp-login",
-		        otp: otp,
+		        otp: Math.floor(rand),
 		        user_id: user
 		    }
 
@@ -406,9 +406,9 @@ class User extends controller {
                 const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
                 let serviceData =
                 {
-                    subject: `Successful Login From Otp ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
+                    subject: `Beldex login verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
                     email_for: "otp-login",
-                    otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`,
+                    otp: Math.floor(rand),
                     user_id: data.user_id
                 }
                 await apiServices.sendEmailNotification(serviceData);
