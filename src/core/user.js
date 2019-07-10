@@ -118,7 +118,8 @@ class User extends controller {
 
     login(req, res) {
         users.findOne({
-            email: req.body.data.attributes.email
+            email: req.body.data.attributes.email,
+            is_active:true
         })
             .exec()
             .then((result) => {
@@ -133,6 +134,7 @@ class User extends controller {
                             'message': 'Invalid credentials'
                         }));
                     } else {
+                        
                         // check that device is already exists or not
                         this.checkDevice(req, res, result);
                     }
