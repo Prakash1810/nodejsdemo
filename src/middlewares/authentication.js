@@ -3,6 +3,7 @@ const config = require('config');
 const Controller = require('../core/controller');
 const controller = new Controller;
 const accesToken = require('../db/management-token');
+const users = require('../db/users');
 let verifyOptions = {
     issuer: config.get('secrete.issuer'),
     subject: 'Authentication',
