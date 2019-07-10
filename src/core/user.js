@@ -39,25 +39,25 @@ class User extends controller {
     }
 
     async insertUser(result, res) {
-    
-        let inc = await sequence.findOneAndUpdate({sequence_type:"users"},{
+
+        let inc = await sequence.findOneAndUpdate({ sequence_type: "users" }, {
             $inc: {
-             login_seq: 1
+                login_seq: 1
             }
-          });
-          try {
-           let user= await  users.create({
+        });
+        try {
+            let user = await users.create({
                 email: result.email,
                 password: result.password,
                 referral_code: result.referral_code,
                 created_date: result.created_date,
-                user_id:inc.login_seq
+                user_id: inc.login_seq
             });
             if (userTemp.removeUserTemp(result.id)) {
-    
+
                 // address creation
                 await apiServices.initAddressCreation(user);
-    
+
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulation!, Your account has been activated.`
                 }));
@@ -66,12 +66,11 @@ class User extends controller {
                     'message': 'Invalid token. may be token as expired!'
                 }));
             }
-          }
-          catch(err)
-          {
-            return res.status(500).send(this.errorMsgFormat(err))
-          }
         }
+        catch (err) {
+            return res.status(500).send(this.errorMsgFormat(err))
+        }
+    }
     async createToken(user, id) {
 
         let jwtOptions = {
@@ -116,7 +115,7 @@ class User extends controller {
         await new token(data).save();
         return { accessToken: accessToken, refreshToken: refreshToken }
     }
-    
+
     login(req, res) {
         users.findOne({
             email: req.body.data.attributes.email
@@ -226,40 +225,40 @@ class User extends controller {
         }
     }
     async generatorOtpforEmail(user) {
-		try {
-		    const rand = Math.random() * (999999 - 100000) + 100000;
-		    const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
-		    const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
-		    const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
-		    if (!isChecked) {
-		        let data =
-		        {
-		            otp_type: getOtpType._id,
-		            user_id: user,
-		            otp: otp,
-		            create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'),
+        try {
+            const rand = Math.random() * (999999 - 100000) + 100000;
+            const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
+            const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
+            const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
+            if (!isChecked) {
+                let data =
+                {
+                    otp_type: getOtpType._id,
+                    user_id: user,
+                    otp: otp,
+                    create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'),
 
-		        }
-		        await new otpHistory(data).save();
-		    }
+                }
+                await new otpHistory(data).save();
+            }
 
 
-		    let serviceData =
-		    {
-		        subject: `Beldex login verification code ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
-		        email_for: "otp-login",
-		        otp: Math.floor(rand),
-		        user_id: user
-		    }
+            let serviceData =
+            {
+                subject: `Beldex login verification code ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
+                email_for: "otp-login",
+                otp: Math.floor(rand),
+                user_id: user
+            }
 
-		    await apiServices.sendEmailNotification(serviceData);
-		    return { status: true }
-		}
-		catch (err) {
-		    return { status: false, error: err.message }
-		}
+            await apiServices.sendEmailNotification(serviceData);
+            return { status: true }
+        }
+        catch (err) {
+            return { status: false, error: err.message }
+        }
 
-	    }
+    }
 
     async checkDevice(req, res, user) {
         var userID = user._id;
@@ -271,11 +270,29 @@ class User extends controller {
         }, async (err, count) => {
             if (!count) {
                 const device = await this.insertDevice(req, userID, true);
+                let isAuth = await users.findOne({_id:userID,$or: [
+                    {
+                      "sms_auth": true
+                    },
+                    {
+                      "google_auth": true
+                    }
+                  ]})
+                  if(isAuth)
+                  {
+                    await this.insertLoginHistory(req, user_id, device._id, timeNow);
+                    return  res.status(200).send(this.successFormat({
+                        'message': "You are successfully logged in",
+                    }, userID))
+                  }
                 const isChecked = await this.generatorOtpforEmail(userID);
                 if (isChecked.status) {
                     res.status(200).send(this.successFormat({
                         'message': "Send a otp on your email",
-                        "device_id": device._id
+                        "device_id": device._id,
+                        "region":req.body.data.attributes.region,
+                        "city":req.body.data.attributes.city,
+                        "ip":req.body.data.attributes.ip
                     }, userID))
                 }
                 else {
@@ -288,6 +305,9 @@ class User extends controller {
                 deviceMangement.findOne({
                     user: userID,
                     browser: req.body.data.attributes.browser,
+                    region: req.body.data.attributes.region,
+                    city: req.body.data.attributes.city,
+                    os: req.body.data.attributes.city,
                     verified: true,
                     is_deleted: false
                 })
@@ -305,7 +325,7 @@ class User extends controller {
 
                             // send email notification
                             this.sendNotificationForAuthorize({
-                                "subject": `Authorize New Device ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
+                                "subject": `Authorize New Device/Location ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
                                 "email_for": "user-authorize",
                                 "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`,
                                 "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`,
@@ -320,11 +340,29 @@ class User extends controller {
                         } else {
 
                             const device = await this.insertDevice(req, userID, true);
+                            let isAuth = await users.findOne({_id:userID,$or: [
+                                {
+                                  "sms_auth": true
+                                },
+                                {
+                                  "google_auth": true
+                                }
+                              ]})
+                              if(isAuth)
+                              {
+                                await this.insertLoginHistory(req, user_id, device._id, timeNow);
+                                return  res.status(200).send(this.successFormat({
+                                    'message': "You are successfully logged in",
+                                }, userID))
+                              }
                             const isChecked = await this.generatorOtpforEmail(userID);
                             if (isChecked.status) {
                                 res.status(200).send(this.successFormat({
                                     'message': "Send a otp on your email",
-                                    "device_id": device._id
+                                    "device_id": device._id,
+                                    "region":req.body.data.attributes.region,
+                                    "city":req.body.data.attributes.city,
+                                    "ip":req.body.data.attributes.ip
                                 }, userID))
                             }
                             else {
@@ -347,16 +385,23 @@ class User extends controller {
                 if (config.get('otpForEmail.timeExpiry') > duration.asSeconds()) {
                     let isCheckedDevice = await deviceMangement.findOne({ _id: data.device_id })
                     if (isCheckedDevice) {
+                        console.log("Login:", isCheckedDevice);
                         const loginHistory = await this.insertLoginHistory(req, data.user_id, isCheckedDevice._id, timeNow);
                         // send email notification
-                        this.sendNotification({
-                            'ip': isCheckedDevice.ip,
-                            'time': timeNow,
-                            'browser': isCheckedDevice.browser,
-                            'browser_version': isCheckedDevice.browser_version,
-                            'os': isCheckedDevice.os,
-                            'user_id': data.user_id
-                        });
+                        let isCheckedDeviceManagement = await deviceMangement.findOne({ region: data.region, city: data.city, ip:data.ip })
+                        if(!isCheckedDeviceManagement)
+                        {
+                            console.log("Hello"); 
+                            this.sendNotification({
+                                'ip': data.ip,
+                                'time': timeNow,
+                                'browser': isCheckedDevice.browser,
+                                'browser_version': isCheckedDevice.browser_version,
+                                'os': isCheckedDevice.os,
+                                'user_id': data.user_id
+                            });
+                        }
+                        
                         let checkUser = await users.findOne({ _id: data.user_id })
                         let tokens = await this.storeToken(checkUser, loginHistory._id);
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
@@ -373,7 +418,7 @@ class User extends controller {
                     }
                 }
                 else {
-                    await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry:'Yes' })
+                    await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                     return res.status(404).send(this.errorMsgFormat({
                         'message': 'invalid Otp or Otp is expired.'
                     }));
@@ -440,7 +485,7 @@ class User extends controller {
         }
     }
 
-   
+
     // send email notification to the authorize device
     sendNotificationForAuthorize(data) {
         return apiServices.sendEmailNotification(data);
@@ -449,7 +494,7 @@ class User extends controller {
     // send email notification to the registered user
     sendNotification(data) {
         let serviceData = {
-            "subject": `Successful Login From New IP ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
+            "subject": `Successful Login From IP ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
             "email_for": "user-login",
             "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
             "time": data.time,

@@ -82,7 +82,7 @@ class Wallet extends controller {
                     asset: asset
                 }
                 
-                let response = apiServices.axiosAPI(data);
+                apiServices.axiosAPI(data);
             } else {
                 return res.status(200).json(this.successFormat({
                     'asset_code': getAddress.asset_code,
