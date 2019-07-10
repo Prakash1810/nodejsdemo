@@ -268,6 +268,7 @@ class User extends controller {
         deviceMangement.countDocuments({
             user: userID
         }, async (err, count) => {
+            console.log("count:",count);
             if (!count) {
                 const device = await this.insertDevice(req, userID, true);
                 let isAuth = await users.findOne({_id:userID,$or: [
@@ -280,26 +281,29 @@ class User extends controller {
                   ]})
                   if(isAuth)
                   {
-                    await this.insertLoginHistory(req, user_id, device._id, timeNow);
+                    await this.insertLoginHistory(req, userID, device._id, timeNow);
                     return  res.status(200).send(this.successFormat({
                         'message': "You are successfully logged in",
                     }, userID))
                   }
-                const isChecked = await this.generatorOtpforEmail(userID);
-                if (isChecked.status) {
-                    res.status(200).send(this.successFormat({
-                        'message': "Send a otp on your email",
-                        "device_id": device._id,
-                        "region":req.body.data.attributes.region,
-                        "city":req.body.data.attributes.city,
-                        "ip":req.body.data.attributes.ip
-                    }, userID))
-                }
-                else {
-                    return res.status(500).send(this.errorMsgFormat({
-                        'message': isChecked.error
-                    }, 'users', 500));
-                }
+                  else{
+                    const isChecked = await this.generatorOtpforEmail(userID);
+                    if (isChecked.status) {
+                        res.status(200).send(this.successFormat({
+                            'message': "Send a otp on your email",
+                            "device_id": device._id,
+                            "region":req.body.data.attributes.region,
+                            "city":req.body.data.attributes.city,
+                            "ip":req.body.data.attributes.ip
+                        }, userID))
+                    }
+                    else {
+                        return res.status(500).send(this.errorMsgFormat({
+                            'message': isChecked.error
+                        }, 'users', 500));
+                    }
+                  }
+                
 
             } else {
                 deviceMangement.findOne({
@@ -307,15 +311,16 @@ class User extends controller {
                     browser: req.body.data.attributes.browser,
                     region: req.body.data.attributes.region,
                     city: req.body.data.attributes.city,
-                    os: req.body.data.attributes.city,
+                    os: req.body.data.attributes.os,
                     verified: true,
                     is_deleted: false
                 })
                     .exec()
                     .then(async (result) => {
+                        console.log("Result:",result);
                         if (!result) {
                             // insert new device records
-                            this.insertDevice(req, userID).then(() => { });
+                            await this.insertDevice(req, userID);
                             let urlHash = this.encryptHash({
                                 "user_id": userID,
                                 "ip": req.body.data.attributes.ip,
@@ -331,7 +336,7 @@ class User extends controller {
                                 "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`,
                                 "ip": req.body.data.attributes.ip,
                                 "hash": urlHash,
-                                "user_id": user._id
+                                "user_id": userID
                             })
                             return res.status(401).send(this.errorMsgFormat({
                                 'msg': 'unauthorized',
@@ -350,26 +355,31 @@ class User extends controller {
                               ]})
                               if(isAuth)
                               {
-                                await this.insertLoginHistory(req, user_id, device._id, timeNow);
+                                
+                                await this.insertLoginHistory(req, userID, device._id, timeNow);
                                 return  res.status(200).send(this.successFormat({
                                     'message': "You are successfully logged in",
                                 }, userID))
                               }
-                            const isChecked = await this.generatorOtpforEmail(userID);
-                            if (isChecked.status) {
-                                res.status(200).send(this.successFormat({
-                                    'message': "Send a otp on your email",
-                                    "device_id": device._id,
-                                    "region":req.body.data.attributes.region,
-                                    "city":req.body.data.attributes.city,
-                                    "ip":req.body.data.attributes.ip
-                                }, userID))
-                            }
-                            else {
-                                return res.status(500).send(this.errorMsgFormat({
-                                    'message': isChecked.error
-                                }, 'users', 500));
-                            }
+                              else
+                              {
+                                const isChecked = await this.generatorOtpforEmail(userID);
+                                if (isChecked.status) {
+                                    res.status(200).send(this.successFormat({
+                                        'message': "Send a otp on your email",
+                                        "device_id": device._id,
+                                        "region":req.body.data.attributes.region,
+                                        "city":req.body.data.attributes.city,
+                                        "ip":req.body.data.attributes.ip
+                                    }, userID))
+                                }
+                                else {
+                                    return res.status(500).send(this.errorMsgFormat({
+                                        'message': isChecked.error
+                                    }, 'users', 500));
+                                }
+                              }
+                            
                         }
                     });
             }
@@ -521,7 +531,7 @@ class User extends controller {
             verified: verify
         };
 
-        return new deviceMangement(data).save(cb);
+        return new deviceMangement(data).save();
     }
 
     async insertLoginHistory(req, userID, deviceID, timeNow) {
@@ -667,6 +677,7 @@ class User extends controller {
     patchWhiteListIP(req, res) {
 
         let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
+        console.log("Hash:",deviceHash);
         if (deviceHash.data.user_id) {
             let checkExpired = this.checkTimeExpired(deviceHash.data.datetime);
             if (checkExpired) {
