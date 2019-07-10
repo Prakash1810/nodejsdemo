@@ -20,8 +20,16 @@ module.exports = async (req, res, next) => {
         if (isChecked) {
             throw error
         } else {
-            req.user = data;
-            next();
+            let isActive = await users.findOne({_id:data.user, is_active:false})
+            if(isActive)
+            {
+                throw error;
+            }
+            else{
+                req.user = data;
+                next();
+            }
+           
         }
     }
     catch (error) {

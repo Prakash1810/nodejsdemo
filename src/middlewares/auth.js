@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const config = require('config');
 const Controller = require('../core/controller');
 const refreshToken = require('../db/management-token');
+const users = require('../db/users');
 const controller = new Controller;
 
 let verifyOptions = {
@@ -21,8 +22,16 @@ module.exports = async (req, res, next) => {
         if (isChecked) {
             throw error
         } else {
-            req.user = data;
-            next();
+            let isActive = await users.findOne({_id:data.user, is_active:false})
+            if(isActive)
+            {
+                throw error;
+            }
+            else{
+                req.user = data;
+                next();
+            }
+           
         }
     }
     catch (error) {
