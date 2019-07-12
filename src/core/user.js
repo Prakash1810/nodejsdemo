@@ -243,16 +243,13 @@ class User extends controller {
                 }
                 await new otpHistory(data).save();
             }
-
-
             let serviceData =
             {
-                subject: `Beldex login verification code ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
+                subject: `Beldex login verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
                 email_for: "otp-login",
                 otp: Math.floor(rand),
-                user_id: user
+                user_id:user
             }
-
             await apiServices.sendEmailNotification(serviceData);
             return { status: true }
         }
@@ -260,6 +257,22 @@ class User extends controller {
             return { status: false, error: err.message }
         }
 
+    }
+
+    async returnToken(res,result,loginHistory)
+    {
+        let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
+        let tokens = await this.storeToken(result, loginHistory);
+        return res.status(200).send(this.successFormat({
+                            "token": tokens.accessToken,
+                            "refreshToken": tokens.refreshToken,
+                            "google_auth": result.google_auth,
+                            "sms_auth": result.sms_auth,
+                            "anti_spoofing": result.anti_spoofing,
+                            "anti_spoofing_code": result.anti_spoofing_code,
+                            "loggedIn": timeNow,
+                            "expiresIn": config.get('secrete.expiry')
+                        }, result._id));
     }
 
     async checkDevice(req, res, user) {
@@ -283,10 +296,9 @@ class User extends controller {
                   ]})
                   if(isAuth)
                   {
-                    await this.insertLoginHistory(req, userID, device._id, timeNow);
-                    return  res.status(200).send(this.successFormat({
-                        'message': "You are successfully logged in",
-                    }, userID))
+                    let loginHistoryId =await this.insertLoginHistory(req, userID, device._id, timeNow);
+                    await this.returnToken(res,user,loginHistoryId._id)
+                 
                   }
                   else{
                     const isChecked = await this.generatorOtpforEmail(userID);
@@ -358,10 +370,8 @@ class User extends controller {
                               if(isAuth)
                               {
                                 
-                                await this.insertLoginHistory(req, userID, device._id, timeNow);
-                                return  res.status(200).send(this.successFormat({
-                                    'message': "You are successfully logged in",
-                                }, userID))
+                                let loginHistoryId = await this.insertLoginHistory(req, userID, device._id, timeNow);
+                                await this.returnToken(res,user,loginHistoryId._id)
                               }
                               else
                               {
@@ -387,23 +397,27 @@ class User extends controller {
             }
         });
     }
+
+
     async validateOtpForEmail(req, res) {
         try {
             let data = req.body.data.attributes;
+            console.log('data:',data.ip);
             let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
             const isChecked = await otpHistory.findOne({ user_id: data.user_id, otp: data.otp, is_active: false });
             if (isChecked) {
+                var date = new Date(isChecked.create_date_time);
+                let getSeconds = date.getSeconds()+config.get('otpForEmail.timeExpiry');
                 let duration = moment.duration(moment().diff(isChecked.create_date_time));
-                if (config.get('otpForEmail.timeExpiry') > duration.asSeconds()) {
+                if (getSeconds > duration.asSeconds()) {
                     let isCheckedDevice = await deviceMangement.findOne({ _id: data.device_id })
                     if (isCheckedDevice) {
-                        console.log("Login:", isCheckedDevice);
                         const loginHistory = await this.insertLoginHistory(req, data.user_id, isCheckedDevice._id, timeNow);
                         // send email notification
                         let isCheckedDeviceManagement = await deviceMangement.findOne({ region: data.region, city: data.city, ip:data.ip })
                         if(!isCheckedDeviceManagement)
                         {
-                            console.log("Hello"); 
+                            console.log("Hello");
                             this.sendNotification({
                                 'ip': data.ip,
                                 'time': timeNow,
@@ -414,19 +428,9 @@ class User extends controller {
                             });
                         }
                         
-                        let checkUser = await users.findOne({ _id: data.user_id })
-                        let tokens = await this.storeToken(checkUser, loginHistory._id);
-                        await otpHistory.findOneAndUpdate({ _id: isChecked._id }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
-                        return res.status(200).send(this.successFormat({
-                            "token": tokens.accessToken,
-                            "refreshToken": tokens.refreshToken,
-                            "google_auth": checkUser.google_auth,
-                            "sms_auth": checkUser.sms_auth,
-                            "anti_spoofing": checkUser.anti_spoofing,
-                            "anti_spoofing_code": checkUser.anti_spoofing_code,
-                            "loggedIn": timeNow,
-                            "expiresIn": config.get('secrete.expiry')
-                        }, checkUser._id));
+                        let checkUser = await users.findOne({ _id: data.user_id });
+                        await otpHistory.findOneAndUpdate({ _id: isChecked._id }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+                        await this.returnToken(res,checkUser,loginHistory._id);
                     }
                 }
                 else {
