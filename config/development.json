@@ -31,7 +31,7 @@
 	"otpForEmail":
 	{
 		"hmt":3,
-		"timeExpiry":30000
+		"timeExpiry":180
 	}
 
 }
