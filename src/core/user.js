@@ -207,6 +207,7 @@ class User extends controller {
 
     getTokenToUserId(req, res, data = 'json') {
         let token = req.headers.Authorization;
+        console.log("Token:",token);
         try {
             let decoded = jwt.verify(token, config.get('secrete.key'));
             if (data === 'json') {
@@ -564,7 +565,7 @@ class User extends controller {
         query.skip = size * (pageNo - 1)
         query.limit = size
 
-        let userID = this.getTokenToUserId(req, res, 'ID');
+        let userID = req.user.user
 
         // Find some documents
         loginHistory.countDocuments({
@@ -623,7 +624,7 @@ class User extends controller {
         query.skip = size * (pageNo - 1)
         query.limit = size
 
-        let userID = this.getTokenToUserId(req, res, 'ID');
+        let userID = req.user.user;
 
         // Find some documents
         deviceMangement.countDocuments({
