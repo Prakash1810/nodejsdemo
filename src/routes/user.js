@@ -127,7 +127,7 @@ router.patch('/change-password', auth, (req, res) => {
 
 router.post('/get-user-id', (req, res) => {
     try {
-        if (req.headers.authorization) {
+        if (req.headers.Authorization) {
             
             return user.getTokenToUserId(req, res);
         } else {
@@ -281,5 +281,6 @@ router.delete('/whitelist', auth, async (req, res) => {
         }, 'users', 500));
     }
 })
+
 
 module.exports = router;
