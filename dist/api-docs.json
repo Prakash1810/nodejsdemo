@@ -272,7 +272,7 @@
             }
         },
         "user/get-user-id": {
-            "get": {
+            "post": {
                 "tags": [
                     "users"
                 ],
