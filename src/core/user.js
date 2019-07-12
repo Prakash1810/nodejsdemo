@@ -414,10 +414,10 @@ class User extends controller {
                     if (isCheckedDevice) {
                         const loginHistory = await this.insertLoginHistory(req, data.user_id, isCheckedDevice._id, timeNow);
                         // send email notification
-                        let isCheckedDeviceManagement = await deviceMangement.findOne({ region: data.region, city: data.city, ip:data.ip })
-                        if(!isCheckedDeviceManagement)
-                        {
-                            console.log("Hello");
+                        // let isCheckedDeviceManagement = await deviceMangement.findOne({ region: data.region, city: data.city, ip:data.ip })
+                        // if(!isCheckedDeviceManagement)
+                        // {
+                            
                             this.sendNotification({
                                 'ip': data.ip,
                                 'time': timeNow,
@@ -426,7 +426,7 @@ class User extends controller {
                                 'os': isCheckedDevice.os,
                                 'user_id': data.user_id
                             });
-                        }
+                        // }
                         
                         let checkUser = await users.findOne({ _id: data.user_id });
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
