@@ -52,7 +52,7 @@ class Password extends Controller {
                 // send email notification to the registered user
                 let serviceData   = {
                     'hash' : encryptedHash,
-                    'subject': `Password Reset From - ${moment().format('YYYY-MM-DD HH:mm:ss')} (${config.get('settings.timeZone')})`,
+                    'subject': `Password Reset - ${moment().format('YYYY-MM-DD HH:mm:ss')} (${config.get('settings.timeZone')})`,
                     'email_for': 'forget-password',
                     'user_id': user._id
                 };

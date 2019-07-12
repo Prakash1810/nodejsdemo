@@ -417,7 +417,7 @@ class User extends controller {
                         let isCheckedDeviceManagement = await deviceMangement.findOne({ region: data.region, city: data.city, ip:data.ip })
                         if(!isCheckedDeviceManagement)
                         {
-                            console.log("Hello");
+                            
                             this.sendNotification({
                                 'ip': data.ip,
                                 'time': timeNow,
