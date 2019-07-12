@@ -221,7 +221,7 @@ class User extends controller {
                 return decoded.user;
             }
         } catch (err) {
-            return res.status(401).json(this.errorMsgFormat({
+            return res.status(401).send(this.errorMsgFormat({
                 message: "Invalid Authentication"
             }, 'user', 401));
         }

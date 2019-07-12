@@ -942,7 +942,15 @@
                 "description": "List of asset",
                 "produces": [
                     "application/json"
-                ]
+                ], 
+                "parameters": [
+                {
+                    "name": "Authorization",
+                    "in": "header",
+                    "description": "asset/list",
+                    "required": true,
+                    "type": "string"
+                }]
             }
         },
         "matching/asset/summary": {
@@ -961,6 +969,13 @@
                         "description": "Asset name",
                         "required": false,
                         "type": "String"
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "asset/summary",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -984,6 +999,13 @@
                         "schema": {
                             "$ref": "#/definitions/balanceHistory"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "balance/history",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1007,6 +1029,13 @@
                         "schema": {
                             "$ref": "#/definitions/balanceQuery"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "balance/query",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1030,6 +1059,13 @@
                         "schema": {
                             "$ref": "#/definitions/balanceUpdate"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "balance/update",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1053,6 +1089,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderPutMarket"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/put-market",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1076,6 +1119,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderPutLimit"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/put-limit",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1099,6 +1149,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderCancel"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/cancel",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1122,6 +1179,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderBook"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/book",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1145,6 +1209,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderDepth"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/depth",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1168,6 +1239,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderPending"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/pending",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1191,6 +1269,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderPendingDetials"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/pending-detials",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1214,6 +1299,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderDeals"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/deals",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1237,6 +1329,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderFinished"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/finsihed",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1260,6 +1359,13 @@
                         "schema": {
                             "$ref": "#/definitions/orderFinishedDetials"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/finished-detials",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1291,6 +1397,13 @@
                         "description": "Asset name",
                         "required": false,
                         "type": "String"
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "market/summary",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1314,6 +1427,13 @@
                         "schema": {
                             "$ref": "#/definitions/marketStatus"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "market/status",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1337,6 +1457,13 @@
                         "schema": {
                             "$ref": "#/definitions/marketStatusToday"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "market/status-toady",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1360,6 +1487,13 @@
                         "schema": {
                             "$ref": "#/definitions/marketLast"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "market/last",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1383,6 +1517,13 @@
                         "schema": {
                             "$ref": "#/definitions/marketDeals"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "market/deals",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1406,6 +1547,13 @@
                         "schema": {
                             "$ref": "#/definitions/marketUserDeals"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "market/user-deals",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1429,6 +1577,13 @@
                         "schema": {
                             "$ref": "#/definitions/marketKline"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "market/kline",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }

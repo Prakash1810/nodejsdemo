@@ -127,7 +127,8 @@ router.patch('/change-password', auth, (req, res) => {
 
 router.get('/get-user-id', (req, res) => {
     try {
-        if (req.headers.Authorization) {
+        if (req.headers.authorization) {
+            
             return user.getTokenToUserId(req, res);
         } else {
             return res.status(401).json(controller.errorMsgFormat({
