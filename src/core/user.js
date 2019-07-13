@@ -206,7 +206,7 @@ class User extends controller {
     }
 
     getTokenToUserId(req, res, data = 'json') {
-        let token = req.headers.Authorization;
+        let token = req.headers.authorization;
         console.log("Token:",token);
         try {
             let decoded = jwt.verify(token, config.get('secrete.key'));

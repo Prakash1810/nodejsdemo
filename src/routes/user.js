@@ -127,7 +127,8 @@ router.patch('/change-password', auth, (req, res) => {
 
 router.post('/get-user-id', (req, res) => {
     try {
-        if (req.headers.Authorization) {
+        console.log("Token:",req.headers);
+        if (req.headers.authorization) {
             
             return user.getTokenToUserId(req, res);
         } else {
