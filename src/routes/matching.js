@@ -58,6 +58,18 @@ router.post('/balance/query', auth, async (req, res) => {
     }
 })
 
+router.patch('/balance/update', auth, async (req, res) => {
+    try {
+        console.log('Data:',req.body.data.attributes)
+        req.body.data.attributes.user_id = Number(req.user.user_id);
+        console.log('Data:',req.body.data.attributes)
+        await matching.matchingEngineRequest('patch', 'balance/update', req.body, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'order-matching', 500));
+    }
+})
 
 //ORDER
 
