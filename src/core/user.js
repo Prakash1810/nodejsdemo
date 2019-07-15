@@ -15,6 +15,8 @@ const token = require('../db/management-token');
 const otpType = require("../db/otp-types");
 const otpHistory = require('../db/otp-history');
 const sequence = require('../db/sequence');
+const addMarket = require('../db/market-list');
+const favourite = require('../db/favourite-user-market');
 
 class User extends controller {
 
@@ -119,7 +121,7 @@ class User extends controller {
     login(req, res) {
         users.findOne({
             email: req.body.data.attributes.email,
-            is_active:true
+            is_active: true
         })
             .exec()
             .then((result) => {
@@ -134,7 +136,7 @@ class User extends controller {
                             'message': 'Invalid credentials'
                         }));
                     } else {
-                        
+
                         // check that device is already exists or not
                         this.checkDevice(req, res, result);
                     }
@@ -207,7 +209,7 @@ class User extends controller {
 
     getTokenToUserId(req, res, data = 'json') {
         let token = req.headers.authorization;
-        console.log("Token:",token);
+        console.log("Token:", token);
         try {
             let decoded = jwt.verify(token, config.get('secrete.key'));
             if (data === 'json') {
@@ -249,7 +251,7 @@ class User extends controller {
                 subject: `Beldex login verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
                 email_for: "otp-login",
                 otp: Math.floor(rand),
-                user_id:user
+                user_id: user
             }
             await apiServices.sendEmailNotification(serviceData);
             return { status: true }
@@ -260,20 +262,19 @@ class User extends controller {
 
     }
 
-    async returnToken(res,result,loginHistory)
-    {
+    async returnToken(res, result, loginHistory) {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let tokens = await this.storeToken(result, loginHistory);
         return res.status(200).send(this.successFormat({
-                            "token": tokens.accessToken,
-                            "refreshToken": tokens.refreshToken,
-                            "google_auth": result.google_auth,
-                            "sms_auth": result.sms_auth,
-                            "anti_spoofing": result.anti_spoofing,
-                            "anti_spoofing_code": result.anti_spoofing_code,
-                            "loggedIn": timeNow,
-                            "expiresIn": config.get('secrete.expiry')
-                        }, result._id));
+            "token": tokens.accessToken,
+            "refreshToken": tokens.refreshToken,
+            "google_auth": result.google_auth,
+            "sms_auth": result.sms_auth,
+            "anti_spoofing": result.anti_spoofing,
+            "anti_spoofing_code": result.anti_spoofing_code,
+            "loggedIn": timeNow,
+            "expiresIn": config.get('secrete.expiry')
+        }, result._id));
     }
 
     async checkDevice(req, res, user) {
@@ -284,32 +285,33 @@ class User extends controller {
         deviceMangement.countDocuments({
             user: userID
         }, async (err, count) => {
-            console.log("count:",count);
+            console.log("count:", count);
             if (!count) {
                 const device = await this.insertDevice(req, userID, true);
-                let isAuth = await users.findOne({_id:userID,$or: [
-                    {
-                      "sms_auth": true
-                    },
-                    {
-                      "google_auth": true
-                    }
-                  ]})
-                  if(isAuth)
-                  {
-                    let loginHistoryId =await this.insertLoginHistory(req, userID, device._id, timeNow);
-                    await this.returnToken(res,user,loginHistoryId._id)
-                 
-                  }
-                  else{
+                let isAuth = await users.findOne({
+                    _id: userID, $or: [
+                        {
+                            "sms_auth": true
+                        },
+                        {
+                            "google_auth": true
+                        }
+                    ]
+                })
+                if (isAuth) {
+                    let loginHistoryId = await this.insertLoginHistory(req, userID, device._id, timeNow);
+                    await this.returnToken(res, user, loginHistoryId._id)
+
+                }
+                else {
                     const isChecked = await this.generatorOtpforEmail(userID);
                     if (isChecked.status) {
                         res.status(200).send(this.successFormat({
                             'message': "Send a otp on your email",
                             "device_id": device._id,
-                            "region":req.body.data.attributes.region,
-                            "city":req.body.data.attributes.city,
-                            "ip":req.body.data.attributes.ip
+                            "region": req.body.data.attributes.region,
+                            "city": req.body.data.attributes.city,
+                            "ip": req.body.data.attributes.ip
                         }, userID))
                     }
                     else {
@@ -317,8 +319,8 @@ class User extends controller {
                             'message': isChecked.error
                         }, 'users', 500));
                     }
-                  }
-                
+                }
+
 
             } else {
                 deviceMangement.findOne({
@@ -332,7 +334,7 @@ class User extends controller {
                 })
                     .exec()
                     .then(async (result) => {
-                        console.log("Result:",result);
+                        console.log("Result:", result);
                         if (!result) {
                             // insert new device records
                             await this.insertDevice(req, userID);
@@ -360,30 +362,30 @@ class User extends controller {
                         } else {
 
                             const device = await this.insertDevice(req, userID, true);
-                            let isAuth = await users.findOne({_id:userID,$or: [
-                                {
-                                  "sms_auth": true
-                                },
-                                {
-                                  "google_auth": true
-                                }
-                              ]})
-                              if(isAuth)
-                              {
-                                
+                            let isAuth = await users.findOne({
+                                _id: userID, $or: [
+                                    {
+                                        "sms_auth": true
+                                    },
+                                    {
+                                        "google_auth": true
+                                    }
+                                ]
+                            })
+                            if (isAuth) {
+
                                 let loginHistoryId = await this.insertLoginHistory(req, userID, device._id, timeNow);
-                                await this.returnToken(res,user,loginHistoryId._id)
-                              }
-                              else
-                              {
+                                await this.returnToken(res, user, loginHistoryId._id)
+                            }
+                            else {
                                 const isChecked = await this.generatorOtpforEmail(userID);
                                 if (isChecked.status) {
                                     res.status(200).send(this.successFormat({
                                         'message': "Send a otp on your email",
                                         "device_id": device._id,
-                                        "region":req.body.data.attributes.region,
-                                        "city":req.body.data.attributes.city,
-                                        "ip":req.body.data.attributes.ip
+                                        "region": req.body.data.attributes.region,
+                                        "city": req.body.data.attributes.city,
+                                        "ip": req.body.data.attributes.ip
                                     }, userID))
                                 }
                                 else {
@@ -391,8 +393,8 @@ class User extends controller {
                                         'message': isChecked.error
                                     }, 'users', 500));
                                 }
-                              }
-                            
+                            }
+
                         }
                     });
             }
@@ -403,22 +405,21 @@ class User extends controller {
     async validateOtpForEmail(req, res) {
         try {
             let data = req.body.data.attributes;
-            console.log('data:',data.ip);
+            console.log('data:', data.ip);
             let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
             const isChecked = await otpHistory.findOne({ user_id: data.user_id, otp: data.otp, is_active: false });
             if (isChecked) {
                 var date = new Date(isChecked.create_date_time);
-                let getSeconds = date.getSeconds()+config.get('otpForEmail.timeExpiry');
+                let getSeconds = date.getSeconds() + config.get('otpForEmail.timeExpiry');
                 let duration = moment.duration(moment().diff(isChecked.create_date_time));
                 if (getSeconds > duration.asSeconds()) {
                     let isCheckedDevice = await deviceMangement.findOne({ _id: data.device_id })
                     if (isCheckedDevice) {
                         const loginHistory = await this.insertLoginHistory(req, data.user_id, isCheckedDevice._id, timeNow);
                         // send email notification
-                        let isCheckedDeviceManagement = await deviceMangement.findOne({ region: data.region, city: data.city, ip:data.ip })
-                        if(!isCheckedDeviceManagement)
-                        {
-                            
+                        let isCheckedDeviceManagement = await deviceMangement.findOne({ region: data.region, city: data.city, ip: data.ip })
+                        if (!isCheckedDeviceManagement) {
+
                             this.sendNotification({
                                 'ip': data.ip,
                                 'time': timeNow,
@@ -428,10 +429,10 @@ class User extends controller {
                                 'user_id': data.user_id
                             });
                         }
-                        
+
                         let checkUser = await users.findOne({ _id: data.user_id });
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
-                        await this.returnToken(res,checkUser,loginHistory._id);
+                        await this.returnToken(res, checkUser, loginHistory._id);
                     }
                 }
                 else {
@@ -684,7 +685,7 @@ class User extends controller {
     patchWhiteListIP(req, res) {
 
         let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
-        console.log("Hash:",deviceHash);
+        console.log("Hash:", deviceHash);
         if (deviceHash.data.user_id) {
             let checkExpired = this.checkTimeExpired(deviceHash.data.datetime);
             if (checkExpired) {
@@ -971,6 +972,108 @@ class User extends controller {
                 'message': err.message
             }, 'users', 500));
         }
+    }
+
+    async addMarkets(req, res) {
+        let data = req.body.data.attributes;
+        if (data.market_name !== null && data.market_name != undefined) {
+            let isCheckMarket = await addMarket.findOne({ market_name: data.market_name })
+            if (isCheckMarket) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': "Market is already in the list"
+                }, 'users', 400));
+            }
+            await new addMarket(data).save();
+            return res.status(200).send(this.successFormat({
+                'message': 'Add Market',
+            }));
+        }
+        else {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': "market_name is required."
+            }, 'users', 400));
+        }
+    }
+
+    async marketList(req, res) {
+        let isChecked = await addMarket.find({});
+        if (isChecked.length == 0) {
+            return res.status(404).send(this.errorMsgFormat({
+                'message': "No Data Found"
+            }, 'users', 404));
+        }
+        else {
+            res.status(200).send(this.successFormat({
+                isChecked
+            }))
+        }
+    }
+
+    favouriteValidation(data) {
+        let schema = Joi.object().keys({
+            market: Joi.string().required()
+        });
+        return Joi.validate(data, schema, {
+            abortEarly: false
+        });
+    }
+    async addFavouriteUser(req, res) {
+        let data = req.body.data.attributes;
+        let isChecked = await addMarket.findOne({ market_name: data.market.toUpperCase() });
+        if (!isChecked) {
+            return res.status(404).send(this.errorMsgFormat({
+                'message': "market not Found"
+            }, 'users', 404));
+        }
+       
+        let isCheckUser = await favourite.findOne({ user: req.user.user });
+        if (isCheckUser) {
+            let id = isCheckUser.market;
+            id.push(isChecked._id);
+            await favourite.findOneAndUpdate({ _id:isCheckUser._id },{ market:id})
+            return res.status(200).send(this.successFormat({
+                'message': 'Add market to your favourite list',
+            }));
+        }
+        await new favourite(
+            {
+                user: req.user.user,
+                market: isChecked._id
+            }).save();
+        return res.status(200).send(this.successFormat({
+            'message': 'Add market to your favourite list',
+        }));
+
+    }
+    async updateFavourite(req,res)
+    {
+        let data = req.body.data.attributes.market;
+        let ismarket = await addMarket.findOne({market_name:data.toUpperCase()});
+        if(!ismarket)
+        {
+            return res.status(404).send(this.errorMsgFormat({
+                'message': "Not found to market list "
+            }, 'users', 404));
+        }
+        let isfavourite = await favourite.findOne({user:req.user.user});
+        if(!isfavourite)
+        {
+            return res.status(404).send(this.errorMsgFormat({
+                'message': "Not found to your favourite list"
+            }, 'users', 404));
+        }
+        console.log(ismarket._id);
+        let fav = isfavourite.market;
+        var index = fav.indexOf(ismarket._id);
+            if (index > -1) {
+               fav.splice(index, 1);
+            }
+        console.log('fav:',fav);
+        await favourite.findOneAndUpdate({user:req.user.user},{market:fav});
+        return res.status(200).send(this.successFormat({
+            'message': 'Remove market to your favourite list',
+        }));
+        
     }
 }
 
