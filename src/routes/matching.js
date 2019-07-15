@@ -190,7 +190,8 @@ router.post('/order/finished-detials', async (req, res) => {
 
 router.get('/market/list', async (req, res) => {
     try {
-        await matching.matchingEngineGetRequest('market/list', res);
+        
+        await matching.matchingEngineRequestForMarketList('market/list', req, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

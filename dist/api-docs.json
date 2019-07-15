@@ -562,6 +562,105 @@
                 ]
             }
         },
+        "user/market": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Add market in Db",
+                "operationId": "Create",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/market"
+                        }
+                    }
+                ]
+            }
+        },
+        "user/market/list": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Show a market from db",
+                "operationId": "find",
+                "produces": [
+                    "application/json"
+                ]
+            }
+        },
+        "user/favourite": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Add market in favourite list",
+                "operationId": "Create",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/favourite"
+                        }
+                    },
+                    {
+
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string"
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "users"
+                ],
+                "description": "remove market in favourite list",
+                "operationId": "patch",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/favourite"
+                        }
+                    },
+                    {
+
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "settings",
+                        "required": true,
+                        "type": "string"
+                    }
+                ]
+            }
+        },
+       
         "wallet/assets": {
             "get": {
                 "tags": [
@@ -1025,6 +1124,38 @@
                 ]
             }
         },
+
+        "matching/balance/update": {
+            "patch": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "balance query",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "balance update",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/balanceUpdate"
+                        }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "balance/query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ]
+            }
+        },
+
         "matching/order/put-market": {
             "post": {
                 "tags": [
@@ -1301,6 +1432,15 @@
                 "description": "Market list",
                 "produces": [
                     "application/json"
+                ],
+                "parameters": [
+                     {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "settings",
+                        "required": false,
+                        "type": "string"
+                     }
                 ]
             }
         },
@@ -1866,6 +2006,38 @@
                     }
                 }
             }
+        },
+        "market": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market_name":"ETHBTC"
+                            }
+                        }
+                    }
+                }
+        },
+        "favourite": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "market":"ETHBTC"
+                            }
+                        }
+                    }
+                }
         },
         "balanceHistory": {
             "properties": {

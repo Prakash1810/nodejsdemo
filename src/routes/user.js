@@ -127,9 +127,9 @@ router.patch('/change-password', auth, (req, res) => {
 
 router.get('/get-user-id', (req, res) => {
     try {
-        console.log("Token:",req.headers);
+        console.log("Token:", req.headers);
         if (req.headers.authorization) {
-            
+
             return user.getTokenToUserId(req, res);
         } else {
             return res.status(401).json(controller.errorMsgFormat({
@@ -282,6 +282,52 @@ router.delete('/whitelist', auth, async (req, res) => {
         }, 'users', 500));
     }
 })
+router.post('/market', async (req, res) => {
+    try {
+        await user.addMarkets(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
 
+router.get('/market/list', async (req, res) => {
+    try {
+        await user.marketList(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
+
+router.post('/favourite', auth, async (req, res) => {
+    try {
+        let {
+            error
+        } = user.favouriteValidation(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        }
+        await user.addFavouriteUser(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
+
+router.patch('/favourite', auth, async (req, res) => {
+    try {
+        await user.updateFavourite(req,res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
 
 module.exports = router;
