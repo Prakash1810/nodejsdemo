@@ -1,70 +1,70 @@
-const Joi           = require('joi');
-const UserTemp      = require('../db/user-temp');
-const Users         = require('../db/users');
-const apiServices   = require('../services/api');
-const Controller    = require('../core/controller');
-const helpers       = require('../helpers/helper.functions');
-const password      = require('../core/password');
+const Joi = require('joi');
+const UserTemp = require('../db/user-temp');
+const Users = require('../db/users');
+const apiServices = require('../services/api');
+const Controller = require('../core/controller');
+const helpers = require('../helpers/helper.functions');
+const password = require('../core/password');
+const moment = require('moment');
 
 class Registration extends Controller {
 
-    validate (req) {
+    validate(req) {
         let emailReg = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
         let schema = Joi.object().keys({
-                        email: Joi.string().required().regex(emailReg).options({
-                            language:{
-                                string:{
-                                    required: '{{label}} field is required',
-                                    regex: {
-                                        base: 'Invalid {{label}} address.'
-                                    }
-                                }
-                            }
-                        }).label('email'),
-                        password: Joi.string().required().min(8).regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
-                            language:{
-                                string:{
-                                    required: '{{label}} field is required',
-                                    min: '{{label}} must be at least 8 characters with uppercase letters and numbers.',
-                                    regex: {
-                                        base: '{{label}} must be at least 8 characters with uppercase letters and numbers.'
-                                    }
-                                }
-                            }
-                        }).label('password'),
-                        password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
-                        referral_code: Joi.string().allow('').optional()
-                    });
-    
+            email: Joi.string().required().regex(emailReg).options({
+                language: {
+                    string: {
+                        required: '{{label}} field is required',
+                        regex: {
+                            base: 'Invalid {{label}} address.'
+                        }
+                    }
+                }
+            }).label('email'),
+            password: Joi.string().required().min(8).regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
+                language: {
+                    string: {
+                        required: '{{label}} field is required',
+                        min: '{{label}} must be at least 8 characters with uppercase letters and numbers.',
+                        regex: {
+                            base: '{{label}} must be at least 8 characters with uppercase letters and numbers.'
+                        }
+                    }
+                }
+            }).label('password'),
+            password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
+            referral_code: Joi.string().allow('').optional()
+        });
+
         return Joi.validate(req, schema, { abortEarly: false })
     }
 
-    post (req, res) {
+    post(req, res) {
         // check email address already exits in user temp collections
         UserTemp.find({ email: req.body.data.attributes.email })
-        .exec()
-        .then(result => {
+            .exec()
+            .then(result => {
+                if (result.length) {
+                    return res.status(400).send(this.errorFormat({ 'email': 'This email address already exits.' }));
+                } else {
+                    // check email address already exits in user temp collections
+                    Users.find({ email: req.body.data.attributes.email })
+                        .exec()
+                        .then(result => {
+                            if (result.length) {
+                                return res.status(400).send(this.errorFormat({ 'email': 'This email address already exits.' }));
+                            }
 
-            if (result.length) {
-                return res.status(400).send(this.errorFormat({ 'email': 'This email address already exits.' }));
-            } else {
-                // check email address already exits in user temp collections
-                Users.find({email: req.body.data.attributes.email})
-                .exec()
-                .then(result => {
-                    if (result.length) {
-                        return res.status(400).send(this.errorFormat({ 'email': 'This email address already exits.' }));
-                    }
-                    
-                    return this.insertUser(req, res);
-                });
-            }
-        });
+                            return this.insertUser(req, res);
+                        });
+                }
+            });
 
         return false;
     }
 
-    insertUser (req, res) {
+    insertUser(req, res) {
         UserTemp.create({
             email: req.body.data.attributes.email,
             password: req.body.data.attributes.password,
@@ -73,8 +73,8 @@ class Registration extends Controller {
             if (err) {
                 return res.status(500).json(this.errorFormat({ 'message': err.message }));
             } else {
-                 // send activation email
-                 this.sendActivationEmail(user);
+                // send activation email
+                this.sendActivationEmail(user);
 
                 return res.status(200).json(this.successFormat({
                     'message': `We have sent a confirmation email to your registered email address. ${user.email}. Please follow the instructions in the email to continue.`,
@@ -83,29 +83,29 @@ class Registration extends Controller {
         });
     }
 
-    sendActivationEmail (user) {
+    sendActivationEmail(user) {
         let encryptedHash = helpers.encrypt(
             JSON.stringify({
                 'id': user._id,
-                'email': user.email
+                'email': user.email,
+                'date': moment().format('YYYY-MM-DD HH:mm:ss')
             })
         );
-
         // send email notification to the registered user
-        let serviceData   = {
-        'hash' : encryptedHash,
-        "to_email": user.email,
-        "subject": "Confirm Your Registration",
-        "email_for": "registration"
+        let serviceData = {
+            'hash': encryptedHash,
+            "to_email": user.email,
+            "subject": "Confirm Your Registration",
+            "email_for": "registration"
         };
-        
+
         return apiServices.sendEmailNotification(serviceData);
     }
-    
-    resendEmail (req, res) {
+
+    resendEmail(req, res) {
         let requestedData = req.body.data.attributes;
-        if ( requestedData.id !== undefined ) {
-            if ( requestedData.type === 'registration' ) {
+        if (requestedData.id !== undefined) {
+            if (requestedData.type === 'registration') {
                 UserTemp.findById(requestedData.id).exec()
                     .then((user) => {
                         if (user === null) {

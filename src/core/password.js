@@ -29,11 +29,13 @@ class Password extends Controller {
         return Joi.validate(req, schema, { abortEarly: false });
     }
 
-    encryptHash (email) {
+    encryptHash (email,user) {
         let timeNow     = moment().format('YYYY-MM-DD HH:mm:ss');
         let data     = JSON.stringify({
             'email': email,
-            'datetime' : timeNow
+            'datetime' : timeNow,
+            'user' : user
+
         });
 
         return helpers.encrypt(data);
@@ -47,7 +49,7 @@ class Password extends Controller {
                 if (!user) {
                     return res.status(400).json(this.errorMsgFormat({ 'message': 'Invalid email address.' }));
             } else {
-                let encryptedHash = this.encryptHash(user.email);
+                let encryptedHash = this.encryptHash(user.email,user.user_id);
                 
                 // send email notification to the registered user
                 let serviceData   = {
@@ -67,46 +69,47 @@ class Password extends Controller {
         });
     }
 
-    checkResetLink (req, res) {
+    async checkResetLink (req, res) {
             
         let userHash = JSON.parse(helpers.decrypt(req.params.hash));
-
+        console.log("Userhash:",userHash);
         if ( userHash.email ) {
             let checkExpired = this.checkTimeExpired(userHash.datetime);
             if ( checkExpired ) {
-                Users.findOne({ email: userHash.email })
+                Users.findOne({ email: userHash.email, is_forget_active:false , user_id : userHash.user})
                 .exec()
-                .then((result) => {
+                .then(async (result) => {
                     if (!result) {
                         return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Invalid token. may be token as expired!'
+                            'message': 'Token expired-already used'
                         }));
                     } else {
+                        await Users.findOneAndUpdate({user_id:userHash.user},{is_forget_active:true})
                         return res.status(200).send(this.successFormat({
-                            'message': 'token is valid!'
+                            'message': 'Token is Valid'
                         },result._id));
                     }
                 });
             } else {
                 return res.status(404).send(this.errorMsgFormat({
-                    'message': 'invalid token or token is expired.'
+                    'message': 'Token is expired.'
                 }));
             }
         } else {
             return res.status(404).send(this.errorMsgFormat({
-                'message': 'invalid token or token is Expired.'
+                'message': 'Email id not found'
             }));
         }
     }
 
     checkTimeExpired ( startDate ) {
-        let duration    = moment.duration(moment().diff(startDate));
-
-        // check expiry time in seconds
-        if (config.get('settings.expiryTime') > duration.asSeconds()) {
+        let date = new Date(startDate);
+        let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
+        let duration = moment.duration(moment().diff(startDate));
+        console.log('Second:',duration.asSeconds());
+        if (getSeconds > duration.asSeconds()) {
             return true;
         }
-
         return false;
     }
 
@@ -128,7 +131,8 @@ class Password extends Controller {
         return Joi.validate(req, schema, { abortEarly: false })
     }
 
-    resetPassword (req, res) {
+    resetPassword (req, res,type = 'reset') {
+        console.log("Request:",req.body.data.attributes);
         bcrypt.genSalt(10, (err, salt) => {
             if (err) return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
             
@@ -136,10 +140,34 @@ class Password extends Controller {
                 if (err) return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
                 
                 // find and update the reccord
-                Users.findByIdAndUpdate(req.body.data.id, { password: hash }, (err, user) => {
+                Users.findByIdAndUpdate(req.body.data.id, { password: hash }, async (err, user) => {
                     if (user == null) {
                         return res.status(404).send(this.errorMsgFormat({'message': 'Invalid user.' }));
                     } else {
+                        if(type == 'change')
+                        {
+                            let serviceData =
+                            {
+                                subject: `Beldex Change Password From ${req.body.data.attributes.email} - ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
+                                email_for: "confirm-password",
+                                email : req.body.data.attributes.email,
+                                user_id : req.body.data.attributes.user_id
+                            }
+                            await apiServices.sendEmailNotification(serviceData);
+    
+                            return res.status(202).send(this.successFormat({
+                                'message': 'Your password updated successfully.'
+                            }, user._id, 'users', 202));
+                        }
+                        let serviceData =
+                        {
+                            subject: `Beldex Reset Password  ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
+                            email_for: "reset-password",
+                            email:user.email,
+                            user_id : user._id
+                        }
+                        await apiServices.sendEmailNotification(serviceData);
+
                         return res.status(202).send(this.successFormat({
                             'message': 'Your password updated successfully.'
                         }, user._id, 'users', 202));
@@ -196,9 +224,10 @@ class Password extends Controller {
                     'message': 'Incorrect old password'
                 }));
             } else {
-
+                req.body.data.attributes.email = result.email;
+                req.body.data.attributes.user_id = result._id;
                 // update password
-                this.resetPassword(req, res);
+                this.resetPassword(req, res ,'change',result.email);
             }
         });
     }
