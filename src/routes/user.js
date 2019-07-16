@@ -14,7 +14,7 @@ router.get('/activation/:hash', (req, res) => {
         user.activate(req, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
-            'message': 'Invalid token.'
+            'message': err.message
         }, 'users', 500));
     }
 });

@@ -244,6 +244,13 @@
                         "schema": {
                             "$ref": "#/definitions/changepassword"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "g2f verify",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }

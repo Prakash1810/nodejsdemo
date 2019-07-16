@@ -18,6 +18,10 @@
 		"expiryTime": 72,
 		"timeZone": "UTC"
 	},
+	"activation": {
+		"expiryTime": 1800,
+		"timeZone": "UTC"
+	},
 	"assets": {
 		"bdx": "beldex",
 		"btc": "bitcoin",
@@ -31,7 +35,13 @@
 	"otpForEmail":
 	{
 		"hmt":3,
-		"timeExpiry":180
+		"timeExpiry":180 
+	},
+
+	"accountActive":{
+		"hmt" : 6,
+		"timeExpiry":7200
 	}
+
 
 }

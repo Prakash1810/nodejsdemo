@@ -17,36 +17,58 @@ const otpHistory = require('../db/otp-history');
 const sequence = require('../db/sequence');
 const addMarket = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
+const accountActive = require('../db/account-active');
 
 class User extends controller {
 
     activate(req, res) {
         const userHash = JSON.parse(helpers.decrypt(req.params.hash));
-        if (userHash.id) {
-            userTemp.findById(userHash.id)
-                .exec((err, result) => {
-                    if (result) {
-                        return this.insertUser(result, res)
-                    } else {
-                        return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Invalid token. may be token as expired!'
-                        }));
-                    }
-                });
-        } else {
-            return res.status(500).send(this.errorMsgFormat({
-                'message': 'invalid token.'
-            }));
+        let date = new Date(userHash.date);
+        let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
+        let duration = moment.duration(moment().diff(userHash.date));
+        console.log('Second:', duration.asSeconds());
+        if (getSeconds > duration.asSeconds()) {
+
+            if (userHash.id) {
+                userTemp.findById(userHash.id)
+                    .exec((err, result) => {
+                        if (result) {
+                            return this.insertUser(result, res)
+                        } else {
+                            return res.status(400).send(this.errorMsgFormat({
+                                'message': 'Token expired-already used'
+                            }));
+                        }
+                    });
+            } else {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Token is expired.'
+                }));
+            }
         }
+        else {
+            if (userTemp.removeUserTemp(userHash.id)) {
+                return res.status(400).send(this.successFormat({
+                    'message': 'Token is expired'
+                }));
+
+            }
+            else {
+                return res.status(400).send(this.successFormat({
+                    'message': 'User not found'
+                }));
+            }
+        }
+
     }
 
     async insertUser(result, res) {
-
         let inc = await sequence.findOneAndUpdate({ sequence_type: "users" }, {
             $inc: {
                 login_seq: 1
             }
         });
+        console.log("Increment:", inc);
         try {
             let user = await users.create({
                 email: result.email,
@@ -118,27 +140,74 @@ class User extends controller {
         return { accessToken: accessToken, refreshToken: refreshToken }
     }
 
-    login(req, res) {
+    async login(req, res) {
+        let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
+        let data = req.body.data.attributes;
+        let isChecked = await accountActive.findOne({ email: data.email });
         users.findOne({
-            email: req.body.data.attributes.email,
+            email: data.email,
             is_active: true
         })
             .exec()
-            .then((result) => {
+            .then(async (result) => {
                 if (!result) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Invalid credentials'
+                        'message': 'User not found, Please register your email'
                     }));
                 } else if (result.is_active) {
-                    let passwordCompare = bcrypt.compareSync(req.body.data.attributes.password, result.password);
+                    let passwordCompare = bcrypt.compareSync(data.password, result.password);
                     if (passwordCompare == false) {
+
+                        if (isChecked) {
+                            if (isChecked.count <= config.get('accountActive.hmt')) {
+                                await accountActive.findOneAndUpdate({ email: data.email },
+                                    {
+                                        $inc: {
+                                            count: 1
+                                        },
+                                        create_date: timeNow
+                                    })
+                            }
+                            else {
+                                return res.status(400).send(this.errorMsgFormat({
+                                    'message': 'Account has been locked, please try again after 2 hours!'
+                                }));
+                            }
+                        }
+                        else {
+                            await new accountActive({ email: data.email, create_date: timeNow }).save();
+                        }
                         return res.status(400).send(this.errorMsgFormat({
                             'message': 'Invalid credentials'
                         }));
                     } else {
+                        if(isChecked)
+                        {
+                            if (isChecked.count > config.get('accountActive.hmt')) {
+                                let date = new Date(isChecked.create_date);
+                                let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
+                                let duration = moment.duration(moment().diff(isChecked.create_date));
+                                console.log('Second:', duration.asSeconds());
+                                if (getSeconds > duration.asSeconds()) {
+    
+                                    return res.status(400).send(this.errorMsgFormat({
+                                        'message': 'Account has been locked, please try again after 2 hours!'
+                                    }));
+                                }
+                                else {
+                                    await accountActive.deleteOne({email:data.email})
+                                    // check that device is already exists or not
+                                    this.checkDevice(req, res, result);
+                                }
+    
+                            }
+                        }
+                       
+                        else {
+                            // check that device is already exists or not
+                            this.checkDevice(req, res, result);
+                        }
 
-                        // check that device is already exists or not
-                        this.checkDevice(req, res, result);
                     }
                 } else {
                     return res.status(400).send(this.errorMsgFormat({
@@ -263,6 +332,7 @@ class User extends controller {
     }
 
     async returnToken(res, result, loginHistory) {
+        await users.findOneAndUpdate({ email: result.email }, { is_forget_active: false })
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let tokens = await this.storeToken(result, loginHistory);
         return res.status(200).send(this.successFormat({
@@ -278,8 +348,8 @@ class User extends controller {
     }
 
     async checkDevice(req, res, user) {
-        var userID = user._id;
-        var timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
+        let userID = user._id;
+        let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
 
         // Find some documents
         deviceMangement.countDocuments({
@@ -307,7 +377,7 @@ class User extends controller {
                     const isChecked = await this.generatorOtpforEmail(userID);
                     if (isChecked.status) {
                         res.status(200).send(this.successFormat({
-                            'message': "Send a otp on your email",
+                            'message': "Send a OTP on your email",
                             "device_id": device._id,
                             "region": req.body.data.attributes.region,
                             "city": req.body.data.attributes.city,
@@ -381,7 +451,7 @@ class User extends controller {
                                 const isChecked = await this.generatorOtpforEmail(userID);
                                 if (isChecked.status) {
                                     res.status(200).send(this.successFormat({
-                                        'message': "Send a otp on your email",
+                                        'message': "Send a OTP on your email",
                                         "device_id": device._id,
                                         "region": req.body.data.attributes.region,
                                         "city": req.body.data.attributes.city,
@@ -409,7 +479,7 @@ class User extends controller {
             let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
             const isChecked = await otpHistory.findOne({ user_id: data.user_id, otp: data.otp, is_active: false });
             if (isChecked) {
-                var date = new Date(isChecked.create_date_time);
+                let date = new Date(isChecked.create_date_time);
                 let getSeconds = date.getSeconds() + config.get('otpForEmail.timeExpiry');
                 let duration = moment.duration(moment().diff(isChecked.create_date_time));
                 if (getSeconds > duration.asSeconds()) {
@@ -437,8 +507,8 @@ class User extends controller {
                 }
                 else {
                     await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
-                    return res.status(404).send(this.errorMsgFormat({
-                        'message': 'invalid Otp or Otp is expired.'
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Invalid OTP or OTP is expired.'
                     }));
                 }
 
@@ -446,7 +516,7 @@ class User extends controller {
             }
             else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid otp'
+                    'message': 'Invalid OTP'
                 }));
             }
         }
@@ -478,7 +548,7 @@ class User extends controller {
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false }, { count: inCount, otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
 
                 res.status(200).send(this.successFormat({
-                    'message': "Send a otp on your email"
+                    'message': "Send a OTP on your email"
                 }, data.user_id))
             }
             else {
@@ -492,7 +562,7 @@ class User extends controller {
             let isChecked = await this.generatorOtpforEmail(data.user_id)
             if (isChecked.status) {
                 res.status(200).send(this.successFormat({
-                    'message': "Send a otp on your email"
+                    'message': "Send a OTP on your email"
                 }, data.user_id))
             }
             else {
@@ -600,7 +670,7 @@ class User extends controller {
                                 "totalCount": 0
                             }, userID, 'loginHistory', 200));
                         } else {
-                            var totalPages = Math.ceil(totalCount / size);
+                            let totalPages = Math.ceil(totalCount / size);
                             return res.status(200).json(this.successFormat({
                                 "data": data,
                                 "pages": totalPages,
@@ -649,7 +719,7 @@ class User extends controller {
                             "totalCount": 0
                         }, userID, 'device', 200));
                     } else {
-                        var totalPages = Math.ceil(totalCount / size);
+                        let totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
                             "data": data,
                             "pages": totalPages,
@@ -799,7 +869,7 @@ class User extends controller {
     }
 
     async patch2FAuth(req, res) {
-        var requestedData = req.body.data.attributes;
+        let requestedData = req.body.data.attributes;
         if ((requestedData.password !== undefined && requestedData.g2f_code !== undefined) && req.body.data.id != undefined) {
             let result = await users.findById(req.body.data.id).exec();
             if (!result) {
@@ -1025,12 +1095,12 @@ class User extends controller {
                 'message': "market not Found"
             }, 'users', 404));
         }
-       
+
         let isCheckUser = await favourite.findOne({ user: req.user.user });
         if (isCheckUser) {
             let id = isCheckUser.market;
             id.push(isChecked._id);
-            await favourite.findOneAndUpdate({ _id:isCheckUser._id },{ market:id})
+            await favourite.findOneAndUpdate({ _id: isCheckUser._id }, { market: id })
             return res.status(200).send(this.successFormat({
                 'message': 'Add market to your favourite list',
             }));
@@ -1045,35 +1115,32 @@ class User extends controller {
         }));
 
     }
-    async updateFavourite(req,res)
-    {
+    async updateFavourite(req, res) {
         let data = req.body.data.attributes.market;
-        let ismarket = await addMarket.findOne({market_name:data.toUpperCase()});
-        if(!ismarket)
-        {
+        let ismarket = await addMarket.findOne({ market_name: data.toUpperCase() });
+        if (!ismarket) {
             return res.status(404).send(this.errorMsgFormat({
                 'message': "Not found to market list "
             }, 'users', 404));
         }
-        let isfavourite = await favourite.findOne({user:req.user.user});
-        if(!isfavourite)
-        {
+        let isfavourite = await favourite.findOne({ user: req.user.user });
+        if (!isfavourite) {
             return res.status(404).send(this.errorMsgFormat({
                 'message': "Not found to your favourite list"
             }, 'users', 404));
         }
         console.log(ismarket._id);
         let fav = isfavourite.market;
-        var index = fav.indexOf(ismarket._id);
-            if (index > -1) {
-               fav.splice(index, 1);
-            }
-        console.log('fav:',fav);
-        await favourite.findOneAndUpdate({user:req.user.user},{market:fav});
+        let index = fav.indexOf(ismarket._id);
+        if (index > -1) {
+            fav.splice(index, 1);
+        }
+        console.log('fav:', fav);
+        await favourite.findOneAndUpdate({ user: req.user.user }, { market: fav });
         return res.status(200).send(this.successFormat({
             'message': 'Remove market to your favourite list',
         }));
-        
+
     }
 }
 
