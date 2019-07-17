@@ -351,21 +351,24 @@ class Wallet extends controller {
         console.log("MarketResponse:",matchResponse);
         for (let result in matchResponse) {
             console.log("Result:",result);
-            let btc = marketResponse.data[assetsJson[result.toLowerCase()]].btc;
-            let usd = marketResponse.data[assetsJson[result.toLowerCase()]].usd;
-            console.log("Btc:",btc);
-            formatedAssetBalnce[result] = {
-                'available': {
-                    'balance': Number(matchResponse[result].available),
-                    'btc': Number(matchResponse[result].available) * btc,
-                    'usd': Number(matchResponse[result].available) * usd
-                },
-                'freeze': {
-                    'balance': Number(matchResponse[result].freeze),
-                    'btc':  Number(matchResponse[result].freeze) * btc,
-                    'usd':  Number(matchResponse[result].freeze) * usd
-                },
+            if(result!='XMR'){
+                let btc = marketResponse.data[assetsJson[result.toLowerCase()]].btc;
+                let usd = marketResponse.data[assetsJson[result.toLowerCase()]].usd;
+                console.log("Btc:",btc);
+                formatedAssetBalnce[result] = {
+                    'available': {
+                        'balance': Number(matchResponse[result].available),
+                        'btc': Number(matchResponse[result].available) * btc,
+                        'usd': Number(matchResponse[result].available) * usd
+                    },
+                    'freeze': {
+                        'balance': Number(matchResponse[result].freeze),
+                        'btc':  Number(matchResponse[result].freeze) * btc,
+                        'usd':  Number(matchResponse[result].freeze) * usd
+                    },
+                }
             }
+           
         }
 
         return formatedAssetBalnce;
