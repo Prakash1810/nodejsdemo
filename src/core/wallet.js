@@ -324,15 +324,17 @@ class Wallet extends controller {
 
     async getAssetsBalance(req, res) {
         let payloads = {},
-            assetNames;
+            assetNames,
+            asset=[];
         payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
-            payloads.asset = req.query.asset_code.toUpperCase();
+            asset.push( req.query.asset_code.toUpperCase());
+            payloads.asset=asset
             assetNames = config.get(`assets.${req.query.asset_code.toLowerCase()}`)
         } else {
             assetNames = _.values(_.reverse(config.get(`assets`))).join(',');
         }
-
+        
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse);
@@ -468,10 +470,11 @@ class Wallet extends controller {
                     maximum_withdraw: getAsset.maximum_withdraw,
                 };
             } else {
-                let payloads = {};
+                let payloads = {},asset=[];
                 payloads.user_id = req.user.user_id;
-                payloads.asset = getAsset.asset_code.toUpperCase();
-
+                asset.push(getAsset.asset_code.toUpperCase());
+                payloads.asset=asset
+                console.log("Payloads:",payloads);
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available
                 if (available !== undefined && amount < available) {
