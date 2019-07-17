@@ -30,7 +30,8 @@
 		"ltc": "litecoin",
 		"bch": "bitcoin-cash",
 		"dash": "dash",
-		"doge": "dogecoin"
+		"doge": "dogecoin",
+		"xmr" : "monero"
 	},
 	"otpForEmail":
 	{

@@ -46,7 +46,7 @@ router.post('/validate/otp', (req, res) => {
         }, 'users', 500));
     }
 });
-router.post('/resend/otp', (req, res) => {
+router.post('/resend/otp/resend-email', (req, res) => {
     try {
         user.resendOtpForEmail(req, res);
 

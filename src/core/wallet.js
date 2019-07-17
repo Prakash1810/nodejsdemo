@@ -351,7 +351,6 @@ class Wallet extends controller {
         console.log("MarketResponse:",matchResponse);
         for (let result in matchResponse) {
             console.log("Result:",result);
-            if(result!='XMR'){
                 let btc = marketResponse.data[assetsJson[result.toLowerCase()]].btc;
                 let usd = marketResponse.data[assetsJson[result.toLowerCase()]].usd;
                 console.log("Btc:",btc);
@@ -367,8 +366,6 @@ class Wallet extends controller {
                         'usd':  Number(matchResponse[result].freeze) * usd
                     },
                 }
-            }
-           
         }
 
         return formatedAssetBalnce;
