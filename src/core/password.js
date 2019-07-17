@@ -49,7 +49,7 @@ class Password extends Controller {
                 if (!user) {
                     return res.status(400).json(this.errorMsgFormat({ 'message': 'Invalid email address.' }));
             } else {
-                let encryptedHash = this.encryptHash(user.email,user.user_id);
+                let encryptedHash = this.encryptHash(user.email,user._id);
                 
                 // send email notification to the registered user
                 let serviceData   = {

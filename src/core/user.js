@@ -201,6 +201,11 @@ class User extends controller {
                                 }
     
                             }
+                            else {
+                                await accountActive.deleteOne({email:data.email})
+                                // check that device is already exists or not
+                                this.checkDevice(req, res, result);
+                            }
                         }
                        
                         else {
