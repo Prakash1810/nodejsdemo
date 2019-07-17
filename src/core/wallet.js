@@ -326,7 +326,7 @@ class Wallet extends controller {
         let payloads = {},
             assetNames,
             asset=[];
-        payloads.user_id = req.user.user_id;
+            payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
             asset.push( req.query.asset_code.toUpperCase());
             payloads.asset=asset
@@ -334,7 +334,7 @@ class Wallet extends controller {
         } else {
             assetNames = _.values(_.reverse(config.get(`assets`))).join(',');
         }
-        
+        console.log("pAYLOADAs:",payloads);
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse);
@@ -347,21 +347,23 @@ class Wallet extends controller {
     currencyConversion(matchResponse, marketResponse) {
         let assetsJson = config.get('assets'),
             formatedAssetBalnce = {};
-
+        console.log("MarketResponse:",marketResponse.data);
+        console.log("MarketResponse:",matchResponse);
         for (let result in matchResponse) {
+            console.log("Result:",result);
             let btc = marketResponse.data[assetsJson[result.toLowerCase()]].btc;
             let usd = marketResponse.data[assetsJson[result.toLowerCase()]].usd;
-
+            console.log("Btc:",btc);
             formatedAssetBalnce[result] = {
                 'available': {
                     'balance': Number(matchResponse[result].available),
-                    'btc': matchResponse[result].available * btc,
-                    'usd': matchResponse[result].available * usd
+                    'btc': Number(matchResponse[result].available) * btc,
+                    'usd': Number(matchResponse[result].available) * usd
                 },
                 'freeze': {
                     'balance': Number(matchResponse[result].freeze),
-                    'btc': matchResponse[result].freeze * btc,
-                    'usd': matchResponse[result].freeze * usd
+                    'btc':  Number(matchResponse[result].freeze) * btc,
+                    'usd':  Number(matchResponse[result].freeze) * usd
                 },
             }
         }
