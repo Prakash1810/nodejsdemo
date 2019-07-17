@@ -18,11 +18,33 @@ const sequence = require('../db/sequence');
 const addMarket = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
+const mangHash = require('../db/management-hash');
 
 class User extends controller {
 
-    activate(req, res) {
-        const userHash = JSON.parse(helpers.decrypt(req.params.hash));
+   async activate(req, res) {
+        const userHash = JSON.parse(helpers.decrypt(req.params.hash))
+        let checkhash =await mangHash.findOne({email: userHash.email, hash: req.params.hash})
+        {
+            if(checkhash)
+            {
+                if(checkhash.is_active)
+                {
+                    return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Verification link -already used'
+                        }));
+                }
+                else 
+                {
+                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                }
+            }
+            else{
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Verification link is expired'
+                }));
+            }
+        }
         let date = new Date(userHash.date);
         let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
         let duration = moment.duration(moment().diff(userHash.date));

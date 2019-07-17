@@ -6,6 +6,7 @@ const Controller = require('../core/controller');
 const helpers = require('../helpers/helper.functions');
 const password = require('../core/password');
 const moment = require('moment');
+const mangHash = require('../db/management-hash');
 
 class Registration extends Controller {
 
@@ -75,7 +76,6 @@ class Registration extends Controller {
             } else {
                 // send activation email
                 this.sendActivationEmail(user);
-
                 return res.status(200).json(this.successFormat({
                     'message': `We have sent a confirmation email to your registered email address. ${user.email}. Please follow the instructions in the email to continue.`,
                 }, user._id));
@@ -83,7 +83,7 @@ class Registration extends Controller {
         });
     }
 
-    sendActivationEmail(user) {
+   async  sendActivationEmail(user,type="registration") {
         let encryptedHash = helpers.encrypt(
             JSON.stringify({
                 'id': user._id,
@@ -91,6 +91,7 @@ class Registration extends Controller {
                 'date': moment().format('YYYY-MM-DD HH:mm:ss')
             })
         );
+
         // send email notification to the registered user
         let serviceData = {
             'hash': encryptedHash,
@@ -99,21 +100,29 @@ class Registration extends Controller {
             "email_for": "registration"
         };
 
-        return apiServices.sendEmailNotification(serviceData);
+        await apiServices.sendEmailNotification(serviceData);
+        if(type == 'sendEmail'){
+            await mangHash.findOneAndUpdate({ email: user.email, hash: encryptedHash, is_active: false, type_for: "registration" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+        }
+        let ischecked = await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { hash: encryptedHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+        if (!ischecked) {
+            await new mangHash({ email: user.email, hash: encryptedHash, type_for: "registration", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
+        }
+       return 0;
     }
 
     resendEmail(req, res) {
         let requestedData = req.body.data.attributes;
-        if (requestedData.id !== undefined) {
+        if (req.body.data.id !== undefined) {
             if (requestedData.type === 'registration') {
-                UserTemp.findById(requestedData.id).exec()
+                UserTemp.findById(req.body.data.id).exec()
                     .then((user) => {
                         if (user === null) {
                             return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }));
                         } else {
 
                             // send activation email
-                            this.sendActivationEmail(user);
+                            this.sendActivationEmail(user,"sendEmail");
 
                             return res.status(200).json(this.successFormat({
                                 'message': `Mail sended successfully. ${user.email}. Please follow the instructions in the email to continue.`,
