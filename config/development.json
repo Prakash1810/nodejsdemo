@@ -12,7 +12,8 @@
 	},
 	"site": {
 		"url": "http://localhost:3000",
-		"version": "v1"
+		"version": "v1",
+		"hmtLink":3
 	},
 	"settings": {
 		"expiryTime": 72,

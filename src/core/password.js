@@ -49,7 +49,7 @@ class Password extends Controller {
         }).exec()
             .then(async (user) => {
                 if (!user) {
-                    return res.status(400).json(this.errorMsgFormat({ 'message': 'Invalid email address.' }));
+                    return res.status(400).json(this.errorMsgFormat({ 'message': 'User not found, please login.' }));
                 } else {
                     let encryptedHash = this.encryptHash(user.email, user._id);
 
@@ -60,14 +60,26 @@ class Password extends Controller {
                         'email_for': 'forget-password',
                         'user_id': user._id
                     };
-
+                    let ischecked = await mangHash.findOne({ email: user.email, is_active: false, type_for: "reset" })
+                    if(ischecked)
+                    {
+                        if (ischecked.count >= config.get('site.hmtLink')) {
+                            await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                            return res.status(400).send(this.errorMsgFormat({
+                                'message': ` Verification link resent request exceeded, please login again `
+                            }, 'users', 400));
+                        }
+                    }
                     await apiServices.sendEmailNotification(serviceData);
-                    let ischecked = await mangHash.findOneAndUpdate({ user_id: user.user_id, email: user.email, is_active: false, type_for: "reset" }, { hash: encryptedHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                    if (ischecked) {
+                        let count = ischecked.count;
+                        await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { hash: encryptedHash,  count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                    }
                     if (!ischecked) {
-                        await new mangHash({ user_id: user.user_id, email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
+                        await new mangHash({email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
                     }
                     return res.status(200).json(this.successFormat({
-                        'message': 'We have sent a reset email to your email address. Please follow the ins{ user_id: user.user_id, email: user.emailtructions in the email to continue.',
+                        'message': 'We have sent a reset email to your email address.',
                         'hash': encryptedHash
                     }, user._id));
                 }
@@ -84,31 +96,28 @@ class Password extends Controller {
         //                             'message': 'Verification link is expired or Token expired-already used'
         //                 }));
         //     }
-        let checkHash = await mangHash.findOne({email: userHash.email, hash: req.params.hash});
-           
-            if(checkHash)
-            {
-                if(checkHash.is_active)
-                {
-                        return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Verification link -already used'
-                        }));
-                }
-                else 
-                {
-                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
-                }
-            }
-            
-            else{
+        let checkHash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash });
+
+        if (checkHash) {
+            if (checkHash.is_active) {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Verification link is expired'
+                    'message': 'Verification link -already used'
                 }));
             }
+            else {
+                await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+            }
+        }
+
+        else {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Verification link is expired'
+            }));
+        }
         if (userHash.email) {
             let checkExpired = this.checkTimeExpired(userHash.datetime);
             if (checkExpired) {
-                Users.findOne({ email: userHash.email, is_forget_active: false, _id: userHash.user })
+                Users.findOne({ email: userHash.email, _id: userHash.user })
                     .exec()
                     .then(async (result) => {
                         if (!result) {
@@ -116,7 +125,6 @@ class Password extends Controller {
                                 'message': "User not found"
                             }));
                         } else {
-                            await Users.findOneAndUpdate({_id: userHash.user }, { is_forget_active: true });
                             return res.status(200).send(this.successFormat({
                                 'message': 'Token is Valid'
                             }, result._id));

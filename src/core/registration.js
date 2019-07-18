@@ -7,6 +7,7 @@ const helpers = require('../helpers/helper.functions');
 const password = require('../core/password');
 const moment = require('moment');
 const mangHash = require('../db/management-hash');
+const config = require('config');
 
 class Registration extends Controller {
 
@@ -70,20 +71,22 @@ class Registration extends Controller {
             email: req.body.data.attributes.email,
             password: req.body.data.attributes.password,
             referral_code: req.body.data.attributes.referral_code ? req.body.data.attributes.referral_code : null
-        }, (err, user) => {
+        }, async (err, user) => {
             if (err) {
                 return res.status(500).json(this.errorFormat({ 'message': err.message }));
             } else {
                 // send activation email
-                this.sendActivationEmail(user);
-                return res.status(200).json(this.successFormat({
-                    'message': `We have sent a confirmation email to your registered email address. ${user.email}. Please follow the instructions in the email to continue.`,
-                }, user._id));
+                let isChecked = await this.sendActivationEmail(user);
+                if (isChecked) {
+                    return res.status(200).json(this.successFormat({
+                        'message': `We have sent a confirmation email to your registered email address. ${user.email}. Please follow the instructions in the email to continue.`,
+                    }, user._id));
+                }
             }
         });
     }
 
-   async  sendActivationEmail(user,type="registration") {
+    async sendActivationEmail(user, type = "registration") {
         let encryptedHash = helpers.encrypt(
             JSON.stringify({
                 'id': user._id,
@@ -99,16 +102,18 @@ class Registration extends Controller {
             "subject": "Confirm Your Registration",
             "email_for": "registration"
         };
+        //check how to many time click a resend button
 
         await apiServices.sendEmailNotification(serviceData);
-        if(type == 'sendEmail'){
-            await mangHash.findOneAndUpdate({ email: user.email, hash: encryptedHash, is_active: false, type_for: "registration" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+        let checkCount = await mangHash.findOne({ email: user.email, is_active: false, type_for: "registration" });
+        if (checkCount && (type == 'sendEmail')) {
+            let count = checkCount.count;
+            await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { hash: encryptedHash, count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
         }
-        let ischecked = await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { hash: encryptedHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
-        if (!ischecked) {
+        else {
             await new mangHash({ email: user.email, hash: encryptedHash, type_for: "registration", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
         }
-       return 0;
+        return true;
     }
 
     resendEmail(req, res) {
@@ -116,17 +121,35 @@ class Registration extends Controller {
         if (req.body.data.id !== undefined) {
             if (requestedData.type === 'registration') {
                 UserTemp.findById(req.body.data.id).exec()
-                    .then((user) => {
-                        if (user === null) {
-                            return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid request.' }));
-                        } else {
-
-                            // send activation email
-                            this.sendActivationEmail(user,"sendEmail");
-
-                            return res.status(200).json(this.successFormat({
-                                'message': `Mail sended successfully. ${user.email}. Please follow the instructions in the email to continue.`,
-                            }, user._id));
+                    .then(async (user) => {
+                        console.log('Welcome');
+                        if(user)
+                        {
+                            let checkCount = await mangHash.findOne({ email: user.email, is_active: false, type_for: "registration" });
+                            if (checkCount) {
+                               
+                                if (checkCount.count >= config.get('site.hmtLink')) {
+                                    await UserTemp.deleteOne({ email: user.email });
+                                    await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                                    return res.status(400).send(this.errorMsgFormat({
+                                        'message': ` Verification link resent request exceeded, please register again `
+                                    }, 'users', 400));
+                                }
+                                else {
+                               
+                                    // send activation email
+                                    let check = this.sendActivationEmail(user, "sendEmail");
+                                    if(check){
+                                        return res.status(200).json(this.successFormat({
+                                            'message': `Mail sended successfully. ${user.email}. Please follow the instructions in the email to continue.`,
+                                        }, user._id));
+                                    }
+                                }
+                            }
+                        }
+                        
+                        else  {
+                            return res.status(400).send(this.errorMsgFormat({ 'message': 'User not found, please register again' }));
                         }
                     });
             } else if (requestedData.type === 'forget-password') {
