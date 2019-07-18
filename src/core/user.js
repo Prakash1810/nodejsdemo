@@ -36,7 +36,7 @@ class User extends controller {
                 }
                 else 
                 {
-                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true,count:1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                 }
             }
             else{
@@ -359,7 +359,6 @@ class User extends controller {
     }
 
     async returnToken(res, result, loginHistory) {
-        await users.findOneAndUpdate({ email: result.email }, { is_forget_active: false })
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let tokens = await this.storeToken(result, loginHistory);
         return res.status(200).send(this.successFormat({
@@ -559,7 +558,7 @@ class User extends controller {
         let data = req.body.data.attributes;
         const isChecked = await otpHistory.findOne({ user_id: data.user_id, is_active: false });
         if (isChecked) {
-            if (isChecked.count < config.get('otpForEmail.hmt')) {
+            if (isChecked.count <= config.get('otpForEmail.hmt')) {
                 let count = isChecked.count++;
                 let inCount = ++count;
                 const rand = Math.random() * (999999 - 100000) + 100000

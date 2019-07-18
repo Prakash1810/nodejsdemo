@@ -30,8 +30,7 @@ const usersSchema = mongoose.Schema({
     created_by: Number,
     modified_date: Date,
     modified_by: Number,
-    is_deleted: { type: Boolean, default: false },
-    is_forget_active: { type: Boolean, default: false }
+    is_deleted: { type: Boolean, default: false }
 });
 
 // autoIncrement.initialize(mongooseConnect.connect());

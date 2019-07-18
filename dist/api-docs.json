@@ -1936,6 +1936,7 @@
                     "example": {
                         "id": "5c960beebd528c10aae89c15",
                         "attributes": {
+                            "email":"xyz@gmail.com",
                             "type": "registration"
                         }
                     }
