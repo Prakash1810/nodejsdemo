@@ -377,9 +377,8 @@ class Wallet extends controller {
             let pageNo = parseInt(req.query.page_no)
             let size = parseInt(req.query.size)
             let query = {}
-
             let payloads = {
-                type: (typeParam === 'withdraw') ? 1 : 2,
+                type: (typeParam === 'withdraw') ? "1" : "2",
                 user: req.user.user,
                 is_deleted: false
             };
@@ -402,6 +401,7 @@ class Wallet extends controller {
                         "totalCount": 0
                     }, null, 'transactions', 200));
                 } else {
+                    console.log("TotalCount:",totalCount);
                     transactions
                         .find(payloads)
                         .select('address amount final_amount date')
@@ -409,7 +409,7 @@ class Wallet extends controller {
                         .limit(query.limit)
                         .populate({
                             path: 'asset',
-                            select: 'asset_name asset_code -_id'
+                            select: 'asset_name asset_code _id'
                         })
                         .exec()
                         .then((data) => {
