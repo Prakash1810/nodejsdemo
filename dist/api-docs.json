@@ -398,7 +398,7 @@
                         "name": "Authorization",
                         "in": "header",
                         "description": "g2f verify",
-                        "required": true,
+                        "required": false,
                         "type": "string"
                     },
                     {
@@ -1955,7 +1955,8 @@
                         "id": "{{user_id}}",
                         "attributes": {
                             "google_secrete_key": "dsa31dsae2132",
-                            "g2f_code": "1234567S"
+                            "g2f_code": "1234567S",
+                            "login_history":"1233567S"
                         }
                     }
                 }
