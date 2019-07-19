@@ -79,7 +79,7 @@ class Password extends Controller {
                         await new mangHash({email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
                     }
                     return res.status(200).json(this.successFormat({
-                        'message': 'We have sent a reset email to your email address.',
+                        'message': 'We have sent a email to your email address.',
                         'hash': encryptedHash
                     }, user._id));
                 }
