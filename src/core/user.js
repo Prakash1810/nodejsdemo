@@ -19,27 +19,25 @@ const addMarket = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
+const service = require('../services/api');
 
 class User extends controller {
 
-   async activate(req, res) {
+    async activate(req, res) {
         const userHash = JSON.parse(helpers.decrypt(req.params.hash))
-        let checkhash =await mangHash.findOne({email: userHash.email, hash: req.params.hash})
+        let checkhash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash })
         {
-            if(checkhash)
-            {
-                if(checkhash.is_active)
-                {
+            if (checkhash) {
+                if (checkhash.is_active) {
                     return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Verification link -already used'
-                        }));
+                        'message': 'Verification link -already used'
+                    }));
                 }
-                else 
-                {
-                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true,count:1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                else {
+                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true, count: 1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                 }
             }
-            else{
+            else {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Verification link is expired'
                 }));
@@ -203,33 +201,32 @@ class User extends controller {
                             'message': 'Invalid credentials'
                         }));
                     } else {
-                        if(isChecked)
-                        {
+                        if (isChecked) {
                             if (isChecked.count > config.get('accountActive.hmt')) {
                                 let date = new Date(isChecked.create_date);
                                 let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
                                 let duration = moment.duration(moment().diff(isChecked.create_date));
                                 console.log('Second:', duration.asSeconds());
                                 if (getSeconds > duration.asSeconds()) {
-    
+
                                     return res.status(400).send(this.errorMsgFormat({
                                         'message': 'Account has been locked, please try again after 2 hours!'
                                     }));
                                 }
                                 else {
-                                    await accountActive.deleteOne({email:data.email})
+                                    await accountActive.deleteOne({ email: data.email })
                                     // check that device is already exists or not
                                     this.checkDevice(req, res, result);
                                 }
-    
+
                             }
                             else {
-                                await accountActive.deleteOne({email:data.email})
+                                await accountActive.deleteOne({ email: data.email })
                                 // check that device is already exists or not
                                 this.checkDevice(req, res, result);
                             }
                         }
-                       
+
                         else {
                             // check that device is already exists or not
                             this.checkDevice(req, res, result);
@@ -933,7 +930,7 @@ class User extends controller {
         }
     }
 
-    async verifyG2F(req, res, type, google_secrete_key) {
+    async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
         let opts = {
             beforeDrift: 2,
             afterDrift: 2,
@@ -946,6 +943,10 @@ class User extends controller {
             return returnStatus;
         } else {
             if (returnStatus === true) {
+                if (method == 'withoutAuth') {
+                    let user = await users.findOne({ _id: req.body.data.id });
+                    await this.returnToken(res, user, req.body.data.attributes.login_history)
+                }
                 return res.status(200).send(this.successFormat({
                     'status': returnStatus
                 }, '2factor', 200));
@@ -959,6 +960,17 @@ class User extends controller {
     }
 
     async postVerifyG2F(req, res, type = 'json') {
+        var method = "withoutAuth";
+        if (req.headers.authorization) {
+            let isChecked = await service.authentication(req);
+            if (!isChecked.status) {
+                return res.status(401).json(controller.errorMsgFormat({
+                    message: "Invalid authentication"
+                }));
+            }
+            method = "withAuth"
+
+        }
         let requestedData = req.body.data.attributes;
         if (requestedData.g2f_code !== undefined) {
             if (requestedData.google_secrete_key === undefined) {
@@ -968,9 +980,9 @@ class User extends controller {
                         'message': 'Invalid data'
                     }));
                 }
-                return this.verifyG2F(req, res, type, result.google_secrete_key);
+                return this.verifyG2F(req, res, type, result.google_secrete_key, method);
             } else {
-                return this.verifyG2F(req, res, type, requestedData.google_secrete_key);
+                return this.verifyG2F(req, res, type, requestedData.google_secrete_key, method);
             }
         } else {
             return res.status(400).send(this.errorMsgFormat({

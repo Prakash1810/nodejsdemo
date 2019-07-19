@@ -45,7 +45,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url', query, (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url', query, (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -404,7 +404,7 @@ class Wallet extends controller {
                     console.log("TotalCount:",totalCount);
                     transactions
                         .find(payloads)
-                        .select('address amount final_amount date')
+                        .select('address amount final_amount date tx_hash confirmation amount status txtime')
                         .skip(query.skip)
                         .limit(query.limit)
                         .populate({

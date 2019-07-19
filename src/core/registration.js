@@ -122,13 +122,12 @@ class Registration extends Controller {
             if (requestedData.type === 'registration') {
                 UserTemp.findById(req.body.data.id).exec()
                     .then(async (user) => {
-                        console.log('Welcome');
                         if(user)
                         {
                             let checkCount = await mangHash.findOne({ email: user.email, is_active: false, type_for: "registration" });
                             if (checkCount) {
                                
-                                if (checkCount.count >= config.get('site.hmtLink')) {
+                                if (checkCount.count > config.get('site.hmtLink')) {
                                     await UserTemp.deleteOne({ email: user.email });
                                     await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                                     return res.status(400).send(this.errorMsgFormat({

@@ -240,7 +240,7 @@ router.patch('/g2f-settings', auth, (req, res) => {
     }
 });
 
-router.post('/g2f-verify', auth, (req, res) => {
+router.post('/g2f-verify', (req, res) => {
     try {
         user.postVerifyG2F(req, res);
     } catch (err) {
