@@ -4,7 +4,7 @@ const transactionSchema = mongoose.Schema({
     user: { type: Schema.Types.ObjectId, ref: 'Users' },
     asset: { type: Schema.Types.ObjectId, ref: 'assets' },
     address: String,
-    type: Number,
+    type: String,
     amount: Number,
     tx_hash: { type: String, default: null },
     fee: { type: Number, default: null },
