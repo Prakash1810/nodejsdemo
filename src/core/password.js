@@ -52,7 +52,7 @@ class Password extends Controller {
                     return res.status(400).json(this.errorMsgFormat({ 'message': 'User not found, please login.' }));
                 } else {
                     let encryptedHash = this.encryptHash(user.email, user._id);
-
+ 
                     // send email notification to the registered user
                     let serviceData = {
                         'hash': encryptedHash,
