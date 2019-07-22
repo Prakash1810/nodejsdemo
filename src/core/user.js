@@ -193,10 +193,16 @@ class User extends controller {
                                     'message': 'Account has been locked, please try again after 2 hours!'
                                 }));
                             }
+                            if (isChecked.count > config.get('accountActive.limit')) {
+                                return res.status(400).send(this.errorMsgFormat({
+                                    'message': `Invalid credentials, Your are about to exceed the maximum try -only ${config.get('accountActive.hmt') - isChecked.count+1 } attempts left`
+                                }));
+                            }
                         }
                         else {
                             await new accountActive({ email: data.email, create_date: timeNow }).save();
                         }
+
                         return res.status(400).send(this.errorMsgFormat({
                             'message': 'Invalid credentials'
                         }));
@@ -393,7 +399,10 @@ class User extends controller {
                 })
                 if (isAuth) {
                     let loginHistoryId = await this.insertLoginHistory(req, userID, device._id, timeNow);
-                    await this.returnToken(res, user, loginHistoryId._id)
+                    res.status(200).send(this.successFormat({
+                        'message': "You are successfully logged in.",
+                        "login_history": loginHistoryId._id
+                    }, userID))
 
                 }
                 else {
@@ -468,7 +477,10 @@ class User extends controller {
                             if (isAuth) {
 
                                 let loginHistoryId = await this.insertLoginHistory(req, userID, device._id, timeNow);
-                                await this.returnToken(res, user, loginHistoryId._id)
+                                res.status(200).send(this.successFormat({
+                                    'message': "You are successfully logged in.",
+                                    "login_history": loginHistoryId._id
+                                }, userID))
                             }
                             else {
                                 const isChecked = await this.generatorOtpforEmail(userID);
