@@ -13,7 +13,7 @@
 	"site": {
 		"url": "http://localhost:3000",
 		"version": "v1",
-		"hmtLink":3
+		"hmtLink":2
 	},
 	"settings": {
 		"expiryTime": 72,
@@ -41,9 +41,9 @@
 	},
 
 	"accountActive":{
-		"hmt" : 6,
+		"hmt" : 5,
 		"timeExpiry":7200,
-		"limit":4
+		"limit":3
 	}
 
 
