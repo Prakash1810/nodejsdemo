@@ -3,14 +3,17 @@ const mongoose = require('./src/app/db.config');
 const swagger    = require('./docs');
 const compression = require('compression');
 
+
 // mongodb connect
 
-
+require('./src/services/logger')();
 mongoose.connect();
 
 app.use(compression());
 // swagger api documentation
 app.use('/doc', swagger);
+
+
 
 
 app.listen(3000, () => {

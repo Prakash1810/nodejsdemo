@@ -21,9 +21,6 @@ const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
 const service = require('../services/api');
 const axios = require('axios');
-const CryptoJS = require("crypto-js");
-const crypto = require('crypto');
- 
 
 class User extends controller {
 
