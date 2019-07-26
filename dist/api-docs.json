@@ -578,18 +578,6 @@
                 "operationId": "Create",
                 "produces": [
                     "application/json"
-                ],
-                "parameters": [
-                    {
-                        "name": "Parameters",
-                        "in": "body",
-                        "description": "settings",
-                        "required": true,
-                        "type": "string",
-                        "schema": {
-                            "$ref": "#/definitions/market"
-                        }
-                    }
                 ]
             }
         },
@@ -1627,7 +1615,6 @@
                 },
                 "data": {
                     "example": {
-                        "id": "{{user_id}}",
                         "attributes": {
                             "email": "xyz@gmail.com",
                             "password": "1234567S",
@@ -1838,6 +1825,30 @@
                             "browser": "Chrome",
                             "browser_version": "71.0.3578.11",
                             "os": "Linux"
+                        }
+                    }
+                }
+            }
+        },
+        "binance": {
+            "properties": {
+                "code": {
+                    "example": 200
+                },
+                "errors": {
+                    "example": "false"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                                    "symbol":"LTCBTC",
+                                    "side":"BUY",
+                                    "type":"LIMIT",
+                                    "timeInForce":"GTC",
+                                    "quantity":1,
+                                    "price":0.1,
+                                    "recvWindow":30000,
+                                    "timestamp":1499827319559
                         }
                     }
                 }

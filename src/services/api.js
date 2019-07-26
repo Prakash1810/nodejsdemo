@@ -9,10 +9,12 @@ const config = require('config');
 const controller = new Controller;
 const market = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
+const Binance = require('binance-api-node').default;
+const redis = require('redis');
 class Api extends Controller {
 
     async sendEmailNotification(data) {
-        console.log('Data:', data);
+
         if (data.email_for !== 'registration') {
             let disableData = JSON.stringify({
                 'user_id': data.user_id,
@@ -25,7 +27,7 @@ class Api extends Controller {
             data.to_email = user.email
             data.anti_spoofing_code = (user.anti_spoofing) ? user.anti_spoofing_code : false
         }
-
+        console.log('Data:', data);
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
             .then((res) => {
                 console.log(res.data);
@@ -41,7 +43,7 @@ class Api extends Controller {
             let results = await assets.find({
                 is_default: true
             });
-
+            console.log('Result:', results);
             results.forEach((result) => {
                 let data = {
                     "coin": result.asset_code,
@@ -68,7 +70,16 @@ class Api extends Controller {
             if (axiosError.response !== undefined) throw (axiosError.response)
         });
     }
-
+    async binance(input,user_id) {
+        const client2 = Binance({
+            apiKey: process.env.APIKEY,
+            apiSecret: process.env.SECERTKEY
+        })
+        let response = await client2.order(input);
+        response.user_id=user_id;
+        console.log('Response:', response);
+        this.addResponseInRedis(response);
+    }
     async matchingEngineGetRequest(path, res) {
         let axiosResponse = await axios['get'](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`);
@@ -126,7 +137,7 @@ class Api extends Controller {
         }
 
     }
-    async matchingEngineRequestForMarketList(path, req, res) {
+    async matchingEngineRequestForMarketList(path, req, res, type = 'withoutAdd') {
 
         if (req.headers.authorization) {
             let markets = [];
@@ -134,7 +145,7 @@ class Api extends Controller {
             if (!isChecked.status) {
                 return res.status(401).json(controller.errorMsgFormat({
                     message: "Invalid authentication"
-                }));
+                }),401);
             }
             let getMarket = await market.find({});
             if (getMarket.length == 0) {
@@ -143,47 +154,56 @@ class Api extends Controller {
                 }, 'users', 404));
             }
             for (var i = 0; i < getMarket.length; i++) {
-                let checkedFavorite = await favourite.findOne({ user: isChecked.result.user, market: {
-                    $in: [
-                      getMarket[i]._id
-                    ]
-                  }});
-                if(checkedFavorite)
-                {
+                let checkedFavorite = await favourite.findOne({
+                    user: isChecked.result.user, market: {
+                        $in: [
+                            getMarket[i]._id
+                        ]
+                    }
+                });
+                if (checkedFavorite) {
                     markets.push(getMarket[i].market_name);
                 }
-                 
+
             }
             let axiosResponse = await axios.get(
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`)
             const result = axiosResponse.data;
             let data = result.result.result;
-            if (result.status)
-            {
-                for(var i=0;i<markets.length;i++)
-                {
-                    for(var j=0;j<data.length;j++)
-                    {
-                        if(data[j].name === markets[i])
-                        {
-                            data[j].is_favourite = true
+            if (result.status) {
+
+                
+                for (var i = 0; i < markets.length; i++) {
+                    for (var j = 0; j < data.length; j++) {
+                        data[j].q=getMarket[j].q;
+                        if (data[j].name === markets[i]) {
+                            data[j].is_favourite = true;
+                            break;
                         }
                     }
                 }
-                return res.status(200).send(controller.successFormat(data,result.id));
+                return res.status(200).send(controller.successFormat(data, result.id));
             }
             else {
                 return res.status(result.errorCode).send(controller.errorMsgFormat({
                     'message': result.error
                 }, 'order-matching', result.errorCode));
             }
-           
+
         }
+        let getMarket = await market.find({});
         let axiosResponse = await axios['get'](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`);
         let result = axiosResponse.data;
         let data = result.result.result;
         if (result.status) {
+            if (type == 'withAdd') {
+                return { status: true, result: data };
+            }
+            for(let k =0; k<data.length;k++)
+            {
+                data[k].q=getMarket[k].q
+            }
             return res.status(200).send(controller.successFormat(data, result.result.id))
         } else {
             return res.status(result.errorCode).send(controller.errorMsgFormat({
@@ -212,6 +232,20 @@ class Api extends Controller {
 
     async marketPrice(assetsName, convertTo = 'usd,btc') {
         return await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${assetsName}&vs_currencies=${convertTo}`);
+    }
+
+    async addResponseInRedis(response) {
+        
+        var client = redis.createClient(process.env.REDIS_HOST,process.env.REDIS_PORT);
+
+        client.on('connect', function () {
+            client.set(response.orderId, response, redis.print);
+            return { status:true, result:'Add data Redis' };
+        });
+
+        client.on('error', function (err) {
+            return { status:false, error:'Something went wrong' };
+        });
     }
 }
 

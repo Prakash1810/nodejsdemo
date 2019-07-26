@@ -87,13 +87,26 @@ router.post('/order/put-market', auth, async (req, res) => {
 
 router.post('/order/put-limit', auth, async (req, res) => {
     try {
+        let side;
+        let data = req.body.data.attributes;
          req.body.data.attributes.user_id = Number(req.user.user_id);
         const fee = await getFee.find({config:{$in:['takerFeeRate' ,'makerFeeRate']}})
         for(var i=0;i<fee.length;i++)
         {
             req.body.data.attributes[fee[i].config]=fee[i].value
         }
-       
+        
+        side = data.side == 2 ? "BUY" : "SELL";
+
+        let input = 
+        {
+            symbol:data.market,
+            side:side,
+            type:"LIMIT",
+            quantity:data.amount,
+            price:data.pride
+        }
+        await matching.binance(input,req.body.data.attributes.user_id);
         await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({

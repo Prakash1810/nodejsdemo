@@ -73,6 +73,7 @@ class Wallet extends controller {
                 user: req.user.user
             });
             if (!getAddress) {
+                console.log("GetAddress");
                 let isChecked =  await assets.findOne({_id:asset})
                 let data =
                 {
