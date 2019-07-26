@@ -4,7 +4,7 @@ const schema = new mongoose.Schema({
     market_name: {
         type: String, required: true, index: true, unique: true
     },
-    q: { type: String, default: false }
+    q: { type: Boolean, default: false }
 })
 
 module.exports = mongoose.model('market-list', schema);
