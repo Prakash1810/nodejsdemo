@@ -125,7 +125,7 @@ router.patch('/change-password', auth, (req, res) => {
     }
 });
 
-router.get('/get-user-id', (req, res) => {
+router.post('/get-user-id', (req, res) => {
     try {
         console.log("Token:", req.headers);
         if (req.headers.authorization) {
@@ -329,5 +329,7 @@ router.patch('/favourite', auth, async (req, res) => {
         }, 'users', 500));
     }
 })
+
+
 
 module.exports = router;

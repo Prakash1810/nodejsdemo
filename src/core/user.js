@@ -20,6 +20,10 @@ const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
 const service = require('../services/api');
+const axios = require('axios');
+const CryptoJS = require("crypto-js");
+const crypto = require('crypto');
+ 
 
 class User extends controller {
 
@@ -195,7 +199,7 @@ class User extends controller {
                             }
                             if (isChecked.count > config.get('accountActive.limit')) {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': `Invalid credentials, Your are about to exceed the maximum try - only ${config.get('accountActive.hmt') - isChecked.count+1 } attempts left`
+                                    'message': `Invalid credentials, Your are about to exceed the maximum try - only ${config.get('accountActive.hmt') - isChecked.count + 1} attempts left`
                                 }));
                             }
                         }
@@ -402,7 +406,7 @@ class User extends controller {
                     res.status(200).send(this.successFormat({
                         'message': "You are successfully logged in.",
                         "login_history": loginHistoryId._id,
-                        "google_auth":isAuth.google_auth,
+                        "google_auth": isAuth.google_auth,
                         "sms_auth": isAuth.sms_auth,
 
                     }, userID))
@@ -483,7 +487,7 @@ class User extends controller {
                                 res.status(200).send(this.successFormat({
                                     'message': "You are successfully logged in.",
                                     "login_history": loginHistoryId._id,
-                                    "google_auth":isAuth.google_auth,
+                                    "google_auth": isAuth.google_auth,
                                     "sms_auth": isAuth.sms_auth,
 
                                 }, userID))
@@ -969,7 +973,7 @@ class User extends controller {
                     'status': returnStatus
                 }, '2factor', 200));
             } else {
-                return res.status(400).send(this.successFormat({
+                return res.status(400).send(this.errorFormat({
                     'status': returnStatus,
                     'message': 'Incorrect code'
                 }, '2factor', 400));
@@ -984,7 +988,7 @@ class User extends controller {
             if (!isChecked.status) {
                 return res.status(401).json(controller.errorMsgFormat({
                     message: "Invalid authentication"
-                }));
+                }),401);
             }
             method = "withAuth"
 
@@ -1101,22 +1105,32 @@ class User extends controller {
     }
 
     async addMarkets(req, res) {
-        let data = req.body.data.attributes;
-        if (data.market_name !== null && data.market_name != undefined) {
-            let isCheckMarket = await addMarket.findOne({ market_name: data.market_name })
-            if (isCheckMarket) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': "Market is already in the list"
-                }, 'users', 400));
+        let market = await service.matchingEngineRequestForMarketList('market/list', req, res,'withAdd');
+      
+        if(market.status)
+        {
+            console.log("Market:",market);
+            let data = market.result;
+            for(var i=0;i<data.length;i++)
+            {
+                let isCheckMarket = await addMarket.findOne({ market_name:data[i].name});
+                if(!isCheckMarket)
+                {
+                    let request = {
+                        market_name:data[i].name,
+                    }
+                    await new addMarket(request).save();
+                }
             }
-            await new addMarket(data).save();
+
+         
             return res.status(200).send(this.successFormat({
                 'message': 'Add Market',
             }));
         }
         else {
             return res.status(400).send(this.errorMsgFormat({
-                'message': "market_name is required."
+                'message': "Data not found "
             }, 'users', 400));
         }
     }
@@ -1198,6 +1212,30 @@ class User extends controller {
         }));
 
     }
+
+    async binanceExecute(req, res) {
+        let headers ={
+            'X-MBX-APIKEY' : process.env.APIKEY
+        }
+        console.log("headers:",headers);
+        
+        axios.get('https://api.binance.com/api/v1/time')
+            .then((response) => {
+                console.log('Response:',response.data);
+               return  res.status(200).send(response.data)
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
+
+   async binancePostExecute(req, res) {
+
+
+    }
+   
+
+
 }
 
 module.exports = new User;

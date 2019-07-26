@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const config = require('config');
-
+const http = require('http');
 class Helpers {
 
     encrypt (data) {
@@ -25,6 +25,8 @@ class Helpers {
             }
         };
     }
+    
+    
 }
 
 module.exports = new Helpers();
