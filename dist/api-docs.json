@@ -10,7 +10,7 @@
             "email": "sathish.kumar@beldex.org"
         }
     },
-    "host": "localhost:3000",
+    "host": "coreapialpha.beldex.io/doc",
     "basePath": "/api/v1/",
     "tags": [
         {
@@ -29,7 +29,7 @@
         }
     ],
     "schemes": [
-        "http"
+        "https"
     ],
     "consumes": [
         "application/json"
