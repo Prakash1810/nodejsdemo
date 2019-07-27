@@ -980,6 +980,12 @@ class User extends controller {
 
     async postVerifyG2F(req, res, type = 'json') {
         var method = "withoutAuth";
+        if(req.headers.authentication == null)
+        {
+            return res.status(401).json(controller.errorMsgFormat({
+                message: "Invalid request"
+            }),400);
+        }
         if (req.headers.authorization) {
             let isChecked = await service.authentication(req);
             if (!isChecked.status) {
