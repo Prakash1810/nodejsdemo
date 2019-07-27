@@ -6,7 +6,7 @@ const compression = require('compression');
 
 // mongodb connect
 
-require('./src/services/logger')();
+
 mongoose.connect();
 
 app.use(compression());

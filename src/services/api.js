@@ -206,8 +206,9 @@ class Api extends Controller {
         let axiosResponse = await axios['get'](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`);
         let result = axiosResponse.data;
-        let data = result.result.result;
+       
         if (result.status) {
+            let data = result.result.result;
             if (type == 'withAdd') {
                 return { status: true, result: data };
             }
@@ -228,9 +229,10 @@ class Api extends Controller {
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;
-        let value = result.result.result;
+       
         if (result.status) {
             if (type === 'json') {
+                let value = result.result.result;
                 if(method == 'order/cancel')
                 {
                    await new orderCancel(value).save();
