@@ -5,6 +5,7 @@ const Controller = require('../core/controller');
 const controller = new Controller;
 const getFee = require("../db/matching-engine-config");
 const auth = require('../middlewares/authentication');
+const market = require('../db/market-list');
 //ASSET
 
 router.get('/asset/list', async (req, res) => {
@@ -73,9 +74,25 @@ router.patch('/balance/update', auth, async (req, res) => {
 
 router.post('/order/put-market', auth, async (req, res) => {
     try {
+        let side ;
+        let data =  req.body.data.attributes;
          req.body.data.attributes.user_id = Number(req.user.user_id);
+            if(data.q)
+            {
+                side = data.side == 2 ? "BUY" : "SELL";
+
+                let input = 
+                {
+                    symbol:data.market,
+                    side:side,
+                    type:"MARKET",
+                    quantity:data.amount,
+                }
+                await matching.binance(input,req.body.data.attributes.user_id);
+            }
         const fee = await getFee.findOne({config:"takerFeeRate"});
         req.body.data.attributes[fee.config]=fee.value;
+        
         await matching.matchingEngineRequest('post', 'order/put-market', req.body, res);
 
     } catch (err) {
@@ -90,24 +107,26 @@ router.post('/order/put-limit', auth, async (req, res) => {
         let side;
         let data = req.body.data.attributes;
          req.body.data.attributes.user_id = Number(req.user.user_id);
+         if(data.q)
+         {
+             side = data.side == 2 ? "BUY" : "SELL";
+
+             let input = 
+             {
+                 symbol:data.market,
+                 side:side,
+                 type:"LIMIT",
+                 quantity:data.amount,
+                 price:data.pride
+             }
+             await matching.binance(input,req.body.data.attributes.user_id);
+         }
         const fee = await getFee.find({config:{$in:['takerFeeRate' ,'makerFeeRate']}})
         for(var i=0;i<fee.length;i++)
         {
             req.body.data.attributes[fee[i].config]=fee[i].value
         }
-        
-        side = data.side == 2 ? "BUY" : "SELL";
-
-        let input = 
-        {
-            symbol:data.market,
-            side:side,
-            type:"LIMIT",
-            quantity:data.amount,
-            price:data.pride
-        }
-        await matching.binance(input,req.body.data.attributes.user_id);
-        await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
+     await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

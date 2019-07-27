@@ -11,6 +11,10 @@ const market = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
 const Binance = require('binance-api-node').default;
 const redis = require('redis');
+const kafka = require('kafka-node');
+const orderCancel = require('../db/order-cancel');
+const fs = require('fs');
+const moment = require('moment');
 class Api extends Controller {
 
     async sendEmailNotification(data) {
@@ -70,15 +74,22 @@ class Api extends Controller {
             if (axiosError.response !== undefined) throw (axiosError.response)
         });
     }
+
     async binance(input,user_id) {
-        const client2 = Binance({
+        const client = Binance({
             apiKey: process.env.APIKEY,
             apiSecret: process.env.SECERTKEY
         })
-        let response = await client2.order(input);
+        let response = await client.order(input);
         response.user_id=user_id;
         console.log('Response:', response);
-        this.addResponseInRedis(response);
+        if(input.type == 'MARKET')
+        {
+            this.addResponseInKAFKA(response, input.symbol);
+        }else{
+            this.addResponseInREDIS(response);
+        }
+        
     }
     async matchingEngineGetRequest(path, res) {
         let axiosResponse = await axios['get'](
@@ -217,11 +228,16 @@ class Api extends Controller {
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;
+        let value = result.result.result;
         if (result.status) {
             if (type === 'json') {
-                return res.status(200).send(controller.successFormat(result.result.result, result.result.id));
+                if(method == 'order/cancel')
+                {
+                   await new orderCancel(value).save();
+                }
+                return res.status(200).send(controller.successFormat(value, result.result.id));
             } else {
-                return controller.successFormat(result.result.result, result.result.id);
+                return controller.successFormat(value, result.result.id);
             }
         } else {
             return res.status(result.errorCode).send(controller.errorMsgFormat({
@@ -234,18 +250,76 @@ class Api extends Controller {
         return await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${assetsName}&vs_currencies=${convertTo}`);
     }
 
-    async addResponseInRedis(response) {
+    async addResponseInREDIS(response) {
         
-        var client = redis.createClient(process.env.REDIS_HOST,process.env.REDIS_PORT);
+            var client = redis.createClient(process.env.REDIS_HOST,process.env.REDIS_PORT);
 
-        client.on('connect', function () {
-            client.set(response.orderId, response, redis.print);
-            return { status:true, result:'Add data Redis' };
-        });
+            client.on('connect', function () {
+                client.set(response.orderId, response, redis.print);
+                // return { status:true, result:'Add data Redis' };
+                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${response}`
+                fs.appendFile('/var/log/coreapi/redisSuccess.txt', `\n${fileConent} `, function (err) {
+                    if (err) 
+                    console.log("Error:",err);
+                  });
+            });
+    
+            client.on('error', function (err) {
+                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${response.orderId} :${response.user_id} : ${err}`
+                fs.appendFile('redisError.txt', `\n${fileConent} `, function (err) {
+                    if (err) 
+                    console.log("Error:",err);
+                  });
+                //return { status:false, error:'Something went wrong' };
+            });
+        
+        
+    }
 
-        client.on('error', function (err) {
-            return { status:false, error:'Something went wrong' };
+    async addResponseInKAFKA(jsonData, market)
+    {
+        let Producer = kafka.Producer,
+        Client = new kafka.KafkaClient({
+            kafkaHost: process.env.KAFKA
+        }),
+        producer = new Producer(Client, {
+            requireAcks: 1
         });
+       
+    producer.on('ready', async function () {
+       let response = await  producer.send([{
+            topic: `${config.get('topic')}${market}`,
+            messages: JSON.stringify(jsonData),
+        }]);
+        if(response)
+        {
+            
+            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.orderId} : ${jsonData.user_id} : ${jsonData}`
+            fs.appendFile('kafaSuccess.txt', `\n${fileConent} `, function (err) {
+                if (err) 
+                console.log("Error:",err);
+              });
+              //return { status :true }
+        }
+        else{
+            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${jsonData}`
+            fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
+                if (err) 
+                console.log("Error:",err);
+              });
+            //return { status : false , error : response.message }
+        }
+    });
+
+    producer.on('error', function (err) {
+        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${err}`
+            fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
+                if (err) 
+                console.log("Error:",err);
+              });
+        //return { status : false , error : response.message }
+    });
+
     }
 }
 
