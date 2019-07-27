@@ -6,7 +6,6 @@ const compression = require('compression');
 
 // mongodb connect
 
-
 mongoose.connect();
 
 app.use(compression());
@@ -21,6 +20,6 @@ app.listen(3000, () => {
 });
 
 // logger
-require('./src/app/logger');
+//require('./src/app/logger');
 
 module.exports = app;
