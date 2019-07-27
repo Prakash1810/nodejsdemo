@@ -231,8 +231,9 @@ class Api extends Controller {
         const result = axiosResponse.data;
        
         if (result.status) {
+            let value = result.result.result;
             if (type === 'json') {
-                let value = result.result.result;
+                
                 if(method == 'order/cancel')
                 {
                    await new orderCancel(value).save();
