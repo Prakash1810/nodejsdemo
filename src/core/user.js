@@ -877,7 +877,10 @@ class User extends controller {
             requestData.is_active = userHash.is_active;
         }
 
-            if(type != 'withCallPatchSetting')
+        if(type != 'withCallPatchSetting')
+        {   
+            let check = await users.find({_id:req.body.data.id,google_auth:true})
+            if(check)
             {
                 let isChecked = await this.postVerifyG2F(req,res,'setting');
                 if(isChecked.status == false)
@@ -888,7 +891,8 @@ class User extends controller {
                 }
              
             }
-
+            
+        }
         if (req.body.data.id !== undefined && Object.keys(requestData).length) {
             // find and update the reccord
            let update = await  users.findOneAndUpdate({
@@ -973,7 +977,7 @@ class User extends controller {
             {
                 return res.status(202).send(this.successFormat({
                     'message': 'Your request is updated successfully.'
-                },'users', 202));
+                },null,'users', 202));
             }
             else{
                 return res.status(400).send(this.errorMsgFormat({
@@ -989,7 +993,7 @@ class User extends controller {
 
     async updateG2F(req, res) {
         let check = await this.postVerifyG2F(req, res, 'boolean');
-        console.log("Check:",check);
+       // console.log("Check:",check);
         if (check.status === true ) {
             // delete password attribute
 
@@ -1015,31 +1019,32 @@ class User extends controller {
                 drift: 4,
                 step: 30
             };
+	    console.log("Attributes:",req.body.data.attributes);
+            console.log("Google Secret:", google_secrete_key);
             let counter = Math.floor(Date.now() / 1000 / opts.step);
             let returnStatus = await g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
                 if (returnStatus === true) {
-                    if (method == 'withoutAuth') {
+                    if (method == 'withoutAuth' && type != 'boolean') {
                         let user = await users.findOne({ _id: req.body.data.id });
                         await this.returnToken(res, user, req.body.data.attributes.login_history)
                     }
                     else if(method == 'setting'|| type =='boolean')
                     {
-                        
                         return { status:true };
                     }
                     else{
-                        return res.status(200).send(this.successFormat({
+                        return res.status(202).send(this.successFormat({
                             'status': returnStatus
-                        }, '2factor', 200));
+                        }, '2factor', 202));
                     }
                     
                 } else {
                     if(method == 'setting' || type =='boolean')
                     {
-                        console.log("type:",type);
                         return { status:false };
                     }
                     else{
+		
                         return res.status(400).send(this.errorFormat({
                             'status': returnStatus,
                             'message': 'Incorrect code'
@@ -1050,6 +1055,7 @@ class User extends controller {
             }
         catch(err)
         {
+	    console.log("Error Message", err.message);
             return res.status(400).send(this.errorMsgFormat({
                 'message': err.message
             }, '2factor', 400));
@@ -1078,7 +1084,7 @@ class User extends controller {
                  method = "withAuth"
                 }
             let requestedData = req.body.data.attributes;
-            if (requestedData.g2f_code !== undefined) {
+        if (requestedData.g2f_code !== undefined) {
                 if (requestedData.google_secrete_key === undefined) {
                     let result = await users.findById(req.body.data.id).exec();
                     if (!result) {
@@ -1087,13 +1093,19 @@ class User extends controller {
                         }));
                     }
                     if(type == 'setting')
-                         { 
+                         {
                              method = 'setting';
                              let cheked = await this.verifyG2F(req, res, type, result.google_secrete_key, method);
                              return cheked;
                          }
                     return this.verifyG2F(req, res, type, result.google_secrete_key, method);
                 } else {
+                    if(type == 'setting')
+                         {
+                             method = 'setting';
+                             let cheked = await this.verifyG2F(req, res, type, result.google_secrete_key, method);
+                             return cheked;
+                         }
                     return this.verifyG2F(req, res, type, requestedData.google_secrete_key, method);
                 }
             } else {
@@ -1101,7 +1113,7 @@ class User extends controller {
                     'message': 'Invalid request'
                 }, '2factor', 400));
             }
-        }catch(err)
+	}catch(err)
         {
             return res.status(400).send(this.errorMsgFormat({
                 'message': err.message
@@ -1310,26 +1322,6 @@ class User extends controller {
 
     }
 
-    async binanceExecute(req, res) {
-        let headers ={
-            'X-MBX-APIKEY' : process.env.APIKEY
-        }
-        console.log("headers:",headers);
-        
-        axios.get('https://api.binance.com/api/v1/time')
-            .then((response) => {
-                console.log('Response:',response.data);
-               return  res.status(200).send(response.data)
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-    }
-
-   async binancePostExecute(req, res) {
-
-
-    }
    
 
 
