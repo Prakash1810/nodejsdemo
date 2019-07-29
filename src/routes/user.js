@@ -125,7 +125,7 @@ router.patch('/change-password', auth, (req, res) => {
     }
 });
 
-router.get('/get-user-id', (req, res) => {
+router.post('/get-user-id', (req, res) => {
     try {
         console.log("Token:", req.headers);
         if (req.headers.authorization) {
@@ -182,7 +182,7 @@ router.patch('/settings', auth, (req, res) => {
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
-            user.patchSettings(req, res);
+            user.patchSettings(req, res,'withG2f');
         }
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({

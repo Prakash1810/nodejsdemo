@@ -858,7 +858,9 @@ class User extends controller {
             mobile_code: Joi.number().optional(),
             anti_spoofing: Joi.boolean().optional(),
             anti_spoofing_code: Joi.string().optional(),
-            white_list_address: Joi.boolean().optional()
+            white_list_address: Joi.boolean().optional(),
+            g2f_code : Joi.string().required(),
+            white_list_address : Joi.boolean().optional()
         });
 
         return Joi.validate(req, schema, {
@@ -866,13 +868,23 @@ class User extends controller {
         });
     }
 
-    patchSettings(req, res) {
+   async patchSettings(req, res, type='withoutG2f') {
         let requestData = req.body.data.attributes;
-        if (requestData.code !== undefined) {
-            let userHash = JSON.parse(helpers.decrypt(requestData.code));
-            requestData.is_active = userHash.is_active;
+        req.body.data.id = req.user.user;
+        // if (requestData.code !== undefined) {
+        //     let userHash = JSON.parse(helpers.decrypt(requestData.code));
+        //     requestData.is_active = userHash.is_active;
+        // }
+        if(type == 'withG2f')
+        {   
+           let isChecked = await this.postVerifyG2F(req,res,'setting');
+           if(isChecked.status == false)
+           {
+            return res.status(400).send(this.errorFormat({
+                'message': 'Incorrect code'
+            }, 'user', 400));
+           }
         }
-
         if (req.body.data.id !== undefined && Object.keys(requestData).length) {
 
             // find and update the reccord
@@ -950,70 +962,114 @@ class User extends controller {
     }
 
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
-        let opts = {
-            beforeDrift: 2,
-            afterDrift: 2,
-            drift: 4,
-            step: 30
-        };
-        let counter = Math.floor(Date.now() / 1000 / opts.step);
-        let returnStatus = await g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
-        if (type === 'boolean') {
-            return returnStatus;
-        } else {
-            if (returnStatus === true) {
-                if (method == 'withoutAuth') {
-                    let user = await users.findOne({ _id: req.body.data.id });
-                    await this.returnToken(res, user, req.body.data.attributes.login_history)
-                }
-                return res.status(200).send(this.successFormat({
-                    'status': returnStatus
-                }, '2factor', 200));
+        try{
+            let opts = {
+                beforeDrift: 2,
+                afterDrift: 2,
+                drift: 4,
+                step: 30
+            };
+            let counter = Math.floor(Date.now() / 1000 / opts.step);
+            let returnStatus = await g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
+            if (type === 'boolean') {
+                return returnStatus;
             } else {
-                return res.status(400).send(this.errorFormat({
-                    'status': returnStatus,
-                    'message': 'Incorrect code'
-                }, '2factor', 400));
+                if (returnStatus === true) {
+                    if (method == 'withoutAuth') {
+                        let user = await users.findOne({ _id: req.body.data.id });
+                        await this.returnToken(res, user, req.body.data.attributes.login_history)
+                    }
+                    else if(method == 'setting')
+                    {
+                        
+                        return { status:true };
+                    }
+                    else{
+                        return res.status(200).send(this.successFormat({
+                            'status': returnStatus
+                        }, '2factor', 200));
+                    }
+                    
+                } else {
+                    if(method == 'setting')
+                    {
+                        return { status:false };
+                    }
+                    else{
+                        return res.status(400).send(this.errorFormat({
+                            'status': returnStatus,
+                            'message': 'Incorrect code'
+                        }, '2factor', 400));
+                    }
+                   
+                }
             }
+        }catch(err)
+        {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': err.message
+            }, '2factor', 400));
         }
+       
     }
 
     async postVerifyG2F(req, res, type = 'json') {
-        var method = "withoutAuth";
-        if(req.headers.authentication == null)
-        {
-            return res.status(401).json(controller.errorMsgFormat({
-                message: "Invalid request"
-            }),400);
-        }
-        if (req.headers.authorization) {
-            let isChecked = await service.authentication(req);
-            if (!isChecked.status) {
+        try{
+            var method = "withoutAuth";
+            if(req.headers.authorization == null)
+            {
                 return res.status(401).json(controller.errorMsgFormat({
-                    message: "Invalid authentication"
-                }),401);
+                    message: "Invalid request"
+                }),400);
             }
-            method = "withAuth"
-
-        }
-        let requestedData = req.body.data.attributes;
-        if (requestedData.g2f_code !== undefined) {
-            if (requestedData.google_secrete_key === undefined) {
-                let result = await users.findById(req.body.data.id).exec();
-                if (!result) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Invalid data'
-                    }));
+            if (req.headers.authorization) {
+                let isChecked = await service.authentication(req);
+                if (!isChecked.status) {
+                    return res.status(401).json(controller.errorMsgFormat({
+                        message: "Invalid authentication"
+                    }),401);
+                    
                 }
-                return this.verifyG2F(req, res, type, result.google_secrete_key, method);
-            } else {
-                return this.verifyG2F(req, res, type, requestedData.google_secrete_key, method);
+                req.body.data.id = isChecked.result.user;
+            
+               
+                    method = "withAuth"
+                
+                
             }
-        } else {
+           
+            
+            let requestedData = req.body.data.attributes;
+            if (requestedData.g2f_code !== undefined) {
+                if (requestedData.google_secrete_key === undefined) {
+                    let result = await users.findById(req.body.data.id).exec();
+                    if (!result) {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Invalid data'
+                        }));
+                    }
+                    if(type == 'setting')
+                         { 
+                             method = 'setting';
+                             let cheked = await this.verifyG2F(req, res, type, result.google_secrete_key, method);
+                             return cheked;
+                         }
+                    return this.verifyG2F(req, res, type, result.google_secrete_key, method);
+                } else {
+                    return this.verifyG2F(req, res, type, requestedData.google_secrete_key, method);
+                }
+            } else {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid request'
+                }, '2factor', 400));
+            }
+        }catch(err)
+        {
             return res.status(400).send(this.errorMsgFormat({
-                'message': 'Invalid request'
+                'message': err.message
             }, '2factor', 400));
         }
+        
     }
 
     async refreshToken(data, res) {
