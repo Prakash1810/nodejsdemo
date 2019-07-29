@@ -91,6 +91,9 @@ router.post('/order/put-market', auth, async (req, res) => {
                 }
                 await matching.binance(input,req.body.data.attributes.user_id);
             }
+            //delete q from request;
+         delete data.q;
+         
         const fee = await getFee.findOne({config:"takerFeeRate"});
         req.body.data.attributes[fee.config]=fee.value;
         
@@ -122,6 +125,10 @@ router.post('/order/put-limit', auth, async (req, res) => {
              }
              await matching.binance(input,req.body.data.attributes.user_id);
          }
+
+         //delete q from request;
+         delete data.q;
+
         const fee = await getFee.find({config:{$in:['takerFeeRate' ,'makerFeeRate']}})
         for(var i=0;i<fee.length;i++)
         {
