@@ -5,7 +5,8 @@ const Controller = require('../core/controller');
 const controller = new Controller;
 const getFee = require("../db/matching-engine-config");
 const auth = require('../middlewares/authentication');
-const market = require('../db/market-list');
+const orderCancel = require('../db/order-cancel');
+const _ = require('lodash');
 //ASSET
 
 router.get('/asset/list', async (req, res) => {
@@ -138,6 +139,19 @@ router.post('/order/cancel', auth, async (req, res) => {
     try {
          req.body.data.attributes.user_id = Number(req.user.user_id);
         await matching.matchingEngineRequest('post', 'order/cancel', req.body, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'order-matching', 500));
+    }
+})
+
+router.get('/order/cancel', auth, async (req, res) => {
+    try {
+            let user  = Number(req.user.user_id);
+            let data = await orderCancel.find({user:user});
+            let result = _.orderBy(data,['ctime'],['asc']);
+            return res.status(200).send(controller.successFormat(result,user));
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

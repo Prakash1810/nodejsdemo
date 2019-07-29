@@ -80,7 +80,7 @@ class Api extends Controller {
             apiKey: process.env.APIKEY,
             apiSecret: process.env.SECERTKEY
         })
-        let response = await client.order(input);
+        let response = await client.order(input);getMarket
         response.user_id=user_id;
         console.log('Response:', response);
         if(input.type == 'MARKET')
@@ -186,12 +186,16 @@ class Api extends Controller {
                 
                 for (var i = 0; i < markets.length; i++) {
                     for (var j = 0; j < data.length; j++) {
-                        data[j].q=getMarket[j].q;
                         if (data[j].name === markets[i]) {
                             data[j].is_favourite = true;
                             break;
                         }
                     }
+                }
+                //add q in response 
+                for(let k=0; k< getMarket.length;k++)
+                {
+                    data[k].q = getMarket[k].q;
                 }
                 return res.status(200).send(controller.successFormat(data, result.id));
             }

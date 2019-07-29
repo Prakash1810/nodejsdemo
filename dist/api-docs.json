@@ -463,6 +463,13 @@
                         "schema": {
                             "$ref": "#/definitions/settings"
                         }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "g2f settings",
+                        "required": true,
+                        "type": "string"
                     }
                 ]
             }
@@ -1239,6 +1246,24 @@
                         "type": "string"
                     }
                 ]
+            },
+            "get": {
+                "tags": [
+                    "matching"
+                ],
+                "description": "order-cancel",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "order/cancel",
+                        "required": true,
+                        "type": "string"
+                    }
+                ]
             }
         },
         "matching/order/book": {
@@ -2001,10 +2026,10 @@
                 },
                 "data": {
                     "example": {
-                        "id": "{{user_id}}",
                         "attributes": {
                             "anti_spoofing_code": "satz",
-                            "anti_spoofing": "true"
+                            "anti_spoofing": "true",
+                            "g2f_code":"674145"
                         }
                     }
                 }
