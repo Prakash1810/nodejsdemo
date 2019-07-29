@@ -7,6 +7,7 @@ const config = require('config');
 const bcrypt = require('bcrypt');
 const mangHash = require('../db/management-hash');
 const moment = require('moment');
+const user = require('../core/user');
 
 class Password extends Controller {
 
@@ -52,7 +53,7 @@ class Password extends Controller {
                     return res.status(400).json(this.errorMsgFormat({ 'message': 'User not found, please login.' }));
                 } else {
                     let encryptedHash = this.encryptHash(user.email, user._id);
- 
+
                     // send email notification to the registered user
                     let serviceData = {
                         'hash': encryptedHash,
@@ -61,9 +62,8 @@ class Password extends Controller {
                         'user_id': user._id
                     };
                     let ischecked = await mangHash.findOne({ email: user.email, is_active: false, type_for: "reset" })
-                    if(ischecked)
-                    {
-                        if (ischecked.count >config.get('site.hmtLink')) {
+                    if (ischecked) {
+                        if (ischecked.count > config.get('site.hmtLink')) {
                             await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                             return res.status(400).send(this.errorMsgFormat({
                                 'message': ` Verification link resent request exceeded, please login again `
@@ -73,10 +73,10 @@ class Password extends Controller {
                     await apiServices.sendEmailNotification(serviceData);
                     if (ischecked) {
                         let count = ischecked.count;
-                        await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { hash: encryptedHash,  count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                        await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { hash: encryptedHash, count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                     }
                     if (!ischecked) {
-                        await new mangHash({email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
+                        await new mangHash({ email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
                     }
                     return res.status(200).json(this.successFormat({
                         'message': 'We have sent a email to your email address.',
@@ -254,20 +254,29 @@ class Password extends Controller {
                         'message': 'Invalid data'
                     }));
                 }
+                let check = await user.postVerifyG2F(req, res, 'boolean');
+                if ( check.status == true ) {
+                    // compare existing password
+                    let passwordCompare = bcrypt.compareSync(req.body.data.attributes.old_password, result.password);
 
-                // compare existing password
-                let passwordCompare = bcrypt.compareSync(req.body.data.attributes.old_password, result.password);
-
-                if (passwordCompare == false) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Incorrect old password'
-                    }));
-                } else {
-                    req.body.data.attributes.email = result.email;
-                    req.body.data.attributes.user_id = result._id;
-                    // update password
-                    this.resetPassword(req, res, 'change', result.email);
+                    if (passwordCompare == false) {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Incorrect old password'
+                        }));
+                    } else {
+                        req.body.data.attributes.email = result.email;
+                        req.body.data.attributes.user_id = result._id;
+                        // update password
+                        this.resetPassword(req, res, 'change', result.email);
+                    }
                 }
+                else{
+
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Incorrect code'
+                    }, '2factor', 400));
+                }
+
             });
     }
 }
