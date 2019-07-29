@@ -868,53 +868,82 @@ class User extends controller {
         });
     }
 
-   async patchSettings(req, res, type='withoutG2f') {
+   async patchSettings(req, res, type='withoutCallPatchSetting') {
+    try {
         let requestData = req.body.data.attributes;
         req.body.data.id = req.user.user;
-        // if (requestData.code !== undefined) {
-        //     let userHash = JSON.parse(helpers.decrypt(requestData.code));
-        //     requestData.is_active = userHash.is_active;
-        // }
-        if(type == 'withG2f')
-        {   
-           let isChecked = await this.postVerifyG2F(req,res,'setting');
-           if(isChecked.status == false)
-           {
-            return res.status(400).send(this.errorFormat({
-                'message': 'Incorrect code'
-            }, 'user', 400));
-           }
+        if (requestData.code !== undefined) {
+            let userHash = JSON.parse(helpers.decrypt(requestData.code));
+            requestData.is_active = userHash.is_active;
         }
-        if (req.body.data.id !== undefined && Object.keys(requestData).length) {
 
+            if(type != 'withCallPatchSetting')
+            {
+                let isChecked = await this.postVerifyG2F(req,res,'setting');
+                if(isChecked.status == false)
+                {
+                         return res.status(400).send(this.errorFormat({
+                             'message': 'Incorrect code'
+                         }, 'user', 400));
+                }
+             
+            }
+
+        if (req.body.data.id !== undefined && Object.keys(requestData).length) {
             // find and update the reccord
-            users.findOneAndUpdate({
+           let update = await  users.findOneAndUpdate({
                 _id: req.body.data.id
             }, {
                     $set: requestData
-                })
-                .then(result => {
-                    return res.status(202).send(this.successFormat({
-                        'message': 'Your request is updated successfully.'
-                    }, result._id, 'users', 202));
-                })
-                .catch(err => {
-                    return res.status(500).send(this.errorMsgFormat({
-                        'message': err.message
-                    }, 'users', 500));
                 });
+           if(update)
+           {
+            if(type == 'withCallPatchSetting' || type == 'disable' )
+            {
+                return {status : true }
+            }
+                return res.status(202).send(this.successFormat({
+                    'message': 'Your request is updated successfully.'
+                }, result._id, 'users', 202));
+           }
+           else{
+                    if(type == 'withCallPatchSetting' || type == 'disable' )
+                    {
+                        return { status : false }
+                    } 
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Invalid request.'
+                    }, 'users', 400));
+           }
         } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Invalid request.'
             }, 'users', 400));
         }
+    } catch (error) {
+        return res.status(400).send(this.errorMsgFormat({
+            'message': err.message
+        }, 'patchSetting', 400));
+    }
+       
     }
 
-    disableAccount(req, res) {
+    async disableAccount(req, res) {
         let requestedData = req.body.data.attributes;
         let userHash = JSON.parse(helpers.decrypt(requestedData.code));
         if (userHash.is_active !== undefined) {
-            this.patchSettings(req, res);
+            let checked = await this.patchSettings(req, res, 'disable');
+            if(checked.status)
+            {
+                return res.status(202).send(this.successFormat({
+                    'message': 'Your request is updated successfully.'
+                },'users', 202));
+            }
+            else{
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid request..'
+                }, 'users', 400));
+            }
         } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Invalid request..'
@@ -939,7 +968,18 @@ class User extends controller {
                 }
             }
 
-            return this.updateG2F(req, res)
+            let checked = await this.updateG2F(req, res);
+            if(checked.status)
+            {
+                return res.status(202).send(this.successFormat({
+                    'message': 'Your request is updated successfully.'
+                },'users', 202));
+            }
+            else{
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid request..'
+                }, 'users', 400));
+            }
         } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Invalid request'
@@ -949,12 +989,16 @@ class User extends controller {
 
     async updateG2F(req, res) {
         let check = await this.postVerifyG2F(req, res, 'boolean');
-        if (check === true) {
+        console.log("Check:",check);
+        if (check.status === true ) {
             // delete password attribute
+
             delete req.body.data.attributes.password;
 
-            return this.patchSettings(req, res);
+            return await this.patchSettings(req, res, 'withCallPatchSetting');
+            //console.log(checked);
         } else {
+
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Incorrect code'
             }));
@@ -962,6 +1006,8 @@ class User extends controller {
     }
 
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
+        console.log("Method:",method);
+        console.log("Type:",type);
         try{
             let opts = {
                 beforeDrift: 2,
@@ -971,15 +1017,12 @@ class User extends controller {
             };
             let counter = Math.floor(Date.now() / 1000 / opts.step);
             let returnStatus = await g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
-            if (type === 'boolean') {
-                return returnStatus;
-            } else {
                 if (returnStatus === true) {
                     if (method == 'withoutAuth') {
                         let user = await users.findOne({ _id: req.body.data.id });
                         await this.returnToken(res, user, req.body.data.attributes.login_history)
                     }
-                    else if(method == 'setting')
+                    else if(method == 'setting'|| type =='boolean')
                     {
                         
                         return { status:true };
@@ -991,8 +1034,9 @@ class User extends controller {
                     }
                     
                 } else {
-                    if(method == 'setting')
+                    if(method == 'setting' || type =='boolean')
                     {
+                        console.log("type:",type);
                         return { status:false };
                     }
                     else{
@@ -1004,7 +1048,7 @@ class User extends controller {
                    
                 }
             }
-        }catch(err)
+        catch(err)
         {
             return res.status(400).send(this.errorMsgFormat({
                 'message': err.message
@@ -1022,7 +1066,7 @@ class User extends controller {
                     message: "Invalid request"
                 }),400);
             }
-            if (req.headers.authorization) {
+            if (req.headers.authorization && type != 'boolean') {
                 let isChecked = await service.authentication(req);
                 if (!isChecked.status) {
                     return res.status(401).json(controller.errorMsgFormat({
@@ -1031,14 +1075,8 @@ class User extends controller {
                     
                 }
                 req.body.data.id = isChecked.result.user;
-            
-               
-                    method = "withAuth"
-                
-                
-            }
-           
-            
+                 method = "withAuth"
+                }
             let requestedData = req.body.data.attributes;
             if (requestedData.g2f_code !== undefined) {
                 if (requestedData.google_secrete_key === undefined) {
