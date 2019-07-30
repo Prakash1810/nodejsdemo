@@ -218,6 +218,7 @@ class Password extends Controller {
 
     changePasswordValidate(req) {
         let schema = Joi.object().keys({
+            g2f_code : Joi.string().required(),
             old_password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
                 language: {
                     string: {
@@ -245,10 +246,9 @@ class Password extends Controller {
     }
 
     async changePassword(req, res) {
-
         Users.findById(req.body.data.id)
             .exec()
-            .then((result) => {
+            .then( async (result) => {
                 if (!result) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Invalid data'

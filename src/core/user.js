@@ -196,7 +196,7 @@ class User extends controller {
                             }
                             if (isChecked.count > config.get('accountActive.limit')) {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': `Invalid credentials, Your are about to exceed the maximum try - only ${config.get('accountActive.hmt') - isChecked.count + 1} attempts left`
+                                    'message': `Invalid credentials, Your are about to exceed the maximum try - only ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's':''} left`
                                 }));
                             }
                         }
@@ -1064,6 +1064,7 @@ class User extends controller {
     async postVerifyG2F(req, res, type = 'json') {
         try{
             var method = "withoutAuth";
+           
             if(req.headers.authorization == null)
             {
                 return res.status(401).json(controller.errorMsgFormat({
@@ -1081,6 +1082,7 @@ class User extends controller {
                 req.body.data.id = isChecked.result.user;
                  method = "withAuth"
                 }
+                console.log("Hello");
             let requestedData = req.body.data.attributes;
         if (requestedData.g2f_code !== undefined) {
                 if (requestedData.google_secrete_key === undefined) {
@@ -1104,6 +1106,7 @@ class User extends controller {
                              let cheked = await this.verifyG2F(req, res, type, result.google_secrete_key, method);
                              return cheked;
                          }
+                        
                     return this.verifyG2F(req, res, type, requestedData.google_secrete_key, method);
                 }
             } else {
