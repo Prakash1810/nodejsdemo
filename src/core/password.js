@@ -244,7 +244,7 @@ class Password extends Controller {
         return Joi.validate(req, schema, { abortEarly: false })
     }
 
-    changePassword(req, res) {
+    async changePassword(req, res) {
 
         Users.findById(req.body.data.id)
             .exec()
