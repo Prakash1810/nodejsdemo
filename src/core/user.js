@@ -876,10 +876,11 @@ class User extends controller {
             let userHash = JSON.parse(helpers.decrypt(requestData.code));
             requestData.is_active = userHash.is_active;
         }
-
+        console.log("Data:");
         if(type != 'withCallPatchSetting')
         {   
-            let check = await users.find({_id:req.body.data.id,google_auth:true})
+            let check = await users.findOne({_id:req.body.data.id, google_auth:true});
+            console.log("Check:",check);
             if(check)
             {
                 let isChecked = await this.postVerifyG2F(req,res,'setting');
@@ -908,7 +909,7 @@ class User extends controller {
             }
                 return res.status(202).send(this.successFormat({
                     'message': 'Your request is updated successfully.'
-                }, result._id, 'users', 202));
+                }, null , 'users', 202));
            }
            else{
                     if(type == 'withCallPatchSetting' || type == 'disable' )
@@ -926,7 +927,7 @@ class User extends controller {
         }
     } catch (error) {
         return res.status(400).send(this.errorMsgFormat({
-            'message': err.message
+            'message': error.message
         }, 'patchSetting', 400));
     }
        
@@ -1067,14 +1068,14 @@ class User extends controller {
            
             if(req.headers.authorization == null)
             {
-                return res.status(401).json(controller.errorMsgFormat({
+                return res.status(401).json(this.errorMsgFormat({
                     message: "Invalid request"
                 }),400);
             }
             if (req.headers.authorization && type != 'boolean') {
                 let isChecked = await service.authentication(req);
                 if (!isChecked.status) {
-                    return res.status(401).json(controller.errorMsgFormat({
+                    return res.status(401).json(this.errorMsgFormat({
                         message: "Invalid authentication"
                     }),401);
                     
@@ -1082,7 +1083,7 @@ class User extends controller {
                 req.body.data.id = isChecked.result.user;
                  method = "withAuth"
                 }
-                console.log("Hello");
+
             let requestedData = req.body.data.attributes;
         if (requestedData.g2f_code !== undefined) {
                 if (requestedData.google_secrete_key === undefined) {
