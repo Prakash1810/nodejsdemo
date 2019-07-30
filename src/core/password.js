@@ -248,7 +248,7 @@ class Password extends Controller {
 
         Users.findById(req.body.data.id)
             .exec()
-            .then((result) => {
+            .then( async (result) => {
                 if (!result) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Invalid data'

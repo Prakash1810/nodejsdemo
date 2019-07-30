@@ -196,7 +196,7 @@ class User extends controller {
                             }
                             if (isChecked.count > config.get('accountActive.limit')) {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': `Invalid credentials, Your are about to exceed the maximum try - only ${config.get('accountActive.hmt') - isChecked.count + 1} attempts left`
+                                    'message': `Invalid credentials, Your are about to exceed the maximum try - only ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's':''} left`
                                 }));
                             }
                         }
