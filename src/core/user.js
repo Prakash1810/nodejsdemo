@@ -47,7 +47,6 @@ class User extends controller {
         let date = new Date(userHash.date);
         let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
         let duration = moment.duration(moment().diff(userHash.date));
-        console.log('Second:', duration.asSeconds());
         if (getSeconds > duration.asSeconds()) {
 
             if (userHash.id) {
@@ -89,7 +88,6 @@ class User extends controller {
                 login_seq: 1
             }
         });
-        console.log("Increment:", inc);
         try {
             let user = await users.create({
                 email: result.email,
@@ -213,7 +211,6 @@ class User extends controller {
                                 let date = new Date(isChecked.create_date);
                                 let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
                                 let duration = moment.duration(moment().diff(isChecked.create_date));
-                                console.log('Second:', duration.asSeconds());
                                 if (getSeconds > duration.asSeconds()) {
 
                                     return res.status(400).send(this.errorMsgFormat({
@@ -309,7 +306,6 @@ class User extends controller {
 
     getTokenToUserId(req, res, data = 'json') {
         let token = req.headers.authorization;
-        console.log("Token:", token);
         try {
             let decoded = jwt.verify(token, config.get('secrete.key'));
             if (data === 'json') {
@@ -385,7 +381,6 @@ class User extends controller {
         deviceMangement.countDocuments({
             user: userID
         }, async (err, count) => {
-            console.log("count:", count);
             if (!count) {
                 const device = await this.insertDevice(req, userID, true);
                 let isAuth = await users.findOne({
@@ -440,7 +435,6 @@ class User extends controller {
                 })
                     .exec()
                     .then(async (result) => {
-                        console.log("Result:", result);
                         if (!result) {
                             // insert new device records
                             await this.insertDevice(req, userID);
@@ -517,7 +511,6 @@ class User extends controller {
     async validateOtpForEmail(req, res) {
         try {
             let data = req.body.data.attributes;
-            console.log('data:', data.ip);
             let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
             const isChecked = await otpHistory.findOne({ user_id: data.user_id, otp: data.otp, is_active: false });
             if (isChecked) {
@@ -797,7 +790,6 @@ class User extends controller {
     patchWhiteListIP(req, res) {
 
         let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
-        console.log("Hash:", deviceHash);
         if (deviceHash.data.user_id) {
             let checkExpired = this.checkTimeExpired(deviceHash.data.datetime);
             if (checkExpired) {
@@ -876,10 +868,9 @@ class User extends controller {
             let userHash = JSON.parse(helpers.decrypt(requestData.code));
             requestData.is_active = userHash.is_active;
         }
-
         if(type != 'withCallPatchSetting')
         {   
-            let check = await users.find({_id:req.body.data.id,google_auth:true})
+            let check = await users.findOne({_id:req.body.data.id, google_auth:true});
             if(check)
             {
                 let isChecked = await this.postVerifyG2F(req,res,'setting');
@@ -908,7 +899,7 @@ class User extends controller {
             }
                 return res.status(202).send(this.successFormat({
                     'message': 'Your request is updated successfully.'
-                }, result._id, 'users', 202));
+                }, null , 'users', 202));
            }
            else{
                     if(type == 'withCallPatchSetting' || type == 'disable' )
@@ -926,7 +917,7 @@ class User extends controller {
         }
     } catch (error) {
         return res.status(400).send(this.errorMsgFormat({
-            'message': err.message
+            'message': error.message
         }, 'patchSetting', 400));
     }
        
@@ -993,14 +984,13 @@ class User extends controller {
 
     async updateG2F(req, res) {
         let check = await this.postVerifyG2F(req, res, 'boolean');
-       // console.log("Check:",check);
         if (check.status === true ) {
             // delete password attribute
 
             delete req.body.data.attributes.password;
 
             return await this.patchSettings(req, res, 'withCallPatchSetting');
-            //console.log(checked);
+
         } else {
 
             return res.status(400).send(this.errorMsgFormat({
@@ -1010,8 +1000,7 @@ class User extends controller {
     }
 
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
-        console.log("Method:",method);
-        console.log("Type:",type);
+
         try{
             let opts = {
                 beforeDrift: 2,
@@ -1053,7 +1042,6 @@ class User extends controller {
             }
         catch(err)
         {
-	    console.log("Error Message", err.message);
             return res.status(400).send(this.errorMsgFormat({
                 'message': err.message
             }, '2factor', 400));
@@ -1067,14 +1055,14 @@ class User extends controller {
            
             if(req.headers.authorization == null)
             {
-                return res.status(401).json(controller.errorMsgFormat({
+                return res.status(401).json(this.errorMsgFormat({
                     message: "Invalid request"
                 }),400);
             }
             if (req.headers.authorization && type != 'boolean') {
                 let isChecked = await service.authentication(req);
                 if (!isChecked.status) {
-                    return res.status(401).json(controller.errorMsgFormat({
+                    return res.status(401).json(this.errorMsgFormat({
                         message: "Invalid authentication"
                     }),401);
                     
@@ -1082,7 +1070,7 @@ class User extends controller {
                 req.body.data.id = isChecked.result.user;
                  method = "withAuth"
                 }
-                console.log("Hello");
+
             let requestedData = req.body.data.attributes;
         if (requestedData.g2f_code !== undefined) {
                 if (requestedData.google_secrete_key === undefined) {
@@ -1219,7 +1207,6 @@ class User extends controller {
       
         if(market.status)
         {
-            console.log("Market:",market);
             let data = market.result;
             for(var i=0;i<data.length;i++)
             {
@@ -1309,13 +1296,11 @@ class User extends controller {
                 'message': "Not found to your favourite list"
             }, 'users', 404));
         }
-        console.log(ismarket._id);
         let fav = isfavourite.market;
         let index = fav.indexOf(ismarket._id);
         if (index > -1) {
             fav.splice(index, 1);
         }
-        console.log('fav:', fav);
         await favourite.findOneAndUpdate({ user: req.user.user }, { market: fav });
         return res.status(200).send(this.successFormat({
             'message': 'Remove market to your favourite list',
