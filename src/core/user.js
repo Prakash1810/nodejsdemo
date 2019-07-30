@@ -941,7 +941,7 @@ class User extends controller {
             {
                 return res.status(202).send(this.successFormat({
                     'message': 'Your request is updated successfully.'
-                },'users', 202));
+                },null,'users', 202));
             }
             else{
                 return res.status(400).send(this.errorMsgFormat({
@@ -1019,8 +1019,6 @@ class User extends controller {
                 drift: 4,
                 step: 30
             };
-	    console.log("Attributes:",req.body.data.attributes);
-            console.log("Google Secret:", google_secrete_key);
             let counter = Math.floor(Date.now() / 1000 / opts.step);
             let returnStatus = await g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
                 if (returnStatus === true) {
@@ -1035,7 +1033,7 @@ class User extends controller {
                     else{
                         return res.status(202).send(this.successFormat({
                             'status': returnStatus
-                        }, '2factor', 202));
+                        }, null,'2factor', 202));
                     }
                     
                 } else {
