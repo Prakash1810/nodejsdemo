@@ -1058,7 +1058,7 @@ class User extends controller {
                 if (!isChecked.status) {
                     return res.status(401).json(this.errorMsgFormat({
                         message: "Invalid authentication"
-                    }),401);
+                    }),'user',401);
                     
                 }
                 req.body.data.id = isChecked.result.user;
