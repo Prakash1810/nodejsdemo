@@ -31,7 +31,6 @@ class Api extends Controller {
             data.to_email = user.email
             data.anti_spoofing_code = (user.anti_spoofing) ? user.anti_spoofing_code : false
         }
-        console.log('Data:', data);
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
             .then((res) => {
                 console.log(res.data);

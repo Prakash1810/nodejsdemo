@@ -368,6 +368,7 @@ class User extends controller {
             "sms_auth": result.sms_auth,
             "anti_spoofing": result.anti_spoofing,
             "anti_spoofing_code": result.anti_spoofing_code,
+            'white_list_address':result.white_list_address,
             "loggedIn": timeNow,
             "expiresIn": config.get('secrete.expiry')
         }, result._id));
@@ -851,7 +852,7 @@ class User extends controller {
             anti_spoofing: Joi.boolean().optional(),
             anti_spoofing_code: Joi.string().optional(),
             white_list_address: Joi.boolean().optional(),
-            g2f_code : Joi.string().required(),
+            g2f_code : Joi.string(),
             white_list_address : Joi.boolean().optional()
         });
 
@@ -1052,13 +1053,6 @@ class User extends controller {
     async postVerifyG2F(req, res, type = 'json') {
         try{
             var method = "withoutAuth";
-           
-            if(req.headers.authorization == null)
-            {
-                return res.status(401).json(this.errorMsgFormat({
-                    message: "Invalid request"
-                }),400);
-            }
             if (req.headers.authorization && type != 'boolean') {
                 let isChecked = await service.authentication(req);
                 if (!isChecked.status) {
@@ -1072,7 +1066,7 @@ class User extends controller {
                 }
 
             let requestedData = req.body.data.attributes;
-        if (requestedData.g2f_code !== undefined) {
+            if (requestedData.g2f_code !== undefined) {
                 if (requestedData.google_secrete_key === undefined) {
                     let result = await users.findById(req.body.data.id).exec();
                     if (!result) {
