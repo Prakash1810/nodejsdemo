@@ -135,7 +135,7 @@ router.get('/get-user-id', (req, res) => {
             return res.status(401).json(controller.errorMsgFormat({
                 message: "Invalid authentication",
                 data: req.headers
-            }, 'users', 500));
+            }, 'users', 401));
         }
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
