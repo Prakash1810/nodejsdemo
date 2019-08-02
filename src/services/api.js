@@ -237,7 +237,7 @@ class Api extends Controller {
             let value = result.result.result;
             if (type === 'json') {
                 
-                if(method == 'order/cancel')
+                if(path == 'order/cancel')
                 {
                    await new orderCancel(value).save();
                 }
