@@ -45,7 +45,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url', query, (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url,token', query, (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],

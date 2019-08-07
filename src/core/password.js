@@ -218,7 +218,7 @@ class Password extends Controller {
 
     changePasswordValidate(req) {
         let schema = Joi.object().keys({
-            g2f_code : Joi.string().required(),
+            g2f_code: Joi.string(),
             old_password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
                 language: {
                     string: {
@@ -248,14 +248,38 @@ class Password extends Controller {
     changePassword(req, res) {
         Users.findById(req.body.data.id)
             .exec()
-            .then( async (result) => {
+            .then(async (result) => {
+                let check = null;
                 if (!result) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Invalid data'
                     }));
                 }
-                let check = await user.postVerifyG2F(req, res, 'boolean');
-                if ( check.status == true ) {
+                if (req.body.data.attributes.g2f_code) {
+                    check = await user.postVerifyG2F(req, res, 'boolean');
+                    if (check.status == true) {
+                        // compare existing password
+                        let passwordCompare = bcrypt.compareSync(req.body.data.attributes.old_password, result.password);
+
+                        if (passwordCompare == false) {
+                            return res.status(400).send(this.errorMsgFormat({
+                                'message': 'Incorrect old password'
+                            }));
+                        } else {
+                            req.body.data.attributes.email = result.email;
+                            req.body.data.attributes.user_id = result._id;
+                            // update password
+                            this.resetPassword(req, res, 'change', result.email);
+                        }
+                    }
+                    else {
+
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Incorrect code'
+                        }, '2factor', 400));
+                    }
+                }
+                else {
                     // compare existing password
                     let passwordCompare = bcrypt.compareSync(req.body.data.attributes.old_password, result.password);
 
@@ -270,12 +294,9 @@ class Password extends Controller {
                         this.resetPassword(req, res, 'change', result.email);
                     }
                 }
-                else{
 
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Incorrect code'
-                    }, '2factor', 400));
-                }
+
+
 
             });
     }
