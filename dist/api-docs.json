@@ -10,7 +10,7 @@
             "email": "sathish.kumar@beldex.org"
         }
     },
-    "host": "coreapialpha.beldex.io",
+    "host": "coreapialpha",
     "basePath": "/api/v1/",
     "tags": [
         {
@@ -2531,7 +2531,7 @@
                     "example": {
                         "attributes": {
                             "verification_code": "{{ code }}",
-                            "active": true,
+                            "accept": true,
                             "ip": "27.5.230.172"
                         }
                     }

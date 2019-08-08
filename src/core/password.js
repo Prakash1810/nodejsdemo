@@ -219,16 +219,7 @@ class Password extends Controller {
     changePasswordValidate(req) {
         let schema = Joi.object().keys({
             g2f_code: Joi.string(),
-            old_password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
-                language: {
-                    string: {
-                        required: '{{label}} field is required',
-                        regex: {
-                            base: '{{label}} must be at least 8 characters with uppercase letters and numbers.'
-                        }
-                    }
-                }
-            }).label('old_password'),
+            old_password: Joi.string().required(),
             password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
                 language: {
                     string: {
@@ -263,7 +254,7 @@ class Password extends Controller {
 
                         if (passwordCompare == false) {
                             return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Incorrect old password'
+                                'message': 'Current Password Incorrect'
                             }));
                         } else {
                             req.body.data.attributes.email = result.email;

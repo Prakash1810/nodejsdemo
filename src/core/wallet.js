@@ -74,15 +74,15 @@ class Wallet extends controller {
             });
             if (!getAddress) {
                 console.log("GetAddress");
-                let isChecked =  await assets.findOne({_id:asset})
+                let isChecked = await assets.findOne({ _id: asset })
                 let data =
                 {
-                    coin : isChecked.asset_code,
+                    coin: isChecked.asset_code,
                     user_id: req.user.user_id,
                     user: req.user.user,
                     asset: asset
                 }
-                
+
                 apiServices.axiosAPI(data);
             } else {
                 return res.status(200).json(this.successFormat({
@@ -176,8 +176,8 @@ class Wallet extends controller {
 
             // find and update the reccord
             await withdrawAddress.findOneAndUpdate({
-                    _id: req.body.data.id
-                }, {
+                _id: req.body.data.id
+            }, {
                     $set: {
                         is_whitelist: requestData.is_whitelist
                     }
@@ -205,8 +205,8 @@ class Wallet extends controller {
 
             // find and update the reccord
             await withdrawAddress.findOneAndUpdate({
-                    _id: ID
-                }, {
+                _id: ID
+            }, {
                     $set: {
                         is_deleted: true
                     }
@@ -298,7 +298,7 @@ class Wallet extends controller {
                 user: req.user.user,
                 asset: req.params.asset,
                 is_whitelist: (isWhitelist !== undefined) ? isWhitelist : false
-            }, )
+            })
             .select('-_id  address label is_whitelist');
 
         if (!data) {
@@ -326,16 +326,16 @@ class Wallet extends controller {
     async getAssetsBalance(req, res) {
         let payloads = {},
             assetNames,
-            asset=[];
-            payloads.user_id = req.user.user_id;
+            asset = [];
+        payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
-            asset.push( req.query.asset_code.toUpperCase());
-            payloads.asset=asset
+            asset.push(req.query.asset_code.toUpperCase());
+            payloads.asset = asset
             assetNames = config.get(`assets.${req.query.asset_code.toLowerCase()}`)
         } else {
             assetNames = _.values(_.reverse(config.get(`assets`))).join(',');
         }
-        console.log("pAYLOADAs:",payloads);
+        console.log("pAYLOADAs:", payloads);
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse);
@@ -348,25 +348,25 @@ class Wallet extends controller {
     currencyConversion(matchResponse, marketResponse) {
         let assetsJson = config.get('assets'),
             formatedAssetBalnce = {};
-        console.log("MarketResponse:",marketResponse.data);
-        console.log("MarketResponse:",matchResponse);
+        console.log("MarketResponse:", marketResponse.data);
+        console.log("MarketResponse:", matchResponse);
         for (let result in matchResponse) {
-            console.log("Result:",result);
-                let btc = marketResponse.data[assetsJson[result.toLowerCase()]].btc;
-                let usd = marketResponse.data[assetsJson[result.toLowerCase()]].usd;
-                console.log("Btc:",btc);
-                formatedAssetBalnce[result] = {
-                    'available': {
-                        'balance': Number(matchResponse[result].available),
-                        'btc': Number(matchResponse[result].available) * btc,
-                        'usd': Number(matchResponse[result].available) * usd
-                    },
-                    'freeze': {
-                        'balance': Number(matchResponse[result].freeze),
-                        'btc':  Number(matchResponse[result].freeze) * btc,
-                        'usd':  Number(matchResponse[result].freeze) * usd
-                    },
-                }
+            console.log("Result:", result);
+            let btc = marketResponse.data[assetsJson[result.toLowerCase()]].btc;
+            let usd = marketResponse.data[assetsJson[result.toLowerCase()]].usd;
+            console.log("Btc:", btc);
+            formatedAssetBalnce[result] = {
+                'available': {
+                    'balance': Number(matchResponse[result].available),
+                    'btc': Number(matchResponse[result].available) * btc,
+                    'usd': Number(matchResponse[result].available) * usd
+                },
+                'freeze': {
+                    'balance': Number(matchResponse[result].freeze),
+                    'btc': Number(matchResponse[result].freeze) * btc,
+                    'usd': Number(matchResponse[result].freeze) * usd
+                },
+            }
         }
 
         return formatedAssetBalnce;
@@ -402,7 +402,7 @@ class Wallet extends controller {
                         "totalCount": 0
                     }, null, 'transactions', 200));
                 } else {
-                    console.log("TotalCount:",totalCount);
+                    console.log("TotalCount:", totalCount);
                     transactions
                         .find(payloads)
                         .select('address amount final_amount date tx_hash confirmation amount status txtime')
@@ -473,11 +473,11 @@ class Wallet extends controller {
                     maximum_withdraw: getAsset.maximum_withdraw,
                 };
             } else {
-                let payloads = {},asset=[];
+                let payloads = {}, asset = [];
                 payloads.user_id = req.user.user_id;
                 asset.push(getAsset.asset_code.toUpperCase());
-                payloads.asset=asset
-                console.log("Payloads:",payloads);
+                payloads.asset = asset
+                console.log("Payloads:", payloads);
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available
                 if (available !== undefined && amount < available) {
@@ -508,7 +508,7 @@ class Wallet extends controller {
                     '_id': req.body.data.id,
                     'asset': requestData.asset
                 });
-                if (withdraw.address !== undefined) {
+                if (withdraw.address !== undefined || withdraw.address != null) {
                     try {
                         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
                         let data = {
@@ -557,33 +557,38 @@ class Wallet extends controller {
     }
     async insertNotification(data) {
         let asset = await assets.findById(data.asset);
-        let transactions = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']);
-        let transactionId = new transactions(transactions).save();
-        let beldexId = new beldexNotification({user: new mongoose.Types.ObjectId(transactions.user),
-                type: 1,
-                notify_type: 'withdrawConfirmation',
-                notify_data: null,
-                status: 1,
-                created_date: transactions.created_date}).save();              
-        
+        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']);
+
+        let transactionId = await new transactions(transaction).save();
+        let beldexData = {
+            user: new mongoose.Types.ObjectId(transaction.user),
+            type: 1,
+            notify_type: 'withdrawConfirmation',
+            notify_data: {transactions:transactionId._id},
+            status: 1,
+            created_date: transaction.created_date
+        }
+        let beldexId = await new beldexNotification(beldexData).save();
+        console.log("Beldex:", beldexId);
         let notifyId = beldexId._id;
         let transactionsId = transactionId._id;
         let emailData = {
-                user_id: new mongoose.Types.ObjectId(transactions.user),
-                verification_code: notifyId,
-                amount: transactions.amount,
-                asset_code: asset.asset_code,
-                address: transactions.address,
-                ip: data.ip,
-                time: data.created_date
-            };
-       
-            beldexNotification.findOneAndUpdate({'_id': notifyId }, {
-                'notify_data': {
-                    'transactions': transactionsId,
-                    'email_data': emailData
-                }});
-            
+            user_id: new mongoose.Types.ObjectId(transaction.user),
+            verification_code: notifyId,
+            amount: transaction.amount,
+            asset_code: asset.asset_code,
+            address: transaction.address,
+            ip: data.ip,
+            time: data.created_date
+        };
+
+        beldexNotification.findOneAndUpdate({ '_id': notifyId }, {
+            'notify_data': {
+                'transactions': transactionsId,
+                'email_data': emailData
+            }
+        });
+
 
         // send an confirmation notification
         this.sendWithdrawNotification(emailData);
@@ -631,7 +636,8 @@ class Wallet extends controller {
     patchWithdrawConfirmationValidation(req) {
         let schema = Joi.object().keys({
             verification_code: Joi.string().required(),
-            accept: Joi.boolean().required()
+            accept: Joi.boolean().required(),
+            ip: Joi.string().required()
         });
 
         return Joi.validate(req, schema, {
@@ -651,8 +657,12 @@ class Wallet extends controller {
             if (notify.status === 1) {
 
                 // update the details to matching engine and transactions
-                let response = await this.updateWithdrawRequest(notify, req, res)
+                let response = await this.updateWithdrawRequest(notify, req, res);
+                console.log("Response:",response);
                 if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
+                     // change the withdraw notificaiton status
+                     notify.status = 2;
+                    await notify.save();
                     return res.status(200).json(this.successFormat({
                         "message": "Your confirmation request processed successfully."
                     }, 'withdraw'));
@@ -675,20 +685,15 @@ class Wallet extends controller {
 
     async updateWithdrawRequest(withdraw, req, res) {
         let requestData = req.body.data.attributes;
-
-        // change the withdraw notificaiton status
-        withdraw.status = 2;
-        withdraw.save();
-
         // update the transaction status
         let transaction = await transactions.findOneAndUpdate({
             _id: withdraw.notify_data.transactions,
             is_deleted: false
         }, {
-            $set: {
-                status: 2
-            }
-        }).populate('asset');
+                $set: {
+                    status: 2
+                }
+            }).populate('asset');
         if (transaction) {
             let asset = transaction.asset;
             let payloads = {
@@ -699,6 +704,7 @@ class Wallet extends controller {
                 "change": (requestData.accept) ? `-${transaction.amount}` : `${transaction.amount}`,
                 "detial": {}
             }
+            console.log("Payload:",payloads);
             let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
             return response;
         } else {
@@ -711,9 +717,9 @@ class Wallet extends controller {
         if (ID !== undefined) {
             // find and update the reccord
             await transactions.findOneAndUpdate({
-                    _id: ID,
-                    status: 4
-                }, {
+                _id: ID,
+                status: 4
+            }, {
                     $set: {
                         is_deleted: true
                     }
