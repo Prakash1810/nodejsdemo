@@ -2531,7 +2531,7 @@
                     "example": {
                         "attributes": {
                             "verification_code": "{{ code }}",
-                            "active": true,
+                            "accept": true,
                             "ip": "27.5.230.172"
                         }
                     }

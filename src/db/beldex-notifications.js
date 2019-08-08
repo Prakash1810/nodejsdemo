@@ -1,8 +1,7 @@
 const mongoose = require('mongoose'), Schema = mongoose.Schema;
 
 const notificationSchema = mongoose.Schema({
-    _id: Schema.Types.ObjectId,
-    user: { type: Schema.Types.ObjectId, ref: 'Users' },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
     type: { type: Number, default: 1 }, // 1 => email, 2 => sms
     notify_type: String,
     notify_data: Object,
