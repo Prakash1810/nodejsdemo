@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt');
 const mangHash = require('../db/management-hash');
 const moment = require('moment');
 const user = require('../core/user');
-
+let checkHash = null;
 class Password extends Controller {
 
     validate(req) {
@@ -74,7 +74,7 @@ class Password extends Controller {
         let input = req.body.data;
         let user = await Users.findOne({ _id:input.id,email:input.attributes.email });
         if (user) {
-            let ischecked = await mangHash.findOne({ email: user.email, is_active: false, type_for: "reset" })
+            let ischecked = await mangHash.findOne({ email: user.email, is_active: false, type_for: "reset"})
             if (ischecked) {
                 if (ischecked.count > config.get('site.hmtLink')) {
                     await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
@@ -113,12 +113,6 @@ class Password extends Controller {
 
 
         let userHash = JSON.parse(helpers.decrypt(req.params.hash));
-        console.log("Userhash:", userHash)
-        //  if (!ischecked) {
-        //             return res.status(400).send(this.errorMsgFormat({
-        //                             'message': 'Verification link is expired or Token expired-already used'
-        //                 }));
-        //     }
         let checkHash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash });
 
         if (checkHash) {
@@ -128,7 +122,13 @@ class Password extends Controller {
                 }));
             }
             else {
-                await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+                req.body.checkHash=checkHash;
+                await this.resetPassword(req,res,'hash');
+                if(checkHash.count == -5)
+                {
+                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+                }
+               
             }
         }
 
@@ -195,7 +195,13 @@ class Password extends Controller {
     }
 
     resetPassword(req, res, type = 'reset') {
-        console.log("Request:", req.body.data.attributes);
+     
+        if(type == 'hash')
+        {
+            checkHash=req.body.checkHash;
+            return;
+        }
+        console.log("Hash:",checkHash);
         bcrypt.genSalt(10, (err, salt) => {
             if (err) return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
 
@@ -207,6 +213,7 @@ class Password extends Controller {
                     if (user == null) {
                         return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
                     } else {
+                        
                         if (type == 'change') {
                             let serviceData =
                             {
@@ -220,6 +227,10 @@ class Password extends Controller {
                             return res.status(202).send(this.successFormat({
                                 'message': 'Your password updated successfully.'
                             }, user._id, 'users', 202));
+                        }
+                        if(checkHash!=null)
+                        {
+                            await mangHash.findOneAndUpdate({email:checkHash.email,hash:checkHash.hash},{count:-5})
                         }
                         let serviceData =
                         {
