@@ -131,7 +131,7 @@ class Registration extends Controller {
                                     await UserTemp.deleteOne({ email: user.email });
                                     await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                                     return res.status(400).send(this.errorMsgFormat({
-                                        'message': ` Verification link resent request exceeded, please register again `
+                                        'message': ` Verification link resent request exceeded, please chack email or register again `
                                     }, 'users', 400));
                                 }
                                 else {

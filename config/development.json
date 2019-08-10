@@ -32,7 +32,8 @@
 		"bch": "bitcoin-cash",
 		"dash": "dash",
 		"doge": "dogecoin",
-		"xmr" : "monero"
+		"xmr" : "monero",
+		"usdt": "ther"
 	},
 	"otpForEmail":
 	{
