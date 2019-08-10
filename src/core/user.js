@@ -345,7 +345,7 @@ class User extends controller {
             }
             let serviceData =
             {
-                subject: `Beldex login verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
+                subject: `Beldex login verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')} ( ${config.get('settings.timeZone')} )`,
                 email_for: "otp-login",
                 otp: Math.floor(rand),
                 user_id: user
@@ -576,7 +576,7 @@ class User extends controller {
                 const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
                 let serviceData =
                 {
-                    subject: `Beldex login verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
+                    subject: `Beldex login verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')} ( ${config.get('settings.timeZone')} )`,
                     email_for: "otp-login",
                     otp: Math.floor(rand),
                     user_id: data.user_id
