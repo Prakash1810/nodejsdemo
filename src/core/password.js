@@ -61,23 +61,8 @@ class Password extends Controller {
                         'email_for': 'forget-password',
                         'user_id': user._id
                     };
-                    let ischecked = await mangHash.findOne({ email: user.email, is_active: false, type_for: "reset" })
-                    if (ischecked) {
-                        if (ischecked.count > config.get('site.hmtLink')) {
-                            await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
-                            return res.status(400).send(this.errorMsgFormat({
-                                'message': ` Verification link resent request exceeded, please login again `
-                            }, 'users', 400));
-                        }
-                    }
                     await apiServices.sendEmailNotification(serviceData);
-                    if (ischecked) {
-                        let count = ischecked.count;
-                        await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { hash: encryptedHash, count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
-                    }
-                    if (!ischecked) {
-                        await new mangHash({ email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
-                    }
+                    await new mangHash({ email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
                     return res.status(200).json(this.successFormat({
                         'message': 'We have sent a email to your email address.',
                         'hash': encryptedHash
@@ -85,7 +70,45 @@ class Password extends Controller {
                 }
             });
     }
+    async forgetPasswordResend(req, res) {
+        let input = req.body.data;
+        let user = await Users.findOne({ _id:input.id,email:input.attributes.email });
+        if (user) {
+            let ischecked = await mangHash.findOne({ email: user.email, is_active: false, type_for: "reset" })
+            if (ischecked) {
+                if (ischecked.count > config.get('site.hmtLink')) {
+                    await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': ` Verification link resent request exceeded, please login again `
+                    }, 'users', 400));
+                }
+            }
+            let encryptedHash = this.encryptHash(user.email, user._id);
+            if (ischecked) {
+                let count = ischecked.count;
+                await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { hash: encryptedHash, count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+            }
+            let serviceData = {
+                'hash': encryptedHash,
+                'subject': `Password Reset - ${moment().format('YYYY-MM-DD HH:mm:ss')} (${config.get('settings.timeZone')})`,
+                'email_for': 'forget-password',
+                'user_id': user._id
+            };
+            
+            await apiServices.sendEmailNotification(serviceData);
+            return res.status(200).json(this.successFormat({
+                'message': 'We have sent a email to your email address.',
+                'hash': encryptedHash
+            }, user._id));
 
+        }
+        else {
+            return res.status(400).send(this.errorMsgFormat({ 'message': 'User not found, please register again' },'user',400));
+        }
+
+
+
+    }
     async checkResetLink(req, res) {
 
 
@@ -254,7 +277,7 @@ class Password extends Controller {
 
                         if (passwordCompare == false) {
                             return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Current Password Incorrect'
+                                'message': 'Entered current password is incorrect. Please check.'
                             }));
                         } else {
                             req.body.data.attributes.email = result.email;
@@ -276,7 +299,7 @@ class Password extends Controller {
 
                     if (passwordCompare == false) {
                         return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Current Password Incorrect'
+                            'message': 'Entered current password is incorrect. Please check.'
                         }));
                     } else {
                         req.body.data.attributes.email = result.email;
