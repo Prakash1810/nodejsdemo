@@ -140,7 +140,7 @@ class Registration extends Controller {
                                     let check = this.sendActivationEmail(user, "sendEmail");
                                     if(check){
                                         return res.status(200).json(this.successFormat({
-                                            'message': `Mail sended successfully. ${user.email}. Please follow the instructions in the email to continue.`,
+                                            'message': `Mail sended successfully at ${user.email}. Please follow the instructions in the email to continue.`,
                                         }, user._id));
                                     }
                                 }
@@ -152,7 +152,7 @@ class Registration extends Controller {
                         }
                     });
             } else if (requestedData.type === 'forget-password') {
-                return password.sendResetLink(req, res);
+                return password.forgetPasswordResend(req,res)
             } else {
                 return res.status(400).send(this.errorMsgFormat({ 'message': 'Invalid type request.' }));
             }
