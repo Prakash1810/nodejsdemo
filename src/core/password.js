@@ -115,7 +115,7 @@ class Password extends Controller {
         let userHash = JSON.parse(helpers.decrypt(req.params.hash));
         let checkHash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash });
 
-        if (checkHash) {
+        if (checkHash)  {
             if (checkHash.is_active) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Verification link -already used'
@@ -124,10 +124,6 @@ class Password extends Controller {
             else {
                 req.body.checkHash=checkHash;
                 await this.resetPassword(req,res,'hash');
-                if(checkHash.count == -5)
-                {
-                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
-                }
                
             }
         }
@@ -189,6 +185,7 @@ class Password extends Controller {
                 }
             }).label('password'),
             password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
+            hash:Joi.string()
         });
 
         return Joi.validate(req, schema, { abortEarly: false })
@@ -230,7 +227,7 @@ class Password extends Controller {
                         }
                         if(checkHash!=null)
                         {
-                            await mangHash.findOneAndUpdate({email:checkHash.email,hash:checkHash.hash},{count:-5})
+                            await mangHash.findOneAndUpdate({email:checkHash.email,hash:checkHash.hash,is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                         }
                         let serviceData =
                         {
