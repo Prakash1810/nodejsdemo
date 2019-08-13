@@ -2131,7 +2131,6 @@
                 "data": {
                     "example": {
                         "attributes": {
-                            "user_id": 1,
                             "asset": "LTC",
                             "business": "deposit",
                             "business_id": 10,
@@ -2510,8 +2509,8 @@
                 },
                 "data": {
                     "example": {
-                        "id": "5cd535d18d28a601d8efad5b",
                         "attributes": {
+                            "withdraw_id":"5cd535d18d28a601d8efad5b",
                             "asset": "5c94e142de2b7100085e5296",
                             "amount": 1,
                             "ip": "27.5.230.172"

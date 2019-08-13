@@ -62,7 +62,7 @@ class Password extends Controller {
                         'user_id': user._id
                     };
                     await apiServices.sendEmailNotification(serviceData);
-                    await mangHash.findOneAndUpdate({email:user.email, is_active: false, type_for: "reset"},{is_active:true,created_date: moment().format('YYYY-MM-DD HH:mm:ss')})
+                    await mangHash.update({email:user.email, is_active: false, type_for: "reset"},{$set:{is_active:true,created_date: moment().format('YYYY-MM-DD HH:mm:ss')}})
                     await new mangHash({ email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
                     return res.status(200).json(this.successFormat({
                         'message': 'We have sent a email to your email address.',
@@ -115,7 +115,7 @@ class Password extends Controller {
 
         let userHash = JSON.parse(helpers.decrypt(req.params.hash));
         let checkHash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash });
-
+        console.log("CheckHash:",checkHash);
         if (checkHash)  {
             if (checkHash.is_active) {
                 return res.status(400).send(this.errorMsgFormat({

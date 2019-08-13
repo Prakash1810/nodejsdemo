@@ -446,7 +446,9 @@ class Wallet extends controller {
             asset: Joi.string().required(),
             amount: Joi.number().positive().required(),
             ip: Joi.string().required(),
-            g2f_code : Joi.string()
+            g2f_code : Joi.string(),
+            address : Joi.string(),
+            withdraw_id:Joi.string()
         }); 
 
         return Joi.validate(req, schema, {
@@ -460,7 +462,8 @@ class Wallet extends controller {
     async withdrawValidate(req, res) {
         let requestData = req.body.data.attributes;
         let getAsset = await assets.findById(requestData.asset);
-        let amount = Number(requestData.amount)
+        let amount = Number(requestData.amount);
+        console.log("ASSEST:",getAsset);
         if (getAsset) {
             if (getAsset.is_suspend) {
                 return {
@@ -502,6 +505,7 @@ class Wallet extends controller {
     }
 
     async postWithdraw(req, res) {
+        let withdraw = null;
         let requestData = req.body.data.attributes;
         if(requestData.g2f_code)
         {
@@ -513,13 +517,24 @@ class Wallet extends controller {
                 }, '2factor', 400));
             }
         }
-        if (req.body.data.id !== undefined && requestData.asset != undefined) {
+        if (requestData.asset != undefined) {
+                console.log('Res:',req.body.data.attributes);
                 let validateWithdraw = await this.withdrawValidate(req, res);
                 if (validateWithdraw.status) {
-                    let withdraw = await withdrawAddress.findOne({
-                        '_id': req.body.data.id,
-                        'asset': requestData.asset
-                    });
+                            if((requestData.withdraw_id != null & requestData.withdraw_id != undefined))
+                            {
+                                withdraw = await withdrawAddress.findOne({
+                                    '_id': requestData.withdraw_id,
+                                    'asset': requestData.asset,
+                                });
+                            }
+                            else if(requestData.address)
+                            {
+                                withdraw = {
+                                    address : requestData.address
+                                }
+                            }
+                    
                     if (withdraw.address !== undefined || withdraw.address != null) {
                         try {
                             let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
@@ -574,7 +589,7 @@ class Wallet extends controller {
     async insertNotification(data) {
         let asset = await assets.findById(data.asset);
         let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']);
-
+        console.log("Transaction:",transaction);
         let transactionId = await new transactions(transaction).save();
         let beldexData = {
             user: new mongoose.Types.ObjectId(transaction.user),
@@ -639,7 +654,7 @@ class Wallet extends controller {
                 }, 'withdraw'));
             } else {
                 return res.status(404).json(this.errorMsgFormat({
-                    "message": "Request already processed / invalid request"
+                    "message": "Request already procesaddMarketsed / invalid request"
                 }, 'withdraw'));
             }
         } else {
