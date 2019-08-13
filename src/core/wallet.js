@@ -503,10 +503,17 @@ class Wallet extends controller {
 
     async postWithdraw(req, res) {
         let requestData = req.body.data.attributes;
-        let check = await user.postVerifyG2F(req,res,'boolean')
-        if(check)
+        if(requestData.g2f_code)
         {
-            if (req.body.data.id !== undefined && requestData.asset != undefined) {
+            let check = await user.postVerifyG2F(req,res,'boolean');
+            if(check.status == false)
+            {
+                return res.status(400).send(this.errorFormat({
+                    'message': 'Incorrect code'
+                }, '2factor', 400));
+            }
+        }
+        if (req.body.data.id !== undefined && requestData.asset != undefined) {
                 let validateWithdraw = await this.withdrawValidate(req, res);
                 if (validateWithdraw.status) {
                     let withdraw = await withdrawAddress.findOne({
@@ -559,12 +566,9 @@ class Wallet extends controller {
                     "message": "invalid request"
                 }, 'withdraw'));
             }
-        }
-        else{
-            return res.status(400).send(this.errorFormat({
-                'message': 'Incorrect code'
-            }, '2factor', 400));
-        }
+       
+          
+       
         
     }
     async insertNotification(data) {
