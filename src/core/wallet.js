@@ -722,7 +722,7 @@ class Wallet extends controller {
             is_deleted: false
         }, {
                 $set: {
-                    status: 2
+                    status: 1
                 }
             }).populate('asset');
         if (transaction) {
