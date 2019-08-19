@@ -46,7 +46,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url,token', query, (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal', query, (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -628,7 +628,7 @@ class Wallet extends controller {
 
 
         // send an confirmation notification
-        this.sendWithdrawNssotification(emailData);
+        this.sendWithdrawNotification(emailData);
 
         return notifyId;
     }
