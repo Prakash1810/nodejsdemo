@@ -628,7 +628,7 @@ class Wallet extends controller {
 
 
         // send an confirmation notification
-        this.sendWithdrawNotification(emailData);
+        this.sendWithdrawNssotification(emailData);
 
         return notifyId;
     }
@@ -728,7 +728,7 @@ class Wallet extends controller {
             is_deleted: false
         }, {
                 $set: {
-                    status: 2
+                    status: 1
                 }
             }).populate('asset');
         if (transaction) {
