@@ -11,7 +11,23 @@ const config = require('config');
 const _ = require('lodash');
 const transactions = require('../db/transactions');
 const beldexNotification = require('../db/beldex-notifications');
-const user = require('../core/user');
+const user = require('../core/user');if(message.method == 'order.subscribe' || message.method == 'server.auth')
+{
+    console.log("Meassage:",message);
+    start_ws_auth(
+        function (sockAuth) {
+            if (sockAuth.readyState == 1)
+                sockAuth.send(JSON.stringify(message));
+        },
+        function (sockAuth, data) {
+            if (ws.readyState != 3) {
+                var pretty = JSON.stringify(data, null, 4);
+                ws.send(pretty);
+            }
+
+        }
+    );
+}
 const mongoose = require('mongoose');
 // const Fawn = require("fawn");
 
@@ -46,7 +62,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url,token', query, (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token withdrawal_fee minimum_withdrawal', query, (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -628,7 +644,7 @@ class Wallet extends controller {
 
 
         // send an confirmation notification
-        this.sendWithdrawNssotification(emailData);
+        this.sendWithdrawNotification(emailData);
 
         return notifyId;
     }
