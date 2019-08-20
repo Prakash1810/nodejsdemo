@@ -695,7 +695,8 @@ class Wallet extends controller {
         let requestData = req.body.data.attributes;
         if (requestData.verification_code !== undefined && requestData.verification_code !== null && requestData.accept !== undefined && requestData.accept !== null) {
             let notify = await beldexNotification.findOne({
-                _id: requestData.verification_code
+                _id: requestData.verification_code,
+                user:req.user.user
             });
             if (notify.status === 1) {
 
