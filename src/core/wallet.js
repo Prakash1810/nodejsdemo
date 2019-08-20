@@ -529,18 +529,24 @@ class Wallet extends controller {
             console.log('Res:', req.body.data.attributes);
             let validateWithdraw = await this.withdrawValidate(req, res);
             if (validateWithdraw.status) {
-                if ((requestData.withdraw_id != null && requestData.withdraw_id != undefined)) {
-                    withdraw = await withdrawAddress.findOne({
-                        '_id': requestData.withdraw_id,
-                        'asset': requestData.asset,
-                    });
-                }
-                else if (requestData.address!=null && requestData.address!=undefined) {
-                    withdraw = {
-                        address: requestData.address
-                    }
-                }
-
+                
+                        if ((requestData.withdraw_id != null && requestData.withdraw_id != undefined)) {
+                            withdraw = await withdrawAddress.findOne({
+                                '_id': requestData.withdraw_id,
+                                'asset': requestData.asset,
+                            });
+                        }
+                        else if (requestData.address!=null && requestData.address!=undefined) {
+                            let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
+                            if (isValid !== true) {
+                                return res.status(400).send(this.errorMsgFormat({
+                                    'address': 'Invalid address.'
+                                }, 'withdrawAddress'));
+                            }
+                            withdraw = {
+                                address: requestData.address
+                            }
+                        }
                 if (withdraw.address !== undefined || withdraw.address != null) {
                     try {
                         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
@@ -689,7 +695,8 @@ class Wallet extends controller {
         let requestData = req.body.data.attributes;
         if (requestData.verification_code !== undefined && requestData.verification_code !== null && requestData.accept !== undefined && requestData.accept !== null) {
             let notify = await beldexNotification.findOne({
-                _id: requestData.verification_code
+                _id: requestData.verification_code,
+                user:req.user.user
             });
             if (notify.status === 1) {
 
@@ -705,7 +712,7 @@ class Wallet extends controller {
                     }, 'withdraw'));
                 } else {
                     return res.status(400).json(this.errorMsgFormat({
-                        "message": (response.data.attributes.status !== undefined)
+                        "message": response.data.attributes.message
                     }, 'withdraw'));
                 }
             } else {
@@ -725,6 +732,7 @@ class Wallet extends controller {
         // update the transaction status
         let transaction = await transactions.findOneAndUpdate({
             _id: withdraw.notify_data.transactions,
+            user:req.user.user,
             is_deleted: false
         }, {
                 $set: {
