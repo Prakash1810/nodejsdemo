@@ -81,7 +81,7 @@ class Api extends Controller {
             apiKey: process.env.APIKEY,
             apiSecret: process.env.SECERTKEY
         })
-        let response = await client.order(input);getMarket
+        let response = await client.order(input);
         response.user_id=user_id;
         console.log('Response:', response);
         if(input.type == 'MARKET')

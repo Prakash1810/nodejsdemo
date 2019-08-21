@@ -40,6 +40,9 @@
 		"hmt":3,
 		"timeExpiry":180 
 	},
+	"walletForEmail":{
+		"timeExpiry":180 
+	},
 
 	"accountActive":{
 		"hmt" : 5,

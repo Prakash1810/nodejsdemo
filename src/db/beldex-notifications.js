@@ -7,7 +7,10 @@ const notificationSchema = mongoose.Schema({
     notify_data: Object,
     status: { type: Number, default: 1 }, // 1 => Sended , 2 => Processed
     created_date: { type: Date, default: Date.now },
+    is_active:{ type:Boolean,default:false },
     modified_date: Date,
+    time_expiry :{type:String, default:'No'}
+
 });
 
 module.exports = mongoose.model('beldex-notifications', notificationSchema);

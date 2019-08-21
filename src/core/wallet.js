@@ -698,28 +698,41 @@ class Wallet extends controller {
                 _id: requestData.verification_code,
                 user:req.user.user
             });
-            if (notify.status === 1) {
+            let date = new Date(notify.created_date);
+            let getSeconds = date.getSeconds() + config.get('walletForEmail.timeExpiry');
+            let duration = moment.duration(moment().diff(notify.created_date));
+            if (getSeconds > duration.asSeconds()) {
+                if (notify.status === 1) {
 
-                // update the details to matching engine and transactions
-                let response = await this.updateWithdrawRequest(notify, req, res);
-                console.log("Response:", response);
-                if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
-                    // change the withdraw notificaiton status
-                    notify.status = 2;
-                    await notify.save();
-                    return res.status(200).json(this.successFormat({
-                        "message": "Your confirmation request processed successfully."
-                    }, 'withdraw'));
+                    // update the details to matching engine and transactions
+                    let response = await this.updateWithdrawRequest(notify, req, res);
+                    console.log("Response:", response);
+                    if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
+                        // change the withdraw notificaiton status
+                        notify.status = 2;
+                        notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
+                        await notify.save();
+                        return res.status(200).json(this.successFormat({
+                            "message": "Your confirmation request processed successfully."
+                        }, 'withdraw'));
+                    } else {
+                        return res.status(400).json(this.errorMsgFormat({
+                            "message": response.data.attributes.message
+                        }, 'withdraw'));
+                    }
                 } else {
                     return res.status(400).json(this.errorMsgFormat({
-                        "message": response.data.attributes.message
+                        "message": "This request alreay processed."
                     }, 'withdraw'));
                 }
-            } else {
-                return res.status(400).json(this.errorMsgFormat({
-                    "message": "This request alreay processed."
-                }, 'withdraw'));
             }
+            else{
+                await beldexNotification.findOneAndUpdate({ _id: requestData.verification_code, user:req.user.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Verification code is expired.'
+                }));
+            }
+            
         } else {
             return res.status(400).json(this.errorMsgFormat({
                 "message": "invalid request"
