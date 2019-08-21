@@ -20,7 +20,8 @@ const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
 const service = require('../services/api');
-const axios = require('axios');
+const _ = require('lodash');
+
 
 class User extends controller {
 
@@ -1210,6 +1211,7 @@ class User extends controller {
                 {
                     let request = {
                         market_name:data[i].name,
+                        market_pair:data[i].money
                     }
                     await new addMarket(request).save();
                 }
@@ -1228,6 +1230,8 @@ class User extends controller {
     }
 
     async marketList(req, res) {
+        let repsonse=[];
+        let pairs =[];
         let isChecked = await addMarket.find({});
         if (isChecked.length == 0) {
             return res.status(404).send(this.errorMsgFormat({
@@ -1235,9 +1239,18 @@ class User extends controller {
             }, 'users', 404));
         }
         else {
-            res.status(200).send(this.successFormat({
-                isChecked
-            }))
+            let pair =await _.unionBy(isChecked,'market_pair');
+            await _.map(pair,async function(uniquePair)
+            {
+                pairs.push(uniquePair.market_pair);
+            });
+            for(var i=0;i<pairs.length;i++)
+            {
+                let markets = await addMarket.find({market_pair:pairs[i]});
+                repsonse.push({[pairs[i]] : markets});
+            }
+            await res.status(200).send(this.successFormat(
+                repsonse))
         }
     }
 
