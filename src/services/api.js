@@ -15,6 +15,7 @@ const kafka = require('kafka-node');
 const orderCancel = require('../db/order-cancel');
 const fs = require('fs');
 const moment = require('moment');
+const _ = require('lodash');
 class Api extends Controller {
 
     async sendEmailNotification(data) {
@@ -30,9 +31,9 @@ class Api extends Controller {
             let user = await users.findById(data.user_id);
             data.to_email = user.email
             data.anti_spoofing_code = (user.anti_spoofing) ? user.anti_spoofing_code : false;
-           
+
         }
-        console.log("Data:",data);
+        console.log("Data:", data);
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
             .then((res) => {
                 console.log(res.data);
@@ -76,21 +77,20 @@ class Api extends Controller {
         });
     }
 
-    async binance(input,user_id) {
+    async binance(input, user_id) {
         const client = Binance({
             apiKey: process.env.APIKEY,
             apiSecret: process.env.SECERTKEY
         })
         let response = await client.order(input);
-        response.user_id=user_id;
+        response.user_id = user_id;
         console.log('Response:', response);
-        if(input.type == 'MARKET')
-        {
+        if (input.type == 'MARKET') {
             this.addResponseInKAFKA(response, input.symbol);
-        }else{
+        } else {
             this.addResponseInREDIS(response);
         }
-        
+
     }
     async matchingEngineGetRequest(path, res) {
         let axiosResponse = await axios['get'](
@@ -157,7 +157,7 @@ class Api extends Controller {
             if (!isChecked.status) {
                 return res.status(401).json(controller.errorMsgFormat({
                     message: "Invalid authentication"
-                }),'user',401);
+                }), 'user', 401);
             }
             let getMarket = await market.find({});
             if (getMarket.length == 0) {
@@ -165,40 +165,40 @@ class Api extends Controller {
                     'message': "No Data Found"
                 }, 'users', 404));
             }
-            for (var i = 0; i < getMarket.length; i++) {
+               _.map(getMarket, async function(market)
+               {
                 let checkedFavorite = await favourite.findOne({
                     user: isChecked.result.user, market: {
                         $in: [
-                            getMarket[i]._id
+                           market._id
                         ]
                     }
                 });
                 if (checkedFavorite) {
-                    markets.push(getMarket[i].market_name);
+                    markets.push(market.market_name);
                 }
 
-            }
+               })
             let axiosResponse = await axios.get(
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`)
             const result = axiosResponse.data;
             let data = result.result.result;
             if (result.status) {
-
-                
-                for (var i = 0; i < markets.length; i++) {
-                    for (var j = 0; j < data.length; j++) {
-                        if (data[j].name === markets[i]) {
-                            data[j].is_favourite = true;
-                            break;
+                _.map(markets,function(noMarkets){
+                    _.map(data,function(res)
+                    {
+                        if(res.name === noMarkets)
+                        {
+                            res.is_favourite = true;
                         }
-                    }
-                }
+                    })
+                })
+
                 //add q in response 
-                for(let k=0; k< getMarket.length;k++)
-                {
+                for (let k = 0; k < getMarket.length; k++) {
                     data[k].q = getMarket[k].q;
                 }
-                return res.status(200).send(controller.successFormat(data, result.id));
+                await this.marketPairs(data,result,res);
             }
             else {
                 return res.status(result.errorCode).send(controller.errorMsgFormat({
@@ -207,41 +207,81 @@ class Api extends Controller {
             }
 
         }
-        let getMarket = await market.find({});
-        let axiosResponse = await axios['get'](
-            `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`);
-        let result = axiosResponse.data;
-       
-        if (result.status) {
-            let data = result.result.result;
-            if (type == 'withAdd') {
-                return { status: true, result: data };
+        else {
+            let getMarket = await market.find({});
+            let axiosResponse = await axios['get'](
+                `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`);
+            let result = axiosResponse.data;
+
+            if (result.status) {
+                let data = result.result.result;
+                if (type == 'withAdd') {
+                    return { status: true, result: data };
+                }
+                for (let k = 0; k < data.length; k++) {
+                    data[k].q = getMarket[k].q
+                }
+                await this.marketPairs(data,result,res);
+            } else {
+                return res.status(result.errorCode).send(controller.errorMsgFormat({
+                    'message': result.error
+                }, 'order-matching', result.errorCode));
             }
-            for(let k =0; k<data.length;k++)
-            {
-                data[k].q=getMarket[k].q
-            }
-            return res.status(200).send(controller.successFormat(data, result.result.id))
-        } else {
-            return res.status(result.errorCode).send(controller.errorMsgFormat({
-                'message': result.error
-            }, 'order-matching', result.errorCode));
         }
 
+
+    }
+
+    //Collect ot market pairs
+    async marketPairs(data,result,res)
+    {
+        try{
+            let markets =[];
+            let repsonse = [];
+            let pairs = [];
+            let market_name = []
+            let pair = await _.unionBy(data, 'money');
+            await _.map(pair, async function (uniquePair) {
+                pairs.push(uniquePair.money);
+               
+            });
+            _.map(data, function (markets) {
+                market_name.push(markets.name);
+            })
+            console.log("Market Name:", market_name);
+            for (var i = 0; i < pairs.length; i++) {
+                _.map(data,function(result)
+                {
+                    if(pairs[i]==result.money)
+                    {
+                        markets.push(result);
+                    }
+                    
+                })
+                repsonse.push({[pairs[i]]:markets})
+            }
+            repsonse.push(market_name);
+            return res.status(200).send(controller.successFormat(repsonse, result.result.id))
+        }catch(err)
+        {
+            return res.status(result.errorCode).send(controller.errorMsgFormat({
+                'message': err.message
+            }, 'order-matching'));
+        }
+       
     }
 
     async matchingEngineRequest(method, path, data, res, type = 'json') {
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;
-       
+
         if (result.status) {
             let value = result.result.result;
             if (type === 'json') {
-                
-                if(path == 'order/cancel')
-                {
-                   await new orderCancel(value).save();
+
+                if (path == 'order/cancel') {
+                    await new orderCancel(value).save();
                 }
                 return res.status(200).send(controller.successFormat(value, result.result.id));
             } else {
@@ -259,74 +299,72 @@ class Api extends Controller {
     }
 
     async addResponseInREDIS(response) {
-        
-            var client = redis.createClient(process.env.REDIS_HOST,process.env.REDIS_PORT);
 
-            client.on('connect', function () {
-                client.set(response.orderId, response, redis.print);
-                // return { status:true, result:'Add data Redis' };
-                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${response}`
-                fs.appendFile('/var/log/coreapi/redisSuccess.txt', `\n${fileConent} `, function (err) {
-                    if (err) 
-                    console.log("Error:",err);
-                  });
+        var client = redis.createClient(process.env.REDIS_HOST, process.env.REDIS_PORT);
+
+        client.on('connect', function () {
+            client.set(response.orderId, response, redis.print);
+            // return { status:true, result:'Add data Redis' };
+            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${response}`
+            fs.appendFile('/var/log/coreapi/redisSuccess.txt', `\n${fileConent} `, function (err) {
+                if (err)
+                    console.log("Error:", err);
             });
-    
-            client.on('error', function (err) {
-                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${response.orderId} :${response.user_id} : ${err}`
-                fs.appendFile('redisError.txt', `\n${fileConent} `, function (err) {
-                    if (err) 
-                    console.log("Error:",err);
-                  });
-                //return { status:false, error:'Something went wrong' };
+        });
+
+        client.on('error', function (err) {
+            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${response.orderId} :${response.user_id} : ${err}`
+            fs.appendFile('redisError.txt', `\n${fileConent} `, function (err) {
+                if (err)
+                    console.log("Error:", err);
             });
-        
-        
+            //return { status:false, error:'Something went wrong' };
+        });
+
+
     }
 
-    async addResponseInKAFKA(jsonData, market)
-    {
+    async addResponseInKAFKA(jsonData, market) {
         let Producer = kafka.Producer,
-        Client = new kafka.KafkaClient({
-            kafkaHost: process.env.KAFKA
-        }),
-        producer = new Producer(Client, {
-            requireAcks: 1
-        });
-       
-    producer.on('ready', async function () {
-       let response = await  producer.send([{
-            topic: `${config.get('topic')}${market}`,
-            messages: JSON.stringify(jsonData),
-        }]);
-        if(response)
-        {
-            
-            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.orderId} : ${jsonData.user_id} : ${jsonData}`
-            fs.appendFile('kafaSuccess.txt', `\n${fileConent} `, function (err) {
-                if (err) 
-                console.log("Error:",err);
-              });
-              //return { status :true }
-        }
-        else{
-            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${jsonData}`
-            fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
-                if (err) 
-                console.log("Error:",err);
-              });
-            //return { status : false , error : response.message }
-        }
-    });
+            Client = new kafka.KafkaClient({
+                kafkaHost: process.env.KAFKA
+            }),
+            producer = new Producer(Client, {
+                requireAcks: 1
+            });
 
-    producer.on('error', function (err) {
-        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${err}`
+        producer.on('ready', async function () {
+            let response = await producer.send([{
+                topic: `${config.get('topic')}${market}`,
+                messages: JSON.stringify(jsonData),
+            }]);
+            if (response) {
+
+                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.orderId} : ${jsonData.user_id} : ${jsonData}`
+                fs.appendFile('kafaSuccess.txt', `\n${fileConent} `, function (err) {
+                    if (err)
+                        console.log("Error:", err);
+                });
+                //return { status :true }
+            }
+            else {
+                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${jsonData}`
+                fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
+                    if (err)
+                        console.log("Error:", err);
+                });
+                //return { status : false , error : response.message }
+            }
+        });
+
+        producer.on('error', function (err) {
+            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${err}`
             fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
-                if (err) 
-                console.log("Error:",err);
-              });
-        //return { status : false , error : response.message }
-    });
+                if (err)
+                    console.log("Error:", err);
+            });
+            //return { status : false , error : response.message }
+        });
 
     }
 }
