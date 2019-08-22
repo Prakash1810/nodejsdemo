@@ -1230,8 +1230,6 @@ class User extends controller {
     }
 
     async marketList(req, res) {
-        let repsonse=[];
-        let pairs =[];
         let isChecked = await addMarket.find({});
         if (isChecked.length == 0) {
             return res.status(404).send(this.errorMsgFormat({
@@ -1239,18 +1237,8 @@ class User extends controller {
             }, 'users', 404));
         }
         else {
-            let pair =await _.unionBy(isChecked,'market_pair');
-            await _.map(pair,async function(uniquePair)
-            {
-                pairs.push(uniquePair.market_pair);
-            });
-            for(var i=0;i<pairs.length;i++)
-            {
-                let markets = await addMarket.find({market_pair:pairs[i]});
-                repsonse.push({[pairs[i]] : markets});
-            }
             await res.status(200).send(this.successFormat(
-                repsonse))
+                isChecked))
         }
     }
 
