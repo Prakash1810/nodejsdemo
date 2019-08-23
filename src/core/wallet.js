@@ -13,6 +13,7 @@ const transactions = require('../db/transactions');
 const beldexNotification = require('../db/beldex-notifications');
 const user = require('../core/user');
 const mongoose = require('mongoose');
+const math = require('mathjs');
 // const Fawn = require("fawn");
 
 // Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
@@ -473,7 +474,6 @@ class Wallet extends controller {
         let requestData = req.body.data.attributes;
         let getAsset = await assets.findById(requestData.asset);
         let amount = Number(requestData.amount);
-        console.log("ASSEST:", getAsset);
         if (getAsset) {
             if (getAsset.is_suspend) {
                 return {
@@ -495,9 +495,10 @@ class Wallet extends controller {
                 console.log("Payloads:", payloads);
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available
-                if (available !== undefined && amount < available) {
+                if (available !== undefined && amount <= available) {
                     return {
-                        status: true
+                        status: true,
+                        matchingApiAmount : available,
                     };
                 } else {
                     return {
@@ -562,7 +563,7 @@ class Wallet extends controller {
                             is_deleted: false,
                             created_date: timeNow
                         };
-                        let returnId = await this.insertNotification(data);
+                        let returnId = await this.insertNotification(data,validateWithdraw.matchingApiAmount);
                         return res.status(200).json(this.successFormat({
                             'message': 'Your withdrawal request posted successfully. Waiting for your confirmation. Please check your email'
                         }, returnId, 'withdraw', 200));
@@ -598,10 +599,19 @@ class Wallet extends controller {
 
 
     }
-    async insertNotification(data) {
+    async insertNotification(data,responseAmount) {
+       
+        let amount = Number(responseAmount);
         let asset = await assets.findById(data.asset);
+        let fee = asset.withdrawal_fee;
         let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']);
-        console.log("Transaction:", transaction);
+        if(amount === transaction.amount)
+        {
+            transaction.amount = amount-fee;
+            transaction.fee=asset.withdrawal_fee;
+        }
+        transaction.fee=asset.withdrawal_fee;
+       
         let transactionId = await new transactions(transaction).save();
         let beldexData = {
             user: new mongoose.Types.ObjectId(transaction.user),
@@ -612,7 +622,6 @@ class Wallet extends controller {
             created_date: transaction.created_date
         }
         let beldexId = await new beldexNotification(beldexData).save();
-        console.log("Beldex:", beldexId);
         let notifyId = beldexId._id;
         let transactionsId = transactionId._id;
         let emailData = {

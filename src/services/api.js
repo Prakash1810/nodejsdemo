@@ -236,7 +236,7 @@ class Api extends Controller {
     async marketPairs(data,result,res)
     {
         try{
-            let markets =[];
+            
             let repsonse = [];
             let pairs = [];
             let market_name = []
@@ -245,11 +245,12 @@ class Api extends Controller {
                 pairs.push(uniquePair.money);
                
             });
-            _.map(data, function (markets) {
-                market_name.push(markets.name);
+            _.map(data, function (nofMarkets) {
+                market_name.push(nofMarkets.name);
             })
             console.log("Market Name:", market_name);
             for (var i = 0; i < pairs.length; i++) {
+                    let markets =[];
                 _.map(data,function(result)
                 {
                     if(pairs[i]==result.money)
@@ -260,8 +261,7 @@ class Api extends Controller {
                 })
                 repsonse.push({[pairs[i]]:markets})
             }
-            repsonse.push(market_name);
-            return res.status(200).send(controller.successFormat(repsonse, result.result.id))
+            return res.status(200).send(controller.successFormat([repsonse,market_name], result.result.id))
         }catch(err)
         {
             return res.status(result.errorCode).send(controller.errorMsgFormat({
