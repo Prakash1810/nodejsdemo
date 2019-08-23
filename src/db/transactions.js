@@ -16,7 +16,8 @@ const transactionSchema = mongoose.Schema({
         alias: 'created_date'
     },
     updated_date: Date,
-    is_deleted: { type: Boolean, default: false }
+    is_deleted: { type: Boolean, default: false },
+    fee : {type: Number}
 
 });
 
