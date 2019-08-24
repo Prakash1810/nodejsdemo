@@ -51,7 +51,17 @@ router.post('/balance/history', auth, async (req, res) => {
 router.post('/balance/query', auth, async (req, res) => {
     try {
       
-        req.body.data.attributes.user_id = Number(req.user.user_id);
+       
+        if(!req.body.data){
+            req.body.data={
+                attributes:{
+                    user_id: Number(req.user.user_id)
+                }
+            }
+        }
+        else{
+            req.body.data.attributes.user_id = Number(req.user.user_id);
+        }
         await matching.matchingEngineRequest('post', 'balance/query', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({

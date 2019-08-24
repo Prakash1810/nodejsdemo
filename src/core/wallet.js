@@ -329,33 +329,48 @@ class Wallet extends controller {
         let payloads = {},
             assetNames,
             asset = [];
+        let collectOfAssetName={};
         payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
-            payloads.asset = asset
-            assetNames = config.get(`assets.${req.query.asset_code.toLowerCase()}`)
+            payloads.asset = asset;
+            let noofAsset = await assets.findOne({asset_code:req.query.asset_code});
+            if(noofAsset)
+            {
+                assetNames=noofAsset.asset_name.toLowerCase();
+                collectOfAssetName[noofAsset.asset_code]=noofAsset.asset_name.toLowerCase();
+            }
+            else{
+                return res.status(400).send(this.errorFormat({
+                    'message': 'Incorrect asset code'
+                }, 'asset-balance', 400));
+            }
         } else {
-            assetNames = _.values(_.reverse(config.get(`assets`))).join(',');
+            
+            let noofAsset = await assets.find({});
+            _.map(noofAsset,function(asset)
+            {
+                collectOfAssetName[asset.asset_code]=asset.asset_name.toLowerCase();
+            })
+            assetNames = _.values(_.reverse(collectOfAssetName)).join(',');
         }
-        console.log("pAYLOADAs:", payloads);
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
-        let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse);
+        let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse,collectOfAssetName);
 
         return res.status(200).json(this.successFormat({
             "data": formatedResponse
         }, null, 'asset-balance', 200));
     }
 
-    currencyConversion(matchResponse, marketResponse) {
-        let assetsJson = config.get('assets'),
-            formatedAssetBalnce = {};
+    currencyConversion(matchResponse, marketResponse,assetsJson) {
+        let formatedAssetBalnce = {};
         console.log("MarketResponse:", marketResponse.data);
-        console.log("MarketResponse:", matchResponse);
+        console.log("MatchResponse:", matchResponse);
         for (let result in matchResponse) {
             console.log("Result:", result);
-            let btc = marketResponse.data[assetsJson[result.toLowerCase()]].btc;
-            let usd = marketResponse.data[assetsJson[result.toLowerCase()]].usd;
+            let btc = marketResponse.data[assetsJson[result]].btc;
+            let usd = marketResponse.data[assetsJson[result]].usd;
             console.log("Btc:", btc);
             formatedAssetBalnce[result] = {
                 'available': {

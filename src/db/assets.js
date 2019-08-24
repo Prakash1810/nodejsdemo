@@ -25,7 +25,10 @@ const assetsSchema = mongoose.Schema({
     modified_by: Number,
     is_deleted: Boolean,
     withdrawal_fee: Number,
-    minimum_withdrawal: Number
+    minimum_withdrawal: Number,
+    delist:{ type:Boolean, default:false } ,
+    depoist:{ type:Boolean, default:true },
+    withdraw:{ type:Boolean, default:true }
 });
 
 module.exports = mongoose.model('assets', assetsSchema);
