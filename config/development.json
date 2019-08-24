@@ -23,18 +23,6 @@
 		"expiryTime": 1800,
 		"timeZone": "UTC"
 	},
-	"assets": {
-		"bdx": "beldex",
-		"btc": "bitcoin",
-		"eth": "ethereum",
-		"etc": "ethereum-clasic",
-		"ltc": "litecoin",
-		"bch": "bitcoin-cash",
-		"dash": "dash",
-		"doge": "dogecoin",
-		"xmr" : "monero",
-		"usdt": "ther"
-	},
 	"otpForEmail":
 	{
 		"hmt":3,

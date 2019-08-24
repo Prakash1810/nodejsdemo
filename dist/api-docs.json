@@ -1110,7 +1110,7 @@
                         "name": "Parameters",
                         "in": "body",
                         "description": "balance query",
-                        "required": true,
+                        "required": false,
                         "type": "string",
                         "schema": {
                             "$ref": "#/definitions/balanceQuery"
