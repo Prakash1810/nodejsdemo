@@ -26,7 +26,7 @@ const assetsSchema = mongoose.Schema({
     is_deleted: Boolean,
     withdrawal_fee: Number,
     minimum_withdrawal: Number,
-    delist:{ type:Boolean, default:false } ,
+    delist:{type:Boolean, default:false } ,
     depoist:{ type:Boolean, default:true },
     withdraw:{ type:Boolean, default:true }
 });

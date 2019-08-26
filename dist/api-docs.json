@@ -672,7 +672,13 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": []
+                "parameters": [ {
+                    "name": "get_all",
+                    "in": "query",
+                    "description": "Asset code \n *refers to <b>`wallet/assets`</b>",
+                    "required": false,
+                    "type": "boolean"
+                }]
             }
         },
         "wallet/withdraw-address": {

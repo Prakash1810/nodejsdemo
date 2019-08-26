@@ -66,12 +66,15 @@ class Api extends Controller {
     }
 
     axiosAPI(data) {
+        console.log("Dataaa:",data);
         axios.post(
             `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {
+            console.log("AxiosResponse:", JSON.stringify(axiosResponse.data));
             if (axiosResponse.data !== undefined)
-                console.log("AxiosResponse:", axiosResponse.data);
-            return axiosResponse.data;
+            {
+                return axiosResponse.data;
+            }
         }).catch(axiosError => {
             if (axiosError.response !== undefined) throw (axiosError.response)
         });
@@ -80,7 +83,7 @@ class Api extends Controller {
     async binance(input, user_id) {
         const client = Binance({
             apiKey: process.env.APIKEY,
-            apiSecret: process.env.SECERTKEY
+            apiSecret: process.env.SECRETKEY
         })
         let response = await client.order(input);
         response.user_id = user_id;
