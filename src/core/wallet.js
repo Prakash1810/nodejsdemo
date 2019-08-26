@@ -20,7 +20,7 @@ const math = require('mathjs');
 
 class Wallet extends controller {
 
-    getAssets(req, res) {
+    async getAssets(req, res) {
         let pageNo = parseInt(req.query.page_no)
         let size = parseInt(req.query.size)
         let query = {}
@@ -37,7 +37,7 @@ class Wallet extends controller {
         // Find some documents
         assets.countDocuments({
             is_suspend: false
-        }, (err, totalCount) => {
+        }, async (err, totalCount) => {
             if (err) {
                 return res.status(200).json(this.successFormat({
                     "data": [],
@@ -47,7 +47,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal', query, (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal depoist withdaw delist', query, async(err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -55,6 +55,19 @@ class Wallet extends controller {
                             "totalCount": 0
                         }, null, 'assets', 200));
                     } else {
+                        
+                        if(req.query.get_all=='false' || req.query.get_all==null ||  req.query.get_all==undefined)
+                        {
+                            for(var i=0;i<data.length;i++)
+                            {
+                                let isCheckDelist = await this.assetDelist(data[i]._id);
+                                if(isCheckDelist.status == false)
+                                {
+                                    data.splice(i,1);
+                                }
+                            }
+                        }
+                        
                         var totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
                             "data": data,
@@ -69,23 +82,38 @@ class Wallet extends controller {
 
     async getAssetAddress(req, res) {
         let asset = req.body.data.attributes.asset;
+        let isCheckDelist = await this.assetDelist(asset);
+        console.log("Data:",isCheckDelist);
+        if(isCheckDelist.status==false)
+        {
+            return res.status(400).send(this.errorFormat({
+                'message': isCheckDelist.err
+            }, 'asset-balance', 400));
+        }
         if (asset !== undefined && asset !== '' && asset !== null) {
             let getAddress = await userAddress.findOne({
                 asset: asset,
                 user: req.user.user
             });
-            if (!getAddress) {
-                console.log("GetAddress");
+            console.log("GetAddress",getAddress);
+            if (getAddress) {
+               
                 let isChecked = await assets.findOne({ _id: asset })
-                let data =
-                {
-                    coin: isChecked.asset_code,
-                    user_id: req.user.user_id,
-                    user: req.user.user,
-                    asset: asset
-                }
-
-                apiServices.axiosAPI(data);
+                
+                   
+                    let data =
+                    {
+                        coin: isChecked.asset_code,
+                        user_id: req.user.user_id,
+                        user: req.user.user,
+                        asset: asset
+                    }
+                    console.log("Data:",data);
+                    console.log("data:",await apiServices.axiosAPI(data));
+                    return res.status(200).json(this.successFormat({
+                        "message":`Create Address for ${data.coin} coin`
+                    }, asset, 'address'));
+                
             } else {
                 return res.status(200).json(this.successFormat({
                     'asset_code': getAddress.asset_code,
@@ -131,7 +159,14 @@ class Wallet extends controller {
 
     async postWithdrawAddress(req, res) {
         let requestData = req.body.data.attributes;
-
+        let isCheckDelist = await this.assetDelist(requestData.asset);
+        console.log("Data:",isCheckDelist);
+        if(isCheckDelist.status==false)
+        {
+            return res.status(400).send(this.errorFormat({
+                'message': isCheckDelist.err
+            }, 'asset-balance', 400));
+        }
         // check addres is valid or not
         let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
         if (isValid !== true) {
@@ -821,6 +856,25 @@ class Wallet extends controller {
                 'message': 'Invalid request.'
             }, 'withdraw', 400));
         }
+    }
+
+    async assetDelist(asset)
+    {
+        let delist = await assets.findOne({_id:asset});
+        if(delist)
+        {
+            if(!delist.delist)
+            {
+                return {status : true}
+            }
+            else{
+                return {status : false, err:'Asset is Delist'}
+            }   
+        }
+        else{
+            return {status : false, err:'Asset is not found'}
+        }
+      
     }
 }
 
