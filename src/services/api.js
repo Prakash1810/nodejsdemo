@@ -70,7 +70,6 @@ class Api extends Controller {
         axios.post(
             `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {
-            console.log("AxiosResponse:", JSON.stringify(axiosResponse.data));
             if (axiosResponse.data !== undefined)
             {
                 return axiosResponse.data;
@@ -239,7 +238,22 @@ class Api extends Controller {
     async marketPairs(data,result,res)
     {
         try{
-            
+            let j=0;
+            let isCheck = await assets.find({});
+            while(j<data.length)
+            {
+                _.map(isCheck,function(asset)
+                {
+                    if(asset.asset_code == data[j].stock)
+                    {
+                        if(asset.delist)
+                        {
+                            data.splice(j,1);
+                        }
+                    }
+                });
+                j++;
+            }
             let repsonse = [];
             let pairs = [];
             let market_name = []
