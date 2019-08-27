@@ -47,7 +47,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal depoist withdaw delist', query, async(err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal depoist withdraw delist', query, async(err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -95,7 +95,7 @@ class Wallet extends controller {
                 asset: asset,
                 user: req.user.user
             });
-            console.log("GetAddress",getAddress);
+          
             if (!getAddress) {
                
                 let isChecked = await assets.findOne({ _id: asset })
@@ -108,8 +108,7 @@ class Wallet extends controller {
                         user: req.user.user,
                         asset: asset
                     }
-                    console.log("Data:",data);
-                    console.log("data:",await apiServices.axiosAPI(data));
+                    await apiServices.axiosAPI(data);
                     return res.status(200).json(this.successFormat({
                         "message":`Create Address for ${data.coin} coin`
                     }, asset, 'address'));
