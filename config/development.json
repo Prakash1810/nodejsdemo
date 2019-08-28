@@ -1,14 +1,14 @@
 {
 	"encryption": {
-		"key": "encryptionKey"
+		"key": "+cjqs&#t67Ch+mPS"
 	},
 	"secrete": {
 		"issuer": "test",
 		"domain": "www.test.com",
-		"key": "privateKey",
+		"key": "--$_VM?LLx3XK95ZJ",
 		"expiry": 300000,
 		"refreshTokenExpiry":420000,
-		"refreshKey" : "secertKey"
+		"refreshKey" : "Nkqw^h%MDeR5m7DGQ"
 	},
 	"site": {
 		"url": "http://localhost:3000",
@@ -29,7 +29,7 @@
 		"timeExpiry":180 
 	},
 	"walletForEmail":{
-		"timeExpiry":180 
+		"timeExpiry":1800
 	},
 
 	"accountActive":{

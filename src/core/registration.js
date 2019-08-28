@@ -102,7 +102,7 @@ class Registration extends Controller {
                                     password:data.password
                                 }})
                                 await this.sendActivationEmail(user,'withoutResend');
-                                return res.status(200).send(this.errorMsgFormat({
+                                return res.status(200).send(this.successFormat({
                                     'message': `Your are about to exceed the maximum try - only ${config.get('accountActiveRegister.hmt') - isChecked.count + 1}  attempt${(config.get('accountActiveRegister.hmt') - isChecked.count) + 1 > 1 ? 's':''} left for user register`
                                 }));
                             }

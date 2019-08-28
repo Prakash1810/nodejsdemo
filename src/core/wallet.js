@@ -14,6 +14,7 @@ const beldexNotification = require('../db/beldex-notifications');
 const user = require('../core/user');
 const mongoose = require('mongoose');
 const math = require('mathjs');
+const helpers = require('../helpers/helper.functions');
 // const Fawn = require("fawn");
 
 // Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
@@ -131,7 +132,8 @@ class Wallet extends controller {
             asset: Joi.string().required(),
             address: Joi.string().required(),
             label: Joi.string().required(),
-            is_whitelist: Joi.boolean().optional()
+            is_whitelist: Joi.boolean().optional(),
+            g2f_code: Joi.string()
         });
 
         return Joi.validate(req, schema, {
@@ -165,6 +167,14 @@ class Wallet extends controller {
             return res.status(400).send(this.errorFormat({
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
+        }
+        if (requestData.g2f_code) {
+            let check = await user.postVerifyG2F(req, res, 'boolean');
+            if (check.status == false) {
+                return res.status(400).send(this.errorFormat({
+                    'message': 'Incorrect code'
+                }, '2factor', 400));
+            }
         }
         // check addres is valid or not
         let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
@@ -402,10 +412,8 @@ class Wallet extends controller {
         console.log("MarketResponse:", marketResponse.data);
         console.log("MatchResponse:", matchResponse);
         for (let result in matchResponse) {
-            console.log("Result:", result);
             let btc = marketResponse.data[assetsJson[result]].btc;
             let usd = marketResponse.data[assetsJson[result]].usd;
-            console.log("Btc:", btc);
             formatedAssetBalnce[result] = {
                 'available': {
                     'balance': Number(matchResponse[result].available),
@@ -576,7 +584,7 @@ class Wallet extends controller {
             }
         }
         if (requestData.asset != undefined) {
-            console.log('Res:', req.body.data.attributes);
+            
             let validateWithdraw = await this.withdrawValidate(req, res);
             if (validateWithdraw.status) {
                 
@@ -602,6 +610,7 @@ class Wallet extends controller {
                         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
                         let data = {
                             user: new mongoose.Types.ObjectId(req.user.user),
+                            user_id:req.user.user_id,
                             asset: new mongoose.Types.ObjectId(requestData.asset),
                             address: withdraw.address,
                             type: 1,
@@ -674,13 +683,15 @@ class Wallet extends controller {
         let notifyId = beldexId._id;
         let transactionsId = transactionId._id;
         let emailData = {
-            user_id: new mongoose.Types.ObjectId(transaction.user),
+            user: new mongoose.Types.ObjectId(transaction.user),
+            user_id : data.user_id,
             verification_code: notifyId,
             amount: transaction.amount,
             asset_code: asset.asset_code,
             address: transaction.address,
             ip: data.ip,
             time: data.created_date
+
         };
 
         beldexNotification.findOneAndUpdate({ '_id': notifyId }, {
@@ -701,7 +712,8 @@ class Wallet extends controller {
         let serviceData = {
             "subject": `Confirm Your Withdraw Request From ${data.ip} ( ${data.time} )`,
             "email_for": "wallet-withdraw",
-            "user_id": data.user_id,
+            "user_id": data.user,
+            "userId":data.user_id,
             'amount': data.amount,
             'asset_code': data.asset_code,
             'address': data.address,
@@ -736,7 +748,6 @@ class Wallet extends controller {
 
     patchWithdrawConfirmationValidation(req) {
         let schema = Joi.object().keys({
-            verification_code: Joi.string().required(),
             accept: Joi.boolean().required(),
             ip: Joi.string().required()
         });
@@ -751,10 +762,11 @@ class Wallet extends controller {
 
     async patchWithdrawConfirmation(req, res) {
         let requestData = req.body.data.attributes;
-        if (requestData.verification_code !== undefined && requestData.verification_code !== null && requestData.accept !== undefined && requestData.accept !== null) {
+        let code = JSON.parse(helpers.decrypt(req.query.code));
+        if (code.code !== undefined && code.code !== null && requestData.accept !== undefined && requestData.accept !== null) {
             let notify = await beldexNotification.findOne({
-                _id: requestData.verification_code,
-                user:req.user.user
+                _id: code.code,
+                user:code.user
             });
             let date = new Date(notify.created_date);
             let getSeconds = date.getSeconds() + config.get('walletForEmail.timeExpiry');
@@ -785,7 +797,7 @@ class Wallet extends controller {
                 }
             }
             else{
-                await beldexNotification.findOneAndUpdate({ _id: requestData.verification_code, user:req.user.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
+                await beldexNotification.findOneAndUpdate({ _id: code.code, user:code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Verification code is expired.'
                 }));
@@ -799,11 +811,12 @@ class Wallet extends controller {
     }
 
     async updateWithdrawRequest(withdraw, req, res) {
+        let code = JSON.parse(helpers.decrypt(req.query.code));
         let requestData = req.body.data.attributes;
         // update the transaction status
         let transaction = await transactions.findOneAndUpdate({
             _id: withdraw.notify_data.transactions,
-            user:req.user.user,
+            user:code.user,
             is_deleted: false
         }, {
                 $set: {
@@ -813,7 +826,7 @@ class Wallet extends controller {
         if (transaction) {
             let asset = transaction.asset;
             let payloads = {
-                "user_id": req.user.user_id,
+                "user_id": code.user_id,
                 "asset": asset.asset_code,
                 "business": (requestData.accept) ? "withdraw" : "deposit",
                 "business_id": Math.floor(Math.random() * Math.floor(10000000)),

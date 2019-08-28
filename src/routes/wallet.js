@@ -115,7 +115,7 @@ router.post('/withdraw', auth, (req, res) => {
     }
 });
 
-router.patch('/withdraw', auth, (req, res) => {
+router.patch('/withdraw', (req, res) => {
     try {
         let { error } = wallet.patchWithdrawConfirmationValidation(req.body.data.attributes);
         if ( error ) {
