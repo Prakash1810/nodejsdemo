@@ -8,6 +8,8 @@ const password = require('../core/password');
 const moment = require('moment');
 const mangHash = require('../db/management-hash');
 const config = require('config');
+const bcrypt = require('bcrypt');
+const accountActive = require('../db/account-active');
 
 class Registration extends Controller {
 
@@ -46,9 +48,77 @@ class Registration extends Controller {
         // check email address already exits in user temp collections
         UserTemp.find({ email: req.body.data.attributes.email })
             .exec()
-            .then(result => {
+            .then( async result => {
+                
+                let data = req.body.data.attributes
                 if (result.length) {
-                    return res.status(400).send(this.errorFormat({ 'email': 'This email address already exits.' }));
+                    let salt = await bcrypt.genSalt(10);
+                    data.password = await bcrypt.hash(data.password,salt);
+                    let isChecked = await accountActive.findOne({ email: data.email,type_for:'register' });
+                    if (isChecked) {
+                        
+                        if (isChecked.count < config.get('accountActiveRegister.hmt')) {
+                            await accountActive.findOneAndUpdate({ email: data.email ,type_for:'register' },
+                                {
+                                    $inc: {
+                                        count: 1
+                                    },
+                                    create_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                                })
+                        }
+                        else if (isChecked.count > config.get('accountActiveRegister.hmt')) {
+                            let date = new Date(isChecked.create_date);
+                            let getSeconds = date.getSeconds() + config.get('accountActiveRegister.timeExpiry');
+                            let duration = moment.duration(moment().diff(isChecked.create_date));
+                            if (getSeconds > duration.asSeconds()) {
+                                return res.status(400).send(this.errorMsgFormat({
+
+                                    'message': 'Account has been locked, please try again after 2 hours!'
+                                }));
+                            }
+                            else {
+                                await accountActive.findOneAndUpdate({ email: data.email ,type_for : 'register'},{count:1,create_date:moment().format('YYYY-MM-DD HH:mm:ss')});
+                                let user = await UserTemp.findOneAndUpdate({email:req.body.data.attributes.email},{
+                                    password:data.password
+                                })
+                                await this.sendActivationEmail(user,'withoutResend');
+                                return res.status(200).json(this.successFormat({
+                                    'message': `We have sent a confirmation email to your registered email address. ${data.email}. Please follow the instructions in the email to continue.`,
+                                }));
+                            }
+
+                        }
+                        else 
+                        {
+                            if (isChecked.count > config.get('accountActiveRegister.limit')) {
+                                await accountActive.findOneAndUpdate({ email: data.email ,type_for:'register' },
+                                {
+                                    $inc: {
+                                        count: 1
+                                    },
+                                    create_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                                })
+                                let user = await UserTemp.findOneAndUpdate({email:req.body.data.attributes.email},{$set:{
+                                    password:data.password
+                                }})
+                                await this.sendActivationEmail(user,'withoutResend');
+                                return res.status(200).send(this.errorMsgFormat({
+                                    'message': `Your are about to exceed the maximum try - only ${config.get('accountActiveRegister.hmt') - isChecked.count + 1}  attempt${(config.get('accountActiveRegister.hmt') - isChecked.count) + 1 > 1 ? 's':''} left for user register`
+                                }));
+                            }
+                        }
+                        
+                       
+                    }
+                    let user = await UserTemp.findOneAndUpdate({email:req.body.data.attributes.email},{$set:{
+                        password:data.password
+                    }})
+                    await this.sendActivationEmail(user,'withoutResend');
+                    return res.status(200).json(this.successFormat({
+                        'message': `We have sent a confirmation email to your registered email address. ${data.email}. Please follow the instructions in the email to continue.`,
+                    }));
+                    
+                   
                 } else {
                     // check email address already exits in user temp collections
                     Users.find({ email: req.body.data.attributes.email })
@@ -75,9 +145,15 @@ class Registration extends Controller {
             if (err) {
                 return res.status(500).json(this.errorFormat({ 'message': err.message }));
             } else {
+                
                 // send activation email
                 let isChecked = await this.sendActivationEmail(user);
+               
                 if (isChecked) {
+                    await new accountActive({
+                        email :req.body.data.attributes.email,
+                        type_for : 'register',
+                    }).save();
                     return res.status(200).json(this.successFormat({
                         'message': `We have sent a confirmation email to your registered email address. ${user.email}. Please follow the instructions in the email to continue.`,
                     }, user._id));
@@ -105,14 +181,21 @@ class Registration extends Controller {
         //check how to many time click a resend button
 
         await apiServices.sendEmailNotification(serviceData);
-        let checkCount = await mangHash.findOne({ email: user.email, is_active: false, type_for: "registration" });
-        if (checkCount && (type == 'sendEmail')) {
-            let count = checkCount.count;
-            await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { hash: encryptedHash, count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+        if(type == 'withoutResend')
+        {
+            await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { hash: encryptedHash, count:1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
         }
-        else {
-            await new mangHash({ email: user.email, hash: encryptedHash, type_for: "registration", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
+        else{
+            let checkCount = await mangHash.findOne({ email: user.email, is_active: false, type_for: "registration" });
+            if (checkCount) {
+                let count = checkCount.count;
+                await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { hash: encryptedHash, count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+            }
+            else {
+                await new mangHash({ email: user.email, hash: encryptedHash, type_for: "registration", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
+            }
         }
+       
         return true;
     }
 
@@ -129,6 +212,7 @@ class Registration extends Controller {
                                
                                 if (checkCount.count > config.get('site.hmtLink')) {
                                     await UserTemp.deleteOne({ email: user.email });
+                                    await accountActive.deleteOne({email:user.email,type_for:'register'})
                                     await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                                     return res.status(400).send(this.errorMsgFormat({
                                         'message': ` Verification link resent request exceeded, please chack email or register again `
@@ -137,7 +221,7 @@ class Registration extends Controller {
                                 else {
                                
                                     // send activation email
-                                    let check = this.sendActivationEmail(user, "sendEmail");
+                                    let check = this.sendActivationEmail(user);
                                     if(check){
                                         return res.status(200).json(this.successFormat({
                                             'message': `Mail sended successfully at ${user.email}. Please follow the instructions in the email to continue.`,

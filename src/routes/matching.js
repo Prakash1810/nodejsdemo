@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const users = require('../db/users');
 const matching = require('../services/api');
 const Controller = require('../core/controller');
 const controller = new Controller;
@@ -103,9 +104,8 @@ router.post('/order/put-market', auth, async (req, res) => {
             }
             //delete q from request;
          delete data.q;
-         
-        const fee = await getFee.findOne({config:"takerFeeRate"});
-        req.body.data.attributes[fee.config]=fee.value;
+         let fee = await users.findOne({_id:req.user.user});
+         req.body.data.attributes.takerFeeRate = fee.taker_fee
         
         await matching.matchingEngineRequest('post', 'order/put-market', req.body, res);
 
@@ -138,12 +138,9 @@ router.post('/order/put-limit', auth, async (req, res) => {
 
          //delete q from request;
          delete data.q;
-
-        const fee = await getFee.find({config:{$in:['takerFeeRate' ,'makerFeeRate']}})
-        for(var i=0;i<fee.length;i++)
-        {
-            req.body.data.attributes[fee[i].config]=fee[i].value
-        }
+         let fee = await users.findOne({_id:req.user.user});
+         req.body.data.attributes.takerFeeRate = fee.taker_fee;
+         req.body.data.attributes.makerFeeRate = fee.maker_fee;
      await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({

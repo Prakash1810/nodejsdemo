@@ -391,7 +391,7 @@ class Wallet extends controller {
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse,collectOfAssetName);
-
+        console.log('FormatResponse:',formatedResponse);
         return res.status(200).json(this.successFormat({
             "data": formatedResponse
         }, null, 'asset-balance', 200));

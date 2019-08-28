@@ -37,6 +37,12 @@
 		"timeExpiry":7200,
 		"limit":3
 	},
+
+	"accountActiveRegister":{
+		"hmt" : 1,
+		"timeExpiry":7200,
+		"limit":0
+	},
 	"topic" : "order-"
 
 }
