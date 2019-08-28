@@ -1,5 +1,6 @@
 const moment = require('moment');
 const users = require('../db/users');
+const fee = require('../db/matching-engine-config');
 const apiServices = require('../services/api');
 const deviceMangement = require('../db/device-management');
 const loginHistory = require('../db/login-history');
@@ -69,13 +70,14 @@ class User extends controller {
         }
         else {
             if (userTemp.removeUserTemp(userHash.id)) {
-                return res.status(400).send(this.successFormat({
+                await accountActive.deleteOne({ email: userHash.email, type_for: 'register' })
+                return res.status(400).send(this.errorFormat({
                     'message': 'Token is expired'
                 }));
 
             }
             else {
-                return res.status(400).send(this.successFormat({
+                return res.status(400).send(this.errorFormat({
                     'message': 'User not found'
                 }));
             }
@@ -90,16 +92,21 @@ class User extends controller {
             }
         });
         try {
+            
             let user = await users.create({
                 email: result.email,
                 password: result.password,
                 referral_code: result.referral_code,
                 created_date: result.created_date,
-                user_id: inc.login_seq
+                user_id: inc.login_seq,
+                taker_fee : (await fee.findOne({config:'takerFeeRate'})).value,
+                maker_fee : (await fee.findOne({config:'makerFeeRate'})).value
             });
+            
             if (userTemp.removeUserTemp(result.id)) {
 
-                // address creation
+                // address creation;
+                await accountActive.deleteOne({ email: result.email, type_for: 'register' })
                 await apiServices.initAddressCreation(user);
 
                 return res.status(200).send(this.successFormat({
@@ -163,7 +170,7 @@ class User extends controller {
     async login(req, res) {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = req.body.data.attributes;
-        let isChecked = await accountActive.findOne({ email: data.email });
+        let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
         users.findOne({
             email: data.email,
             is_active: true
@@ -180,7 +187,7 @@ class User extends controller {
 
                         if (isChecked) {
                             if (isChecked.count <= config.get('accountActive.hmt')) {
-                                await accountActive.findOneAndUpdate({ email: data.email },
+                                await accountActive.findOneAndUpdate({ email: data.email, type_for: 'login' },
                                     {
                                         $inc: {
                                             count: 1
@@ -195,12 +202,12 @@ class User extends controller {
                             }
                             if (isChecked.count > config.get('accountActive.limit')) {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': `Invalid credentials, Your are about to exceed the maximum try - only ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's':''} left`
+                                    'message': `Invalid credentials, Your are about to exceed the maximum try - only ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's' : ''} left`
                                 }));
                             }
                         }
                         else {
-                            await new accountActive({ email: data.email, create_date: timeNow }).save();
+                            await new accountActive({ email: data.email, create_date: timeNow, type_for: 'login' }).save();
                         }
 
                         return res.status(400).send(this.errorMsgFormat({
@@ -210,7 +217,7 @@ class User extends controller {
                         if (isChecked) {
                             if (isChecked.count > config.get('accountActive.hmt')) {
                                 let date = new Date(isChecked.create_date);
-                                let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
+                                let getSeconds = date.getSeconds() + config.get('accountActive.timeExpiry');
                                 let duration = moment.duration(moment().diff(isChecked.create_date));
                                 if (getSeconds > duration.asSeconds()) {
 
@@ -219,14 +226,14 @@ class User extends controller {
                                     }));
                                 }
                                 else {
-                                    await accountActive.deleteOne({ email: data.email })
+                                    await accountActive.deleteOne({ email: data.email, type_for: 'login' })
                                     // check that device is already exists or not
                                     this.checkDevice(req, res, result);
                                 }
 
                             }
                             else {
-                                await accountActive.deleteOne({ email: data.email })
+                                await accountActive.deleteOne({ email: data.email, type_for: 'login' })
                                 // check that device is already exists or not
                                 this.checkDevice(req, res, result);
                             }
@@ -331,7 +338,7 @@ class User extends controller {
             const rand = Math.random() * (999999 - 100000) + 100000;
             const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
             const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
-            console.log('OtP:',otp);
+            console.log('OtP:', otp);
             const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
             if (!isChecked) {
                 let data =
@@ -370,7 +377,7 @@ class User extends controller {
             "sms_auth": result.sms_auth,
             "anti_spoofing": result.anti_spoofing,
             "anti_spoofing_code": result.anti_spoofing_code,
-            'white_list_address':result.white_list_address,
+            'white_list_address': result.white_list_address,
             "loggedIn": timeNow,
             "expiresIn": config.get('secrete.expiry')
         }, result._id));
@@ -854,8 +861,8 @@ class User extends controller {
             anti_spoofing: Joi.boolean().optional(),
             anti_spoofing_code: Joi.string().optional(),
             white_list_address: Joi.boolean().optional(),
-            g2f_code : Joi.string(),
-            white_list_address : Joi.boolean().optional()
+            g2f_code: Joi.string(),
+            white_list_address: Joi.boolean().optional()
         });
 
         return Joi.validate(req, schema, {
@@ -863,67 +870,61 @@ class User extends controller {
         });
     }
 
-   async patchSettings(req, res, type='withoutCallPatchSetting') {
-    try {
-        let requestData = req.body.data.attributes;
-        req.body.data.id = req.user.user;
-        if (requestData.code !== undefined) {
-            let userHash = JSON.parse(helpers.decrypt(requestData.code));
-            requestData.is_active = userHash.is_active;
-        }
-        if(type != 'withCallPatchSetting')
-        {   
-            let check = await users.findOne({_id:req.body.data.id, google_auth:true});
-            if(check)
-            {
-                let isChecked = await this.postVerifyG2F(req,res,'setting');
-                if(isChecked.status == false)
-                {
-                         return res.status(400).send(this.errorFormat({
-                             'message': 'Incorrect code'
-                         }, 'user', 400));
+    async patchSettings(req, res, type = 'withoutCallPatchSetting') {
+        try {
+            let requestData = req.body.data.attributes;
+            req.body.data.id = req.user.user;
+            if (requestData.code !== undefined) {
+                let userHash = JSON.parse(helpers.decrypt(requestData.code));
+                requestData.is_active = userHash.is_active;
+            }
+            if (type != 'withCallPatchSetting') {
+                let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
+                if (check) {
+                    let isChecked = await this.postVerifyG2F(req, res, 'setting');
+                    if (isChecked.status == false) {
+                        return res.status(400).send(this.errorFormat({
+                            'message': 'Incorrect code'
+                        }, 'user', 400));
+                    }
+
                 }
-             
+
             }
-            
-        }
-        if (req.body.data.id !== undefined && Object.keys(requestData).length) {
-            // find and update the reccord
-           let update = await  users.findOneAndUpdate({
-                _id: req.body.data.id
-            }, {
-                    $set: requestData
-                });
-           if(update)
-           {
-            if(type == 'withCallPatchSetting' || type == 'disable' )
-            {
-                return {status : true }
-            }
-                return res.status(202).send(this.successFormat({
-                    'message': 'Your request is updated successfully.'
-                }, null , 'users', 202));
-           }
-           else{
-                    if(type == 'withCallPatchSetting' || type == 'disable' )
-                    {
-                        return { status : false }
-                    } 
+            if (req.body.data.id !== undefined && Object.keys(requestData).length) {
+                // find and update the reccord
+                let update = await users.findOneAndUpdate({
+                    _id: req.body.data.id
+                }, {
+                        $set: requestData
+                    });
+                if (update) {
+                    if (type == 'withCallPatchSetting' || type == 'disable') {
+                        return { status: true }
+                    }
+                    return res.status(202).send(this.successFormat({
+                        'message': 'Your request is updated successfully.'
+                    }, null, 'users', 202));
+                }
+                else {
+                    if (type == 'withCallPatchSetting' || type == 'disable') {
+                        return { status: false }
+                    }
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Invalid request.'
                     }, 'users', 400));
-           }
-        } else {
+                }
+            } else {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid request.'
+                }, 'users', 400));
+            }
+        } catch (error) {
             return res.status(400).send(this.errorMsgFormat({
-                'message': 'Invalid request.'
-            }, 'users', 400));
+                'message': error.message
+            }, 'patchSetting', 400));
         }
-    } catch (error) {
-        return res.status(400).send(this.errorMsgFormat({
-            'message': error.message
-        }, 'patchSetting', 400));
-    }
-       
+
     }
 
     async disableAccount(req, res) {
@@ -931,13 +932,12 @@ class User extends controller {
         let userHash = JSON.parse(helpers.decrypt(requestedData.code));
         if (userHash.is_active !== undefined) {
             let checked = await this.patchSettings(req, res, 'disable');
-            if(checked.status)
-            {
+            if (checked.status) {
                 return res.status(202).send(this.successFormat({
                     'message': 'Your request is updated successfully.'
-                },null,'users', 202));
+                }, null, 'users', 202));
             }
-            else{
+            else {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Invalid request..'
                 }, 'users', 400));
@@ -967,13 +967,12 @@ class User extends controller {
             }
 
             let checked = await this.updateG2F(req, res);
-            if(checked.status)
-            {
+            if (checked.status) {
                 return res.status(202).send(this.successFormat({
                     'message': 'Your request is updated successfully.'
-                },null,'users', 202));
+                }, null, 'users', 202));
             }
-            else{
+            else {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Invalid request..'
                 }, 'users', 400));
@@ -987,7 +986,7 @@ class User extends controller {
 
     async updateG2F(req, res) {
         let check = await this.postVerifyG2F(req, res, 'boolean');
-        if (check.status === true ) {
+        if (check.status === true) {
             // delete password attribute
 
             delete req.body.data.attributes.password;
@@ -1004,7 +1003,7 @@ class User extends controller {
 
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
 
-        try{
+        try {
             let opts = {
                 beforeDrift: 2,
                 afterDrift: 2,
@@ -1013,59 +1012,56 @@ class User extends controller {
             };
             let counter = Math.floor(Date.now() / 1000 / opts.step);
             let returnStatus = await g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
-                if (returnStatus === true) {
-                    if (method == 'withoutAuth' && type != 'boolean') {
-                        let user = await users.findOne({ _id: req.body.data.id });
-                        await this.returnToken(res, user, req.body.data.attributes.login_history)
-                    }
-                    else if(method == 'setting'|| type =='boolean')
-                    {
-                        return { status:true };
-                    }
-                    else{
-                        return res.status(202).send(this.successFormat({
-                            'status': returnStatus
-                        }, null,'2factor', 202));
-                    }
-                    
-                } else {
-                    if(method == 'setting' || type =='boolean')
-                    {
-                        return { status:false };
-                    }
-                    else{
-		
-                        return res.status(400).send(this.errorFormat({
-                            'status': returnStatus,
-                            'message': 'Incorrect code'
-                        }, '2factor', 400));
-                    }
-                   
+            if (returnStatus === true) {
+                if (method == 'withoutAuth' && type != 'boolean') {
+                    let user = await users.findOne({ _id: req.body.data.id });
+                    await this.returnToken(res, user, req.body.data.attributes.login_history)
                 }
+                else if (method == 'setting' || type == 'boolean') {
+                    return { status: true };
+                }
+                else {
+                    return res.status(202).send(this.successFormat({
+                        'status': returnStatus
+                    }, null, '2factor', 202));
+                }
+
+            } else {
+                if (method == 'setting' || type == 'boolean') {
+                    return { status: false };
+                }
+                else {
+
+                    return res.status(400).send(this.errorFormat({
+                        'status': returnStatus,
+                        'message': 'Incorrect code'
+                    }, '2factor', 400));
+                }
+
             }
-        catch(err)
-        {
+        }
+        catch (err) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': err.message
             }, '2factor', 400));
         }
-       
+
     }
 
     async postVerifyG2F(req, res, type = 'json') {
-        try{
+        try {
             var method = "withoutAuth";
             if (req.headers.authorization && type != 'boolean') {
                 let isChecked = await service.authentication(req);
                 if (!isChecked.status) {
                     return res.status(401).json(this.errorMsgFormat({
                         message: "Invalid authentication"
-                    }),'user',401);
-                    
+                    }), 'user', 401);
+
                 }
                 req.body.data.id = isChecked.result.user;
-                 method = "withAuth"
-                }
+                method = "withAuth"
+            }
 
             let requestedData = req.body.data.attributes;
             if (requestedData.g2f_code !== undefined) {
@@ -1076,21 +1072,19 @@ class User extends controller {
                             'message': 'Invalid data'
                         }));
                     }
-                    if(type == 'setting')
-                         {
-                             method = 'setting';
-                             let cheked = await this.verifyG2F(req, res, type, result.google_secrete_key, method);
-                             return cheked;
-                         }
+                    if (type == 'setting') {
+                        method = 'setting';
+                        let cheked = await this.verifyG2F(req, res, type, result.google_secrete_key, method);
+                        return cheked;
+                    }
                     return this.verifyG2F(req, res, type, result.google_secrete_key, method);
                 } else {
-                    if(type == 'setting')
-                         {
-                             method = 'setting';
-                             let cheked = await this.verifyG2F(req, res, type, result.google_secrete_key, method);
-                             return cheked;
-                         }
-                        
+                    if (type == 'setting') {
+                        method = 'setting';
+                        let cheked = await this.verifyG2F(req, res, type, result.google_secrete_key, method);
+                        return cheked;
+                    }
+
                     return this.verifyG2F(req, res, type, requestedData.google_secrete_key, method);
                 }
             } else {
@@ -1098,13 +1092,12 @@ class User extends controller {
                     'message': 'Invalid request'
                 }, '2factor', 400));
             }
-	}catch(err)
-        {
+        } catch (err) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': err.message
             }, '2factor', 400));
         }
-        
+
     }
 
     async refreshToken(data, res) {
@@ -1199,25 +1192,22 @@ class User extends controller {
     }
 
     async addMarkets(req, res) {
-        let market = await service.matchingEngineRequestForMarketList('market/list', req, res,'withAdd');
-      
-        if(market.status)
-        {
+        let market = await service.matchingEngineRequestForMarketList('market/list', req, res, 'withAdd');
+
+        if (market.status) {
             let data = market.result;
-            for(var i=0;i<data.length;i++)
-            {
-                let isCheckMarket = await addMarket.findOne({ market_name:data[i].name});
-                if(!isCheckMarket)
-                {
+            for (var i = 0; i < data.length; i++) {
+                let isCheckMarket = await addMarket.findOne({ market_name: data[i].name });
+                if (!isCheckMarket) {
                     let request = {
-                        market_name:data[i].name,
-                        market_pair:data[i].money
+                        market_name: data[i].name,
+                        market_pair: data[i].money
                     }
                     await new addMarket(request).save();
                 }
             }
 
-         
+
             return res.status(200).send(this.successFormat({
                 'message': 'Add Market',
             }));
@@ -1304,7 +1294,7 @@ class User extends controller {
 
     }
 
-   
+
 
 
 }
