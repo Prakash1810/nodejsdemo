@@ -10,7 +10,7 @@
             "email": "sathish.kumar@beldex.org"
         }
     },
-    "host": "coreapialpha.beldex.io",
+    "host": "localhost:3000",
     "basePath": "/api/v1/",
     "tags": [
         {
@@ -29,7 +29,7 @@
         }
     ],
     "schemes": [
-        "https"
+        "http"
     ],
     "consumes": [
         "application/json"
@@ -965,9 +965,9 @@
                 ],
                 "parameters": [
                     {
-                        "name": "Authorization",
-                        "in": "header",
-                        "description": "access_token",
+                        "name": "code",
+                        "in": "query",
+                        "description": "Asset code \n *refers to <b>`wallet/assets`</b>",
                         "required": true,
                         "type": "string"
                     },
@@ -2463,6 +2463,7 @@
                     "example": "en"
                 },
                 "data": {
+                    "id":"5c908652f83b10002f0f7478",
                     "example": {
                         "attributes": {
                             "asset": "5c94e142de2b7100085e5296",
@@ -2514,6 +2515,7 @@
                     "example": "en"
                 },
                 "data": {
+                    "id":"5c908652f83b10002f0f7478",
                     "example": {
                         "attributes": {
                             "withdraw_id":"5cd535d18d28a601d8efad5b",

@@ -21,11 +21,23 @@ class Api extends Controller {
     async sendEmailNotification(data) {
 
         if (data.email_for !== 'registration') {
-            let disableData = JSON.stringify({
-                'user_id': data.user_id,
-                'is_active': false
-            });
+            
+            
+               let disableData = JSON.stringify({
+                    'user_id': data.user_id,
+                    'is_active': false
+                });
 
+            
+            if(data.email_for == 'wallet-withdraw')
+            {
+                data.code = helpers.encrypt(JSON.stringify(
+                    {
+                        user:data.user_id,
+                        user_id:data.userId,
+                        code:data.verification_code
+                    }))
+            }
             data.disable_code = helpers.encrypt(disableData);
 
             let user = await users.findById(data.user_id);
@@ -66,12 +78,11 @@ class Api extends Controller {
     }
 
     axiosAPI(data) {
-        console.log("Dataaa:",data);
+        console.log("Dataaa:", data);
         axios.post(
             `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {
-            if (axiosResponse.data !== undefined)
-            {
+            if (axiosResponse.data !== undefined) {
                 return axiosResponse.data;
             }
         }).catch(axiosError => {
@@ -167,12 +178,11 @@ class Api extends Controller {
                     'message': "No Data Found"
                 }, 'users', 404));
             }
-               _.map(getMarket, async function(market)
-               {
+            _.map(getMarket, async function (market) {
                 let checkedFavorite = await favourite.findOne({
                     user: isChecked.result.user, market: {
                         $in: [
-                           market._id
+                            market._id
                         ]
                     }
                 });
@@ -180,17 +190,15 @@ class Api extends Controller {
                     markets.push(market.market_name);
                 }
 
-               })
+            })
             let axiosResponse = await axios.get(
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`)
             const result = axiosResponse.data;
             let data = result.result.result;
             if (result.status) {
-                _.map(markets,function(noMarkets){
-                    _.map(data,function(res)
-                    {
-                        if(res.name === noMarkets)
-                        {
+                _.map(markets, function (noMarkets) {
+                    _.map(data, function (res) {
+                        if (res.name === noMarkets) {
                             res.is_favourite = true;
                         }
                     })
@@ -200,7 +208,7 @@ class Api extends Controller {
                 for (let k = 0; k < getMarket.length; k++) {
                     data[k].q = getMarket[k].q;
                 }
-                await this.marketPairs(data,result,res);
+                await this.marketPairs(data, result, res);
             }
             else {
                 return res.status(result.errorCode).send(controller.errorMsgFormat({
@@ -223,7 +231,7 @@ class Api extends Controller {
                 for (let k = 0; k < data.length; k++) {
                     data[k].q = getMarket[k].q
                 }
-                await this.marketPairs(data,result,res);
+                await this.marketPairs(data, result, res);
             } else {
                 return res.status(result.errorCode).send(controller.errorMsgFormat({
                     'message': result.error
@@ -235,20 +243,15 @@ class Api extends Controller {
     }
 
     //Collect ot market pairs
-    async marketPairs(data,result,res)
-    {
-        try{
-            let j=0;
+    async marketPairs(data, result, res) {
+        try {
+            let j = 0;
             let isCheck = await assets.find({});
-            while(j<data.length)
-            {
-                _.map(isCheck,function(asset)
-                {
-                    if(asset.asset_code == data[j].stock)
-                    {
-                        if(asset.delist)
-                        {
-                            data.splice(j,1);
+            while (j < data.length) {
+                _.map(isCheck, function (asset) {
+                    if (asset.asset_code == data[j].stock) {
+                        if (asset.delist) {
+                            data.splice(j, 1);
                         }
                     }
                 });
@@ -260,36 +263,33 @@ class Api extends Controller {
             let pair = await _.unionBy(data, 'money');
             await _.map(pair, async function (uniquePair) {
                 pairs.push(uniquePair.money);
-               
+
             });
             _.map(data, function (nofMarkets) {
                 market_name.push(nofMarkets.name);
             })
             console.log("Market Name:", market_name);
             for (var i = 0; i < pairs.length; i++) {
-                    let markets =[];
-                _.map(data,function(result)
-                {
-                    if(pairs[i]==result.money)
-                    {
+                let markets = [];
+                _.map(data, function (result) {
+                    if (pairs[i] == result.money) {
                         markets.push(result);
                     }
-                    
+
                 })
-                repsonse.push({[pairs[i]]:markets})
+                repsonse.push({ [pairs[i]]: markets })
             }
-            return res.status(200).send(controller.successFormat([repsonse,market_name], result.result.id))
-        }catch(err)
-        {
+            return res.status(200).send(controller.successFormat([repsonse, market_name], result.result.id))
+        } catch (err) {
             return res.status(result.errorCode).send(controller.errorMsgFormat({
                 'message': err.message
             }, 'order-matching'));
         }
-       
+
     }
 
     async matchingEngineRequest(method, path, data, res, type = 'json') {
-        console.log("data:",data);
+        console.log("data:", data);
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;
