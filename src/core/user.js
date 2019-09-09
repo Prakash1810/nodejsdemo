@@ -379,7 +379,10 @@ class User extends controller {
             "anti_spoofing_code": result.anti_spoofing_code,
             'white_list_address': result.white_list_address,
             "loggedIn": timeNow,
-            "expiresIn": config.get('secrete.expiry')
+            "expiresIn": config.get('secrete.expiry'),
+            "taker_fee":result.taker_fee,
+            "maker_fee":result.maker_fee
+            
         }, result._id));
     }
 
