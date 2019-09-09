@@ -28,7 +28,8 @@ const assetsSchema = mongoose.Schema({
     minimum_withdrawal: Number,
     delist:{type:Boolean, default:false } ,
     depoist:{ type:Boolean, default:true },
-    withdraw:{ type:Boolean, default:true }
+    withdraw:{ type:Boolean, default:true },
+    token :{ type:String, default:null}
 });
 
 module.exports = mongoose.model('assets', assetsSchema);
