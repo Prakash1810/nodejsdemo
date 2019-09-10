@@ -145,13 +145,19 @@ class Wallet extends controller {
     }
 
     async coinAddressValidate(address, asset) {
-        let getAsset = await assets.findById(asset);
+        let getAsset = await assets.findOne({_id:asset});
+        let asset_code;
         if (getAsset) {
-            let asset_code = getAsset.asset_code;
+            if(getAsset.token!=null && getAsset.token!=undefined)
+            {
+               
+                    asset_code = getAsset.token
+            }
+               asset_code = getAsset.asset_code;
 
             // check if bdx
             if (asset_code.toLowerCase() === 'bdx') return true;
-
+           
             return coinAddressValidator.validate(address, asset_code.toLowerCase());
         } else {
             return false;
@@ -161,7 +167,6 @@ class Wallet extends controller {
     async postWithdrawAddress(req, res) {
         let requestData = req.body.data.attributes;
         let isCheckDelist = await this.assetDelist(requestData.asset);
-        console.log("Data:",isCheckDelist);
         if(isCheckDelist.status==false)
         {
             return res.status(400).send(this.errorFormat({
@@ -888,6 +893,7 @@ class Wallet extends controller {
         }
       
     }
+    
 }
 
 module.exports = new Wallet;
