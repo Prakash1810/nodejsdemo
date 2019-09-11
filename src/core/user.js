@@ -86,13 +86,13 @@ class User extends controller {
     }
 
     async insertUser(result, res) {
-        let inc = await sequence.findOneAndUpdate({ sequence_type: "users" }, {
-            $inc: {
-                login_seq: 1
-            }
-        });
+     
         try {
-            
+            let inc = await sequence.findOneAndUpdate({ sequence_type: "users" }, {
+                $inc: {
+                    login_seq: 1
+                }
+            });
             let user = await users.create({
                 email: result.email,
                 password: result.password,

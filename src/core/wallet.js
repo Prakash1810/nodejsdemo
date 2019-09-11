@@ -146,15 +146,18 @@ class Wallet extends controller {
 
     async coinAddressValidate(address, asset) {
         let getAsset = await assets.findOne({_id:asset});
+        console.log("GetAsset:",getAsset)
         let asset_code;
         if (getAsset) {
             if(getAsset.token!=null && getAsset.token!=undefined)
             {
-               
-                    asset_code = getAsset.token
+                
+               asset_code = getAsset.token;
             }
-               asset_code = getAsset.asset_code;
-
+            else{
+                asset_code = getAsset.asset_code;
+            }
+        
             // check if bdx
             if (asset_code.toLowerCase() === 'bdx') return true;
            
@@ -185,7 +188,7 @@ class Wallet extends controller {
         let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
         if (isValid !== true) {
             return res.status(400).send(this.errorMsgFormat({
-                'address': 'Invalid address.'
+                'message': 'Invalid address.'
             }, 'withdrawAddress'));
         }
 
@@ -198,7 +201,7 @@ class Wallet extends controller {
 
         if (checkAddress) {
             return res.status(400).send(this.errorMsgFormat({
-                'address': 'This address already exits.'
+                'message': 'This address already exist.'
             }, 'withdrawAddress'));
         } else {
             withdrawAddress.create({
@@ -654,7 +657,7 @@ class Wallet extends controller {
             }
         } else {
             return res.status(400).json(this.errorMsgFormat({
-                "message": "invalid request"
+                "message": "Invalid request"
             }, 'withdraw'));
         }
 
@@ -673,8 +676,10 @@ class Wallet extends controller {
             transaction.amount = amount-fee;
             transaction.fee=asset.withdrawal_fee;
         }
-        transaction.fee=asset.withdrawal_fee;
-       
+        else{
+            transaction.fee=asset.withdrawal_fee;
+        }
+
         let transactionId = await new transactions(transaction).save();
         let beldexData = {
             user: new mongoose.Types.ObjectId(transaction.user),
@@ -741,7 +746,7 @@ class Wallet extends controller {
                 }, 'withdraw'));
             } else {
                 return res.status(404).json(this.errorMsgFormat({
-                    "message": "Request already procesaddMarketsed / invalid request"
+                    "message": "Request already process add Marketed / invalid request"
                 }, 'withdraw'));
             }
         } else {
@@ -787,8 +792,17 @@ class Wallet extends controller {
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
+                        await transactions.findOneAndUpdate({
+                            _id: notify.notify_data.transactions,
+                            user:code.user,
+                            is_deleted: false
+                        },{
+                            $set: {
+                                status: 1
+                            }
+                        });
                         return res.status(200).json(this.successFormat({
-                            "message": "Your confirmation request processed successfully."
+                            "message": "Your withdraw confirmation request has been initiated.  Please click here to check the status of withdraw."
                         }, 'withdraw'));
                     } else {
                         return res.status(400).json(this.errorMsgFormat({
@@ -797,20 +811,20 @@ class Wallet extends controller {
                     }
                 } else {
                     return res.status(400).json(this.errorMsgFormat({
-                        "message": "This request alreay processed."
+                        "message": "Your withdraw request is already processed. Please click here to check the status of withdraw."
                     }, 'withdraw'));
                 }
             }
             else{
                 await beldexNotification.findOneAndUpdate({ _id: code.code, user:code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Verification code is expired.'
+                    'message': 'Your withdraw confirmation link has been expired. Please click here to submit the new request.'
                 }));
             }
             
         } else {
             return res.status(400).json(this.errorMsgFormat({
-                "message": "invalid request"
+                "message": "Invalid request"
             }, 'withdraw'));
         }
     }
@@ -819,15 +833,11 @@ class Wallet extends controller {
         let code = JSON.parse(helpers.decrypt(req.query.code));
         let requestData = req.body.data.attributes;
         // update the transaction status
-        let transaction = await transactions.findOneAndUpdate({
+        let transaction = await transactions.findOne({
             _id: withdraw.notify_data.transactions,
             user:code.user,
             is_deleted: false
-        }, {
-                $set: {
-                    status: 1
-                }
-            }).populate('asset');
+        }).populate('asset');
         if (transaction) {
             let asset = transaction.asset;
             let payloads = {
