@@ -3,6 +3,7 @@ const mongoose = require('mongoose'), Schema = mongoose.Schema;
 const withdrawAddressSchema = mongoose.Schema({
     user: { type: Schema.Types.ObjectId, ref: 'Users' },
     asset: { type: Schema.Types.ObjectId, ref: 'assets' },
+    coin: { type: String, required: true },
     label: String,
     address: String,
     is_whitelist: { type: Boolean, default: false },
