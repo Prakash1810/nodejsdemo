@@ -132,6 +132,7 @@ class Wallet extends controller {
             asset: Joi.string().required(),
             address: Joi.string().required(),
             label: Joi.string().required(),
+            coin:Joi.string().required(),
             is_whitelist: Joi.boolean().optional(),
             g2f_code: Joi.string()
         });
@@ -196,6 +197,7 @@ class Wallet extends controller {
         let checkAddress = await withdrawAddress.findOne({
             'address': requestData.address,
             'user': req.user.user,
+            'coin':requestData.coin,
             'is_deleted': false
         });
 
@@ -677,6 +679,7 @@ class Wallet extends controller {
             transaction.fee=asset.withdrawal_fee;
         }
         else{
+            transaction.amount = transaction.amount-fee;
             transaction.fee=asset.withdrawal_fee;
         }
 
@@ -845,7 +848,7 @@ class Wallet extends controller {
                 "asset": asset.asset_code,
                 "business": (requestData.accept) ? "withdraw" : "deposit",
                 "business_id": Math.floor(Math.random() * Math.floor(10000000)),
-                "change": (requestData.accept) ? `-${transaction.amount}` : `${transaction.amount}`,
+                "change": (requestData.accept) ? `-${transaction.final_amount}` : `${transaction.final_amount}`,
                 "detial": {}
             }
             console.log("Payload:", payloads);

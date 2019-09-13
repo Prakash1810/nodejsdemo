@@ -876,23 +876,25 @@ class User extends controller {
     async patchSettings(req, res, type = 'withoutCallPatchSetting') {
         try {
             let requestData = req.body.data.attributes;
-            req.body.data.id = req.user.user;
+            if(type != 'disable')
+            {
+                req.body.data.id = req.user.user;
+            }
             if (requestData.code !== undefined) {
                 let userHash = JSON.parse(helpers.decrypt(requestData.code));
                 requestData.is_active = userHash.is_active;
             }
-            if (type != 'withCallPatchSetting') {
-                let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
-                if (check) {
-                    let isChecked = await this.postVerifyG2F(req, res, 'setting');
-                    if (isChecked.status == false) {
-                        return res.status(400).send(this.errorFormat({
-                            'message': 'Incorrect code'
-                        }, 'user', 400));
+            if (type != 'withCallPatchSetting' && type != 'disable' ) {
+                    let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
+                    if (check) {
+                        let isChecked = await this.postVerifyG2F(req, res, 'setting');
+                        if (isChecked.status == false) {
+                            return res.status(400).send(this.errorFormat({
+                                'message': 'Incorrect code'
+                            }, 'user', 400));
+                        }
+    
                     }
-
-                }
-
             }
             if (req.body.data.id !== undefined && Object.keys(requestData).length) {
                 // find and update the reccord
@@ -935,10 +937,11 @@ class User extends controller {
         let userHash = JSON.parse(helpers.decrypt(requestedData.code));
         if (userHash.is_active !== undefined) {
             let checked = await this.patchSettings(req, res, 'disable');
+            console.log("Checked:",checked);
             if (checked.status) {
-                return res.status(202).send(this.successFormat({
+                return res.status(200).send(this.successFormat({
                     'message': 'Your request is updated successfully.'
-                }, null, 'users', 202));
+                }, null, 'users', 200));
             }
             else {
                 return res.status(400).send(this.errorMsgFormat({

@@ -2050,8 +2050,9 @@
                 },
                 "data": {
                     "example": {
+                        "id": "{{user_id}}",
                         "attributes": {
-                            "id": "{{user_id}}",
+                           
                             "code": "a4a4592231744ef38a8c53b4355719f02dd28cadba505cd30574efbe61c597fbac22797e1b69238577044727d476b052cf81576ed10b18be2e2ccc0377a256f9"
                         }
                     }
@@ -2467,6 +2468,7 @@
                     "example": {
                         "attributes": {
                             "asset": "5c94e142de2b7100085e5296",
+                            "coin":"BTC",
                             "label": "Bitcoin",
                             "address": "16P71aQ1VzWuDNL3YBkii9hLGb923Fm7LY"
                         }
