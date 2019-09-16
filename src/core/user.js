@@ -86,7 +86,7 @@ class User extends controller {
     }
 
     async insertUser(result, res) {
-     
+
         try {
             let inc = await sequence.findOneAndUpdate({ sequence_type: "users" }, {
                 $inc: {
@@ -99,10 +99,10 @@ class User extends controller {
                 referral_code: result.referral_code,
                 created_date: result.created_date,
                 user_id: inc.login_seq,
-                taker_fee : (await fee.findOne({config:'takerFeeRate'})).value,
-                maker_fee : (await fee.findOne({config:'makerFeeRate'})).value
+                taker_fee: (await fee.findOne({ config: 'takerFeeRate' })).value,
+                maker_fee: (await fee.findOne({ config: 'makerFeeRate' })).value
             });
-            
+
             if (userTemp.removeUserTemp(result.id)) {
 
                 // address creation;
@@ -380,9 +380,9 @@ class User extends controller {
             'white_list_address': result.white_list_address,
             "loggedIn": timeNow,
             "expiresIn": config.get('secrete.expiry'),
-            "taker_fee":result.taker_fee,
-            "maker_fee":result.maker_fee
-            
+            "taker_fee": result.taker_fee,
+            "maker_fee": result.maker_fee
+
         }, result._id));
     }
 
@@ -453,6 +453,7 @@ class User extends controller {
                             await this.insertDevice(req, userID);
                             let urlHash = this.encryptHash({
                                 "user_id": userID,
+                                "email": req.body.data.attributes.email,
                                 "ip": req.body.data.attributes.ip,
                                 "browser": req.body.data.attributes.browser,
                                 "verified": true
@@ -468,6 +469,18 @@ class User extends controller {
                                 "hash": urlHash,
                                 "user_id": userID
                             })
+                            let check = await mangHash.findOne({ email: req.body.data.attributes.email, type_for: 'new_authorize_device' });
+                            if (check) {
+                                await mangHash.findOneAndUpdate({ email: req.body.data.attributes.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                            }
+                            else {
+                                await new mangHash({
+                                    email: req.body.data.attributes.email,
+                                    type_for: 'new_authorize_device',
+                                    hash: urlHash,
+                                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                                }).save()
+                            }
                             return res.status(401).send(this.errorMsgFormat({
                                 'msg': 'unauthorized',
                                 'hash': urlHash
@@ -800,12 +813,27 @@ class User extends controller {
         return false;
     }
 
-    patchWhiteListIP(req, res) {
+    async patchWhiteListIP(req, res) {
 
         let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
+        console.log("DeviceHash:",deviceHash);
         if (deviceHash.data.user_id) {
-            let checkExpired = this.checkTimeExpired(deviceHash.data.datetime);
-            if (checkExpired) {
+            let check = await mangHash.findOne({ email: deviceHash.data.email, type_for:"new_authorize_device", hash: req.params.hash });
+            console.log("Check:",check)
+            if (!check) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': "The link has been expired, please click the latest authorize link from your email or try to resend again."
+                }));
+            }
+            if (check.is_active) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': "The link has already authroized. Please try to login."
+                }));
+            }
+            let date = new Date(check.created_date);
+            let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
+            let duration = moment.duration(moment().diff(check.created_date));
+            if (getSeconds > duration.asSeconds()) {
                 deviceMangement.findOne({
                     browser: deviceHash.data.browser,
                     user: deviceHash.data.user_id
@@ -817,40 +845,42 @@ class User extends controller {
                                 'message': 'Invalid token. may be token as expired!'
                             }));
                         } else {
-                            this.updateWhiteListIP(deviceHash, res);
+                            this.updateWhiteListIP(deviceHash, req, res);
                         }
                     });
-            } else {
-                return res.status(404).send(this.errorMsgFormat({
-                    'message': 'invalid token or token is expired.'
+            }
+            else {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'The link has been expired, please try to resend again.'
                 }));
             }
         } else {
             return res.status(404).send(this.errorMsgFormat({
-                'message': 'invalid token or token is Expired.'
+                'message': 'Invalid token '
             }));
         }
     }
 
-    updateWhiteListIP(hash, res) {
+    updateWhiteListIP(hash, req, res) {
 
         // find and update the reccord
         deviceMangement.updateMany({
             'browser': hash.data.browser,
             'user': hash.data.user_id,
         }, {
-                verified: hash.data.verified
-            }, (err, device) => {
-                if (err) {
-                    return res.status(404).send(this.errorMsgFormat({
-                        'message': 'Invalid device.'
-                    }));
-                } else {
-                    return res.status(202).send(this.successFormat({
-                        'message': 'Your IP address whitelisted Now you can able to login..'
-                    }, device.user, 'users', 202));
-                }
-            });
+            verified: hash.data.verified
+        }, async (err, device) => {
+            if (err) {
+                return res.status(404).send(this.errorMsgFormat({
+                    'message': 'Invalid device.'
+                }));
+            } else {
+                await mangHash.findOneAndUpdate({ email: hash.data.email, hash: req.params.hash, type_for: 'new_authorize_device', }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                return res.status(202).send(this.successFormat({
+                    'message': 'Your IP address whitelisted Now you can able to login..'
+                }, device.user, 'users', 202));
+            }
+        });
     }
 
     settingsValidate(req) {
@@ -876,33 +906,32 @@ class User extends controller {
     async patchSettings(req, res, type = 'withoutCallPatchSetting') {
         try {
             let requestData = req.body.data.attributes;
-            if(type != 'disable')
-            {
+            if (type != 'disable') {
                 req.body.data.id = req.user.user;
             }
             if (requestData.code !== undefined) {
                 let userHash = JSON.parse(helpers.decrypt(requestData.code));
                 requestData.is_active = userHash.is_active;
             }
-            if (type != 'withCallPatchSetting' && type != 'disable' ) {
-                    let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
-                    if (check) {
-                        let isChecked = await this.postVerifyG2F(req, res, 'setting');
-                        if (isChecked.status == false) {
-                            return res.status(400).send(this.errorFormat({
-                                'message': 'Incorrect code'
-                            }, 'user', 400));
-                        }
-    
+            if (type != 'withCallPatchSetting' && type != 'disable') {
+                let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
+                if (check) {
+                    let isChecked = await this.postVerifyG2F(req, res, 'setting');
+                    if (isChecked.status == false) {
+                        return res.status(400).send(this.errorFormat({
+                            'message': 'Incorrect code'
+                        }, 'user', 400));
                     }
+
+                }
             }
             if (req.body.data.id !== undefined && Object.keys(requestData).length) {
                 // find and update the reccord
                 let update = await users.findOneAndUpdate({
                     _id: req.body.data.id
                 }, {
-                        $set: requestData
-                    });
+                    $set: requestData
+                });
                 if (update) {
                     if (type == 'withCallPatchSetting' || type == 'disable') {
                         return { status: true }
@@ -936,12 +965,19 @@ class User extends controller {
         let requestedData = req.body.data.attributes;
         let userHash = JSON.parse(helpers.decrypt(requestedData.code));
         if (userHash.is_active !== undefined) {
+            let checkActive = await users.findOne({_id:req.body.data.id,is_active:false});
+            if(checkActive)
+            {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'This account has already diable, Please contact our beldex support team',
+                }, 'users', 400));
+            }
+
             let checked = await this.patchSettings(req, res, 'disable');
-            console.log("Checked:",checked);
             if (checked.status) {
-                return res.status(200).send(this.successFormat({
+                return res.status(202).send(this.successFormat({
                     'message': 'Your request is updated successfully.'
-                }, null, 'users', 200));
+                }, null, 'users', 202));
             }
             else {
                 return res.status(400).send(this.errorMsgFormat({
@@ -1144,9 +1180,9 @@ class User extends controller {
                 logout_status: 1,
                 _id: user.login_id
             }, {
-                    logout_status: 0,
-                    logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
-                });
+                logout_status: 0,
+                logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
+            });
             if (logout) {
                 await token.findOneAndUpdate({
                     user: user.user, access_token: accessToken, is_deleted: false
@@ -1177,8 +1213,8 @@ class User extends controller {
                 user: data.user,
                 is_deleted: false
             }, {
-                    is_deleted: true
-                });
+                is_deleted: true
+            });
 
             if (deleteWhitList.nModified != 0) {
                 return res.status(200).send(this.successFormat({
