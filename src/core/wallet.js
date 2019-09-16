@@ -781,12 +781,12 @@ class Wallet extends controller {
                 _id: code.code,
                 user:code.user
             });
-            let date = new Date(notify.created_date);
-            let getSeconds = date.getSeconds() + config.get('walletForEmail.timeExpiry');
-            let duration = moment.duration(moment().diff(notify.created_date));
-            if (getSeconds > duration.asSeconds()) {
+           
                 if (notify.status === 1) {
-
+                    let date = new Date(notify.created_date);
+                    let getSeconds = date.getSeconds() + config.get('walletForEmail.timeExpiry');
+                    let duration = moment.duration(moment().diff(notify.created_date));
+                    if (getSeconds > duration.asSeconds()) {
                     // update the details to matching engine and transactions
                     let response = await this.updateWithdrawRequest(notify, req, res);
                     console.log("Response:", response);
@@ -812,18 +812,20 @@ class Wallet extends controller {
                             "message": response.data.attributes.message
                         }, 'withdraw'));
                     }
-                } else {
-                    return res.status(400).json(this.errorMsgFormat({
-                        "message": "Your withdraw request is already processed. Please click here to check the status of withdraw."
-                    }, 'withdraw'));
+                } 
+                else{
+                    await beldexNotification.findOneAndUpdate({ _id: code.code, user:code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Your withdraw confirmation link has been expired. Please click here to submit the new request.'
+                    }));
                 }
             }
-            else{
-                await beldexNotification.findOneAndUpdate({ _id: code.code, user:code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Your withdraw confirmation link has been expired. Please click here to submit the new request.'
-                }));
+            else {
+                return res.status(400).json(this.errorMsgFormat({
+                    "message": "Your withdraw request is already processed. Please click here to check the status of withdraw."
+                }, 'withdraw'));
             }
+            
             
         } else {
             return res.status(400).json(this.errorMsgFormat({
