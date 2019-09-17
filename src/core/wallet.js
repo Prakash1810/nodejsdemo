@@ -19,7 +19,7 @@ const helpers = require('../helpers/helper.functions');
 
 // Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
 
-class Wallet extends controller {
+class Wallet extends controller{
 
     async getAssets(req, res) {
         let pageNo = parseInt(req.query.page_no)
@@ -48,7 +48,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal depoist withdraw delist', query, async(err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal depoist withdraw delist', query, async (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -56,19 +56,16 @@ class Wallet extends controller {
                             "totalCount": 0
                         }, null, 'assets', 200));
                     } else {
-                        
-                        if(req.query.get_all=='false' || req.query.get_all==null ||  req.query.get_all==undefined)
-                        {
-                            for(var i=0;i<data.length;i++)
-                            {
+
+                        if (req.query.get_all == 'false' || req.query.get_all == null || req.query.get_all == undefined) {
+                            for (var i = 0; i < data.length; i++) {
                                 let isCheckDelist = await this.assetDelist(data[i]._id);
-                                if(isCheckDelist.status == false)
-                                {
-                                    data.splice(i,1);
+                                if (isCheckDelist.status == false) {
+                                    data.splice(i, 1);
                                 }
                             }
                         }
-                        
+
                         var totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
                             "data": data,
@@ -84,9 +81,8 @@ class Wallet extends controller {
     async getAssetAddress(req, res) {
         let asset = req.body.data.attributes.asset;
         let isCheckDelist = await this.assetDelist(asset);
-        console.log("Data:",isCheckDelist);
-        if(isCheckDelist.status==false)
-        {
+        console.log("Data:", isCheckDelist);
+        if (isCheckDelist.status == false) {
             return res.status(400).send(this.errorFormat({
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
@@ -96,24 +92,24 @@ class Wallet extends controller {
                 asset: asset,
                 user: req.user.user
             });
-          
+
             if (!getAddress) {
-               
+
                 let isChecked = await assets.findOne({ _id: asset })
-                
-                   
-                    let data =
-                    {
-                        coin: isChecked.asset_code,
-                        user_id: req.user.user_id,
-                        user: req.user.user,
-                        asset: asset
-                    }
-                    await apiServices.axiosAPI(data);
-                    return res.status(200).json(this.successFormat({
-                        "message":`Create Address for ${data.coin} coin`
-                    }, asset, 'address'));
-                
+
+
+                let data =
+                {
+                    coin: isChecked.asset_code,
+                    user_id: req.user.user_id,
+                    user: req.user.user,
+                    asset: asset
+                }
+                await apiServices.axiosAPI(data);
+                return res.status(200).json(this.successFormat({
+                    "message": `Create Address for ${data.coin} coin`
+                }, asset, 'address'));
+
             } else {
                 return res.status(200).json(this.successFormat({
                     'asset_code': getAddress.asset_code,
@@ -132,7 +128,7 @@ class Wallet extends controller {
             asset: Joi.string().required(),
             address: Joi.string().required(),
             label: Joi.string().required(),
-            coin:Joi.string().required(),
+            coin: Joi.string().required(),
             is_whitelist: Joi.boolean().optional(),
             g2f_code: Joi.string()
         });
@@ -146,22 +142,21 @@ class Wallet extends controller {
     }
 
     async coinAddressValidate(address, asset) {
-        let getAsset = await assets.findOne({_id:asset});
-        console.log("GetAsset:",getAsset)
+        let getAsset = await assets.findOne({ _id: asset });
+        console.log("GetAsset:", getAsset)
         let asset_code;
         if (getAsset) {
-            if(getAsset.token!=null && getAsset.token!=undefined)
-            {
-                
-               asset_code = getAsset.token;
+            if (getAsset.token != null && getAsset.token != undefined) {
+
+                asset_code = getAsset.token;
             }
-            else{
+            else {
                 asset_code = getAsset.asset_code;
             }
-        
+
             // check if bdx
             if (asset_code.toLowerCase() === 'bdx') return true;
-           
+
             return coinAddressValidator.validate(address, asset_code.toLowerCase());
         } else {
             return false;
@@ -171,8 +166,7 @@ class Wallet extends controller {
     async postWithdrawAddress(req, res) {
         let requestData = req.body.data.attributes;
         let isCheckDelist = await this.assetDelist(requestData.asset);
-        if(isCheckDelist.status==false)
-        {
+        if (isCheckDelist.status == false) {
             return res.status(400).send(this.errorFormat({
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
@@ -197,7 +191,7 @@ class Wallet extends controller {
         let checkAddress = await withdrawAddress.findOne({
             'address': requestData.address,
             'user': req.user.user,
-            'coin':requestData.coin,
+            'coin': requestData.coin,
             'is_deleted': false
         });
 
@@ -210,6 +204,7 @@ class Wallet extends controller {
                 user: req.user.user,
                 asset: requestData.asset,
                 label: requestData.label,
+                coin: requestData.coin,
                 address: requestData.address,
                 is_whitelist: (requestData.is_whitelist !== undefined) ? requestData.is_whitelist : false
             }, (err, address) => {
@@ -234,10 +229,10 @@ class Wallet extends controller {
             await withdrawAddress.findOneAndUpdate({
                 _id: req.body.data.id
             }, {
-                    $set: {
-                        is_whitelist: requestData.is_whitelist
-                    }
-                })
+                $set: {
+                    is_whitelist: requestData.is_whitelist
+                }
+            })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'Your request is updated successfully.'
@@ -263,10 +258,10 @@ class Wallet extends controller {
             await withdrawAddress.findOneAndUpdate({
                 _id: ID
             }, {
-                    $set: {
-                        is_deleted: true
-                    }
-                })
+                $set: {
+                    is_deleted: true
+                }
+            })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'Your requested record deletedd successfully.'
@@ -383,41 +378,39 @@ class Wallet extends controller {
         let payloads = {},
             assetNames,
             asset = [];
-        let collectOfAssetName={};
+        let collectOfAssetName = {};
         payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
             payloads.asset = asset;
-            let noofAsset = await assets.findOne({asset_code:req.query.asset_code});
-            if(noofAsset)
-            {
-                assetNames=noofAsset.asset_name.toLowerCase();
-                collectOfAssetName[noofAsset.asset_code]=noofAsset.asset_name.toLowerCase();
+            let noofAsset = await assets.findOne({ asset_code: req.query.asset_code });
+            if (noofAsset) {
+                assetNames = noofAsset.asset_name.toLowerCase();
+                collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
             }
-            else{
+            else {
                 return res.status(400).send(this.errorFormat({
                     'message': 'Incorrect asset code'
                 }, 'asset-balance', 400));
             }
         } else {
-            
+
             let noofAsset = await assets.find({});
-            _.map(noofAsset,function(asset)
-            {
-                collectOfAssetName[asset.asset_code]=asset.asset_name.toLowerCase();
+            _.map(noofAsset, function (asset) {
+                collectOfAssetName[asset.asset_code] = asset.asset_name.toLowerCase();
             })
             assetNames = _.values(_.reverse(collectOfAssetName)).join(',');
         }
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
-        let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse,collectOfAssetName);
-        console.log('FormatResponse:',formatedResponse);
+        let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
+        console.log('FormatResponse:', formatedResponse);
         return res.status(200).json(this.successFormat({
             "data": formatedResponse
         }, null, 'asset-balance', 200));
     }
 
-    currencyConversion(matchResponse, marketResponse,assetsJson) {
+    currencyConversion(matchResponse, marketResponse, assetsJson) {
         let formatedAssetBalnce = {};
         console.log("MarketResponse:", marketResponse.data);
         console.log("MatchResponse:", matchResponse);
@@ -493,7 +486,7 @@ class Wallet extends controller {
                                 var totalPages = Math.ceil(totalCount / size);
                                 if (typeParam === 'withdraw') {
                                     for (var i = 0; i < data.length; i++) {
-                                        if (data[i].status !=1 && data[i].status !=2) {
+                                        if (data[i].status != 1 && data[i].status != 2) {
                                             data.splice(i, 1);
                                             i--;
                                         }
@@ -565,7 +558,7 @@ class Wallet extends controller {
                 if (available !== undefined && amount <= available) {
                     return {
                         status: true,
-                        matchingApiAmount : available,
+                        matchingApiAmount: available,
                     };
                 } else {
                     return {
@@ -594,33 +587,33 @@ class Wallet extends controller {
             }
         }
         if (requestData.asset != undefined) {
-            
+
             let validateWithdraw = await this.withdrawValidate(req, res);
             if (validateWithdraw.status) {
-                
-                        if ((requestData.withdraw_id != null && requestData.withdraw_id != undefined)) {
-                            withdraw = await withdrawAddress.findOne({
-                                '_id': requestData.withdraw_id,
-                                'asset': requestData.asset,
-                            });
-                        }
-                        else if (requestData.address!=null && requestData.address!=undefined) {
-                            let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
-                            if (isValid !== true) {
-                                return res.status(400).send(this.errorMsgFormat({
-                                    'address': 'Invalid address.'
-                                }, 'withdrawAddress'));
-                            }
-                            withdraw = {
-                                address: requestData.address
-                            }
-                        }
+
+                if ((requestData.withdraw_id != null && requestData.withdraw_id != undefined)) {
+                    withdraw = await withdrawAddress.findOne({
+                        '_id': requestData.withdraw_id,
+                        'asset': requestData.asset,
+                    });
+                }
+                else if (requestData.address != null && requestData.address != undefined) {
+                    let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
+                    if (isValid !== true) {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'address': 'Invalid address.'
+                        }, 'withdrawAddress'));
+                    }
+                    withdraw = {
+                        address: requestData.address
+                    }
+                }
                 if (withdraw.address !== undefined || withdraw.address != null) {
                     try {
                         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
                         let data = {
                             user: new mongoose.Types.ObjectId(req.user.user),
-                            user_id:req.user.user_id,
+                            user_id: req.user.user_id,
                             asset: new mongoose.Types.ObjectId(requestData.asset),
                             address: withdraw.address,
                             type: 1,
@@ -631,7 +624,7 @@ class Wallet extends controller {
                             is_deleted: false,
                             created_date: timeNow
                         };
-                        let returnId = await this.insertNotification(data,validateWithdraw.matchingApiAmount);
+                        let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount);
                         return res.status(200).json(this.successFormat({
                             'message': 'Your withdrawal request posted successfully. Waiting for your confirmation. Please check your email'
                         }, returnId, 'withdraw', 200));
@@ -667,22 +660,37 @@ class Wallet extends controller {
 
 
     }
-    async insertNotification(data,responseAmount) {
-       
+    async insertNotification(data, responseAmount) {
+
         let amount = Number(responseAmount);
         let asset = await assets.findById(data.asset);
         let fee = asset.withdrawal_fee;
         let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']);
-        if(amount === transaction.amount)
+        // if(amount === transaction.amount || tempAmount == amount )
+        // {
+        //     transaction.amount = amount-fee;
+        //     transaction.fee=fee;
+        // }
+        // else if(tempAmount < amount)
+        // {
+        //     transaction.fee=fee;
+        // }
+        // else{
+        //     fee=fee/fee;
+        //     transaction.amount = transaction.amount-fee;
+        //     transaction.fee=fee;
+        // }
+        let bal = amount - transaction.amount;
+        if((bal-fee)>=0)
         {
-            transaction.amount = amount-fee;
-            transaction.fee=asset.withdrawal_fee;
+            transaction.fee = fee
+            transaction.amount = transaction.amount
         }
         else{
-            transaction.amount = transaction.amount-fee;
-            transaction.fee=asset.withdrawal_fee;
+            let remaningFee = fee - bal;
+            transaction.fee = fee
+            transaction.amount = transaction.amount - remaningFee;
         }
-
         let transactionId = await new transactions(transaction).save();
         let beldexData = {
             user: new mongoose.Types.ObjectId(transaction.user),
@@ -697,7 +705,7 @@ class Wallet extends controller {
         let transactionsId = transactionId._id;
         let emailData = {
             user: new mongoose.Types.ObjectId(transaction.user),
-            user_id : data.user_id,
+            user_id: data.user_id,
             verification_code: notifyId,
             amount: transaction.amount,
             asset_code: asset.asset_code,
@@ -726,7 +734,7 @@ class Wallet extends controller {
             "subject": `Confirm Your Withdraw Request From ${data.ip} ( ${data.time} )`,
             "email_for": "wallet-withdraw",
             "user_id": data.user,
-            "userId":data.user_id,
+            "userId": data.user_id,
             'amount': data.amount,
             'asset_code': data.asset_code,
             'address': data.address,
@@ -779,14 +787,14 @@ class Wallet extends controller {
         if (code.code !== undefined && code.code !== null && requestData.accept !== undefined && requestData.accept !== null) {
             let notify = await beldexNotification.findOne({
                 _id: code.code,
-                user:code.user
+                user: code.user
             });
-           
-                if (notify.status === 1) {
-                    let date = new Date(notify.created_date);
-                    let getSeconds = date.getSeconds() + config.get('walletForEmail.timeExpiry');
-                    let duration = moment.duration(moment().diff(notify.created_date));
-                    if (getSeconds > duration.asSeconds()) {
+
+            if (notify.status === 1) {
+                let date = new Date(notify.created_date);
+                let getSeconds = date.getSeconds() + config.get('walletForEmail.timeExpiry');
+                let duration = moment.duration(moment().diff(notify.created_date));
+                if (getSeconds > duration.asSeconds()) {
                     // update the details to matching engine and transactions
                     let response = await this.updateWithdrawRequest(notify, req, res);
                     console.log("Response:", response);
@@ -797,9 +805,9 @@ class Wallet extends controller {
                         await notify.save();
                         await transactions.findOneAndUpdate({
                             _id: notify.notify_data.transactions,
-                            user:code.user,
+                            user: code.user,
                             is_deleted: false
-                        },{
+                        }, {
                             $set: {
                                 status: 1
                             }
@@ -812,9 +820,9 @@ class Wallet extends controller {
                             "message": response.data.attributes.message
                         }, 'withdraw'));
                     }
-                } 
-                else{
-                    await beldexNotification.findOneAndUpdate({ _id: code.code, user:code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
+                }
+                else {
+                    await beldexNotification.findOneAndUpdate({ _id: code.code, user: code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Your withdraw confirmation link has been expired. Please click here to submit the new request.'
                     }));
@@ -825,8 +833,8 @@ class Wallet extends controller {
                     "message": "Your withdraw request is already processed. Please click here to check the status of withdraw."
                 }, 'withdraw'));
             }
-            
-            
+
+
         } else {
             return res.status(400).json(this.errorMsgFormat({
                 "message": "Invalid request"
@@ -840,7 +848,7 @@ class Wallet extends controller {
         // update the transaction status
         let transaction = await transactions.findOne({
             _id: withdraw.notify_data.transactions,
-            user:code.user,
+            user: code.user,
             is_deleted: false
         }).populate('asset');
         if (transaction) {
@@ -869,10 +877,10 @@ class Wallet extends controller {
                 _id: ID,
                 status: 4
             }, {
-                    $set: {
-                        is_deleted: true
-                    }
-                })
+                $set: {
+                    is_deleted: true
+                }
+            })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'Your requested record deleted successfully.'
@@ -890,25 +898,22 @@ class Wallet extends controller {
         }
     }
 
-    async assetDelist(asset)
-    {
-        let delist = await assets.findOne({_id:asset});
-        if(delist)
-        {
-            if(!delist.delist)
-            {
-                return {status : true}
+    async assetDelist(asset) {
+        let delist = await assets.findOne({ _id: asset });
+        if (delist) {
+            if (!delist.delist) {
+                return { status: true }
             }
-            else{
-                return {status : false, err:'Asset is Delist'}
-            }   
+            else {
+                return { status: false, err: 'Asset is Delist' }
+            }
         }
-        else{
-            return {status : false, err:'Asset is not found'}
+        else {
+            return { status: false, err: 'Asset is not found' }
         }
-      
+
     }
-    
+
 }
 
 module.exports = new Wallet;
