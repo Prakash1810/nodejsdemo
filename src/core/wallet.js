@@ -859,7 +859,7 @@ class Wallet extends controller{
                 "asset": asset.asset_code,
                 "business": (requestData.accept) ? "withdraw" : "deposit",
                 "business_id": Math.floor(Math.random() * Math.floor(10000000)),
-                "change": (requestData.accept) ? `-${withdrawAmount}` : `${transaction.final_amount}`,
+                "change": (requestData.accept) ? `-${transaction.amount+transaction.fee}` : `${transaction.final_amount}`,
                 "detial": {}
             }
             console.log("Payload:", payloads);
