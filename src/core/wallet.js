@@ -853,12 +853,13 @@ class Wallet extends controller{
         }).populate('asset');
         if (transaction) {
             let asset = transaction.asset;
+            let withdrawAmount=transaction.amount+transaction.fee;
             let payloads = {
                 "user_id": code.user_id,
                 "asset": asset.asset_code,
                 "business": (requestData.accept) ? "withdraw" : "deposit",
                 "business_id": Math.floor(Math.random() * Math.floor(10000000)),
-                "change": (requestData.accept) ? `-${transaction.final_amount}` : `${transaction.final_amount}`,
+                "change": (requestData.accept) ? `-${withdrawAmount}` : `${transaction.final_amount}`,
                 "detial": {}
             }
             console.log("Payload:", payloads);
