@@ -467,7 +467,7 @@ class Wallet extends controller{
                     console.log("TotalCount:", totalCount);
                     transactions
                         .find(payloads)
-                        .select('address amount final_amount date tx_hash confirmation amount status txtime')
+                        .select('address amount final_amount date tx_hash confirmation amount status txtime fee')
                         .skip(query.skip)
                         .limit(query.limit)
                         .populate({
@@ -853,7 +853,6 @@ class Wallet extends controller{
         }).populate('asset');
         if (transaction) {
             let asset = transaction.asset;
-            let withdrawAmount=transaction.amount+transaction.fee;
             let payloads = {
                 "user_id": code.user_id,
                 "asset": asset.asset_code,
