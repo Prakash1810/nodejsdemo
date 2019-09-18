@@ -173,7 +173,7 @@ class User extends controller {
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
         users.findOne({
             email: data.email,
-            is_active: true
+            
         })
             .exec()
             .then(async (result) => {
@@ -181,7 +181,13 @@ class User extends controller {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'User not found, Please register your email'
                     }));
-                } else if (result.is_active) {
+                }
+                else if(!result.is_active){
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'This account has disable, Please contact our beldex support team',
+                    }, 'users', 400));
+                } 
+                else if (result.is_active) {
                     let passwordCompare = bcrypt.compareSync(data.password, result.password);
                     if (passwordCompare == false) {
 
@@ -469,7 +475,7 @@ class User extends controller {
                                 "hash": urlHash,
                                 "user_id": userID
                             })
-                            let check = await mangHash.findOne({ email: req.body.data.attributes.email, type_for: 'new_authorize_device' });
+                            let check = await mangHash.findOne({ email: req.body.data.attributes.email, type_for: 'new_authorize_device', is_active:false });
                             if (check) {
                                 await mangHash.findOneAndUpdate({ email: req.body.data.attributes.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                             }
@@ -486,7 +492,6 @@ class User extends controller {
                                 'hash': urlHash
                             }, 'users', 401));
                         } else {
-
                             const device = await this.insertDevice(req, userID, true);
                             let isAuth = await users.findOne({
                                 _id: userID, $or: [
@@ -816,7 +821,7 @@ class User extends controller {
     async patchWhiteListIP(req, res) {
 
         let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
-        console.log("DeviceHash:",deviceHash);
+
         if (deviceHash.data.user_id) {
             let check = await mangHash.findOne({ email: deviceHash.data.email, type_for:"new_authorize_device", hash: req.params.hash });
             console.log("Check:",check)
@@ -969,7 +974,7 @@ class User extends controller {
             if(checkActive)
             {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'This account has already diable, Please contact our beldex support team',
+                    'message': 'This account has already disable, Please contact our beldex support team',
                 }, 'users', 400));
             }
 
