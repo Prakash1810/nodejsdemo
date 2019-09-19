@@ -10,13 +10,12 @@ const controller = new Controller;
 const market = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
 const Binance = require('binance-api-node').default;
-const redis = require('redis');
 const kafka = require('kafka-node');
 const orderCancel = require('../db/order-cancel');
 const fs = require('fs');
 const moment = require('moment');
 const _ = require('lodash');
-const redisClustr = require('redis-clustr');
+const Redis = require('ioredis');
 class Api extends Controller {
 
     async sendEmailNotification(data) {
@@ -340,14 +339,12 @@ class Api extends Controller {
         //     //return { status:false, error:'Something went wrong' };
         // });
 
-        var redis = new redisClustr({
-            servers: [
+        var redis = new Redis.Cluster( [
               {
-                host: process.env.REDIS_HOST,
-                port: process.env.REDIS_PORT
+                port: process.env.REDIS_PORT,
+                host: process.env.REDIS_HOST
               }
-            ]
-          });
+            ]);
           redis.set(response.orderId, response);
           let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
           fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
