@@ -53,6 +53,7 @@
     "nodemon": "^1.19.1",
     "npm": "^6.11.2",
     "redis": "^2.8.0",
+    "redis-clustr": "^1.7.0",
     "underscore": "^1.9.1",
     "wallet-address-validator": "^0.2.4",
     "winston": "^3.2.1"
