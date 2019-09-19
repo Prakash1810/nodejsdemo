@@ -199,7 +199,6 @@ class Password extends Controller {
             checkHash=req.body.checkHash;
             return;
         }
-        console.log("Hash:",checkHash);
         bcrypt.genSalt(10, (err, salt) => {
             if (err) return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
 

@@ -620,7 +620,7 @@ class Wallet extends controller{
                             amount: requestData.amount,
                             ip: requestData.ip,
                             final_amount: requestData.amount,
-                            status: 4,
+                            status: 0,
                             is_deleted: false,
                             created_date: timeNow
                         };

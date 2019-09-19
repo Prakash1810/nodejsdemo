@@ -323,12 +323,12 @@ class Api extends Controller {
         client.on('connect', function () {
             client.set(response.orderId, response, redis.print);
             // return { status:true, result:'Add data Redis' };
-            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${response}`
+            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
             fs.appendFile('/var/log/coreapi/redisSuccess.txt', `\n${fileConent} `, function (err) {
                 if (err)
                     console.log("Error:", err);
             });
-        });
+        }); 
 
         client.on('error', function (err) {
             let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${response.orderId} :${response.user_id} : ${err}`
@@ -358,7 +358,7 @@ class Api extends Controller {
             }]);
             if (response) {
 
-                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.orderId} : ${jsonData.user_id} : ${jsonData}`
+                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.orderId} : ${jsonData.user_id} : ${JSON.stringify(jsonData)}`
                 fs.appendFile('kafaSuccess.txt', `\n${fileConent} `, function (err) {
                     if (err)
                         console.log("Error:", err);
@@ -366,7 +366,7 @@ class Api extends Controller {
                 //return { status :true }
             }
             else {
-                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${jsonData}`
+                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${JSON.stringify(jsonData)}`
                 fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
                     if (err)
                         console.log("Error:", err);
