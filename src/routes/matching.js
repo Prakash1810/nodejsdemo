@@ -102,12 +102,16 @@ router.post('/order/put-market', auth, async (req, res) => {
                 }
                 await matching.binance(input,req.body.data.attributes.user_id);
             }
-            //delete q from request;
-         delete data.q;
-         let fee = await users.findOne({_id:req.user.user});
-         req.body.data.attributes.takerFeeRate = fee.taker_fee
-        
-        await matching.matchingEngineRequest('post', 'order/put-market', req.body, res);
+            else{
+                 //delete q from request;
+                delete data.q;
+                let fee = await users.findOne({_id:req.user.user});
+                req.body.data.attributes.takerFeeRate = fee.taker_fee
+               
+               await matching.matchingEngineRequest('post', 'order/put-market', req.body, res)
+            }
+           
+       ;
 
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({

@@ -10,12 +10,12 @@ const controller = new Controller;
 const market = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
 const Binance = require('binance-api-node').default;
-const redis = require('redis');
 const kafka = require('kafka-node');
 const orderCancel = require('../db/order-cancel');
 const fs = require('fs');
 const moment = require('moment');
 const _ = require('lodash');
+const Redis = require('ioredis');
 class Api extends Controller {
 
     async sendEmailNotification(data) {
@@ -97,7 +97,6 @@ class Api extends Controller {
         })
         let response = await client.order(input);
         response.user_id = user_id;
-        console.log('Response:', response);
         if (input.type == 'MARKET') {
             this.addResponseInKAFKA(response, input.symbol);
         } else {
@@ -317,27 +316,41 @@ class Api extends Controller {
     }
 
     async addResponseInREDIS(response) {
+        console.log("...............Hello....................");
+        // var client = redis.createClient('6379','127.0.0.1');
 
-        var client = redis.createClient(process.env.REDIS_HOST, process.env.REDIS_PORT);
+        // client.on('connect', function () {
+        //     console.log("...........Redis Connected..............")
+        //     client.set(response.orderId, response, redis.print);
+        //     // return { status:true, result:'Add data Redis' };
+        //     let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
+        //     fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
+        //         if (err)
+        //             console.log("Error:", err);
+        //     });
+        // }); 
 
-        client.on('connect', function () {
-            client.set(response.orderId, response, redis.print);
-            // return { status:true, result:'Add data Redis' };
-            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
-            fs.appendFile('/var/log/coreapi/redisSuccess.txt', `\n${fileConent} `, function (err) {
-                if (err)
-                    console.log("Error:", err);
-            });
-        }); 
+        // client.on('error', function (err) {
+        //     let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${response.orderId} :${response.user_id} : ${err}`
+        //     fs.appendFile('redisError.txt', `\n${fileConent} `, function (err) {
+        //         if (err)
+        //             console.log("Error:", err);
+        //     });
+        //     //return { status:false, error:'Something went wrong' };
+        // });
 
-        client.on('error', function (err) {
-            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${response.orderId} :${response.user_id} : ${err}`
-            fs.appendFile('redisError.txt', `\n${fileConent} `, function (err) {
-                if (err)
-                    console.log("Error:", err);
-            });
-            //return { status:false, error:'Something went wrong' };
-        });
+        var redis = new Redis.Cluster( [
+              {
+                port: process.env.REDIS_PORT,
+                host: process.env.REDIS_HOST
+              }
+            ]);
+          redis.set(response.orderId, response);
+          let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
+          fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
+                    if (err)
+                        console.log("Error:", err);
+                });
 
 
     }
