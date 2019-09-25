@@ -107,6 +107,34 @@
                 ]
             }
         },
+        "user/generate/otp": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "generate otp",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "access_token",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "type for",
+                        "required": true,
+                        "type": "string"
+                    }
+
+                ]
+            }
+        },
         "user/validate/otp": {
             "post": {
                 "tags": [
@@ -1691,11 +1719,12 @@
                     "example": "en"
                 },
                 "data": {
+                    "id":"123456789",
                     "example": {
                         "attributes": {
                             "otp":"BEL-12345",
                             "device_id":"123456789",
-                            "user_id":"123456789",
+                          
                             "region":"Tamil Nadu",
                             "city":"Chennai",
                             "ip":"171.78.139.181"

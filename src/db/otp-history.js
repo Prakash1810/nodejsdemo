@@ -7,6 +7,7 @@ const otpHistorySchema = mongoose.Schema({
     otp: String,
     create_date_time: { type: Date, default: Date.now },
     is_active: { type: String, default: false },
+    type_for :{type:String,required:true},
     count: { type: Number, default: 1},
     time_expiry :{type:String, default:'No'}
 });

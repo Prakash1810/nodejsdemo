@@ -62,7 +62,7 @@ class Password extends Controller {
                         'user_id': user._id
                     };
                     await apiServices.sendEmailNotification(serviceData);
-                    await mangHash.update({email:user.email, is_active: false, type_for: "reset"},{$set:{is_active:true,created_date: moment().format('YYYY-MM-DD HH:mm:ss')}})
+                    await mangHash.update({ email: user.email, is_active: false, type_for: "reset" }, { $set: { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') } })
                     await new mangHash({ email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
                     return res.status(200).json(this.successFormat({
                         'message': 'We have sent a email to your email address.',
@@ -73,9 +73,9 @@ class Password extends Controller {
     }
     async forgetPasswordResend(req, res) {
         let input = req.body.data;
-        let user = await Users.findOne({ _id:input.id,email:input.attributes.email });
+        let user = await Users.findOne({ _id: input.id, email: input.attributes.email });
         if (user) {
-            let ischecked = await mangHash.findOne({ email: user.email, is_active: false, type_for: "reset"})
+            let ischecked = await mangHash.findOne({ email: user.email, is_active: false, type_for: "reset" })
             if (ischecked) {
                 if (ischecked.count > config.get('site.hmtLink')) {
                     await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
@@ -95,7 +95,7 @@ class Password extends Controller {
                 'email_for': 'forget-password',
                 'user_id': user._id
             };
-            
+
             await apiServices.sendEmailNotification(serviceData);
             return res.status(200).json(this.successFormat({
                 'message': 'We have sent a email to your email address.',
@@ -104,7 +104,7 @@ class Password extends Controller {
 
         }
         else {
-            return res.status(400).send(this.errorMsgFormat({ 'message': 'User not found, please register again' },'user',400));
+            return res.status(400).send(this.errorMsgFormat({ 'message': 'User not found, please register again' }, 'user', 400));
         }
 
 
@@ -115,17 +115,17 @@ class Password extends Controller {
 
         let userHash = JSON.parse(helpers.decrypt(req.params.hash));
         let checkHash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash });
-        console.log("CheckHash:",checkHash);
-        if (checkHash)  {
+        console.log("CheckHash:", checkHash);
+        if (checkHash) {
             if (checkHash.is_active) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Verification link -already used'
                 }));
             }
             else {
-                req.body.checkHash=checkHash;
-                await this.resetPassword(req,res,'hash');
-               
+                req.body.checkHash = checkHash;
+                await this.resetPassword(req, res, 'hash');
+
             }
         }
 
@@ -186,17 +186,16 @@ class Password extends Controller {
                 }
             }).label('password'),
             password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
-            hash:Joi.string()
+            hash: Joi.string()
         });
 
         return Joi.validate(req, schema, { abortEarly: false })
     }
 
     resetPassword(req, res, type = 'reset') {
-     
-        if(type == 'hash')
-        {
-            checkHash=req.body.checkHash;
+
+        if (type == 'hash') {
+            checkHash = req.body.checkHash;
             return;
         }
         bcrypt.genSalt(10, (err, salt) => {
@@ -210,7 +209,7 @@ class Password extends Controller {
                     if (user == null) {
                         return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
                     } else {
-                        
+
                         if (type == 'change') {
                             let serviceData =
                             {
@@ -225,9 +224,8 @@ class Password extends Controller {
                                 'message': 'Your password updated successfully.'
                             }, user._id, 'users', 202));
                         }
-                        if(checkHash!=null)
-                        {
-                            await mangHash.findOneAndUpdate({email:checkHash.email,hash:checkHash.hash,is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                        if (checkHash != null) {
+                            await mangHash.findOneAndUpdate({ email: checkHash.email, hash: checkHash.hash, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                         }
                         let serviceData =
                         {
@@ -250,6 +248,7 @@ class Password extends Controller {
     changePasswordValidate(req) {
         let schema = Joi.object().keys({
             g2f_code: Joi.string(),
+            otp: Joi.string(),
             old_password: Joi.string().required(),
             password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
                 language: {
@@ -268,6 +267,7 @@ class Password extends Controller {
     }
 
     changePassword(req, res) {
+        let requestData = req.body.data.attributes;
         Users.findById(req.body.data.id)
             .exec()
             .then(async (result) => {
@@ -277,47 +277,41 @@ class Password extends Controller {
                         'message': 'Invalid data'
                     }));
                 }
-                if (req.body.data.attributes.g2f_code) {
-                    check = await user.postVerifyG2F(req, res, 'boolean');
-                    if (check.status == true) {
-                        // compare existing password
-                        let passwordCompare = bcrypt.compareSync(req.body.data.attributes.old_password, result.password);
-
-                        if (passwordCompare == false) {
-                            return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Entered current password is incorrect. Please check.'
-                            }));
-                        } else {
-                            req.body.data.attributes.email = result.email;
-                            req.body.data.attributes.user_id = result._id;
-                            // update password
-                            this.resetPassword(req, res, 'change', result.email);
-                        }
+                
+                if (result.google_auth) {
+                    if (!requestData.g2f_code) {
+                        return res.status(400).send(this.errorFormat({
+                            'message': 'G2f must be provide'
+                        }, 'user', 400));
                     }
-                    else {
-
-                        return res.status(400).send(this.errorMsgFormat({
+                    let check = await user.postVerifyG2F(req, res, 'boolean');
+                    if (check.status == false) {
+                        return res.status(400).send(this.errorFormat({
                             'message': 'Incorrect code'
                         }, '2factor', 400));
                     }
+
                 }
                 else {
-                    // compare existing password
-                    let passwordCompare = bcrypt.compareSync(req.body.data.attributes.old_password, result.password);
-
-                    if (passwordCompare == false) {
-                        return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Entered current password is incorrect. Please check.'
-                        }));
-                    } else {
-                        req.body.data.attributes.email = result.email;
-                        req.body.data.attributes.user_id = result._id;
-                        // update password
-                        this.resetPassword(req, res, 'change', result.email);
+                    if (requestData.otp == null || undefined) {
+                        return res.status(400).send(this.errorFormat({
+                            'message': 'Otp must be provide'
+                        }, 'user', 400));
                     }
+                    await user.validateOtpForEmail(req, res, "change password");
                 }
+                let passwordCompare = bcrypt.compareSync(req.body.data.attributes.old_password, result.password);
 
-
+                if (passwordCompare == false) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Entered current password is incorrect. Please check.'
+                    }));
+                } else {
+                    req.body.data.attributes.email = result.email;
+                    req.body.data.attributes.user_id = result._id;
+                    // update password
+                    this.resetPassword(req, res, 'change', result.email);
+                }
 
 
             });
