@@ -331,5 +331,18 @@ router.patch('/favourite', auth, async (req, res) => {
 })
 
 
+router.get('/generate/otp',auth, async (req,res) =>
+{
+    try{
+        console.log("User:",req.user.user)
+        await user.generatorOtpforEmail(req.user.user,req.query.type,res);
+    }
+    catch(err){
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
+
 
 module.exports = router;

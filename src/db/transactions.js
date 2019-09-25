@@ -1,8 +1,8 @@
-const mongoose = require('mongoose'), Schema = mongoose.Schema;
+const mongoose = require('mongoose');
 
 const transactionSchema = mongoose.Schema({
-    user: { type: Schema.Types.ObjectId, ref: 'Users' },
-    asset: { type: Schema.Types.ObjectId, ref: 'assets' },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
+    asset: { type: mongoose.Schema.Types.ObjectId, ref: 'assets' },
     address: String,
     type: String,
     amount: Number,
@@ -17,7 +17,7 @@ const transactionSchema = mongoose.Schema({
     },
     updated_date: Date,
     is_deleted: { type: Boolean, default: false },
-    fee : {type: Number}
+  
 
 });
 

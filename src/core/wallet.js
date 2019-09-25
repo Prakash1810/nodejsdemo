@@ -130,7 +130,8 @@ class Wallet extends controller{
             label: Joi.string().required(),
             coin: Joi.string().required(),
             is_whitelist: Joi.boolean().optional(),
-            g2f_code: Joi.string()
+            g2f_code: Joi.string(),
+            otp:Joi.string().optional()
         });
 
         return Joi.validate(req, schema, {
@@ -171,13 +172,30 @@ class Wallet extends controller{
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
         }
-        if (requestData.g2f_code) {
-            let check = await user.postVerifyG2F(req, res, 'boolean');
-            if (check.status == false) {
+        let checkG2f= await users.findOne({_id:req.user.user,google_auth:true});
+        if(checkG2f)
+        {
+            if (!requestData.g2f_code) {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'Incorrect code'
-                }, '2factor', 400));
+                    'message': 'G2f must be provide'
+                }, 'user', 400));
             }
+                let check = await user.postVerifyG2F(req, res, 'boolean');
+                if (check.status == false) {
+                    return res.status(400).send(this.errorFormat({
+                        'message': 'Incorrect code'
+                    }, '2factor', 400));
+                }
+            
+        }
+       else{
+            if(requestData.otp == null || undefined){
+                return res.status(400).send(this.errorFormat({
+                    'message': 'Otp must be provide'
+                }, 'user', 400));
+            }
+            req.body.data['id']=req.user.user;
+            await user.validateOtpForEmail(req,res,"withdraw address");
         }
         // check addres is valid or not
         let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
@@ -518,6 +536,7 @@ class Wallet extends controller{
             amount: Joi.number().positive().required(),
             ip: Joi.string().required(),
             g2f_code: Joi.string(),
+            otp:Joi.string(),
             address: Joi.string(),
             withdraw_id: Joi.string()
         });
@@ -578,13 +597,30 @@ class Wallet extends controller{
     async postWithdraw(req, res) {
         let withdraw = null;
         let requestData = req.body.data.attributes;
-        if (requestData.g2f_code) {
-            let check = await user.postVerifyG2F(req, res, 'boolean');
-            if (check.status == false) {
+        let checkG2f= await users.findOne({_id:req.user.user,google_auth:true});
+        if(checkG2f)
+        {
+            if (!requestData.g2f_code) {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'Incorrect code'
-                }, '2factor', 400));
+                    'message': 'G2f must be provide'
+                }, 'user', 400));
             }
+                let check = await user.postVerifyG2F(req, res, 'boolean');
+                if (check.status == false) {
+                    return res.status(400).send(this.errorFormat({
+                        'message': 'Incorrect code'
+                    }, '2factor', 400));
+                }
+            
+        }
+       else{
+            if(requestData.otp == null || undefined){
+                return res.status(400).send(this.errorFormat({
+                    'message': 'Otp must be provide'
+                }, 'user', 400));
+            }
+            req.body.data['id']=req.user.user;
+            await user.validateOtpForEmail(req,res,"withdraw confirmation");
         }
         if (requestData.asset != undefined) {
 
