@@ -554,22 +554,23 @@ class User extends controller {
     async validateOtpForEmail(req, res, typeFor = "login") {
         try {
             console.log(req.body.data);
-            console.log("TypeFOr:",typeFor);
-           
+            console.log("TypeFOr:", typeFor);
+
             let data = req.body.data.attributes;
             let id = req.body.data.id
-            console.log('id:',id);
+            console.log('id:', id);
             let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-            const isChecked = await otpHistory.findOne({ user_id:id, otp: data.otp, is_active: false, type_for: typeFor });
+            const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
             if (isChecked) {
                 let date = new Date(isChecked.create_date_time);
                 let getSeconds = date.getSeconds() + config.get('otpForEmail.timeExpiry');
                 let duration = moment.duration(moment().diff(isChecked.create_date_time));
                 if (getSeconds > duration.asSeconds()) {
                     if (typeFor == "login") {
+                        console.log("Hello");
                         let isCheckedDevice = await deviceMangement.findOne({ _id: data.device_id })
                         if (isCheckedDevice) {
-                            const loginHistory = await this.insertLoginHistory(req,id, isCheckedDevice._id, timeNow);
+                            const loginHistory = await this.insertLoginHistory(req, id, isCheckedDevice._id, timeNow);
                             // send email notification
                             let isCheckedDeviceManagement = await deviceMangement.findOne({ region: data.region, city: data.city, ip: data.ip })
                             if (!isCheckedDeviceManagement) {
@@ -580,28 +581,33 @@ class User extends controller {
                                     'browser': isCheckedDevice.browser,
                                     'browser_version': isCheckedDevice.browser_version,
                                     'os': isCheckedDevice.os,
-                                    'user_id':id
+                                    'user_id': id
                                 });
                             }
 
-                            let checkUser = await users.findOne({ _id:id });
+                            let checkUser = await users.findOne({ _id: id });
+                            
                             await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                             await this.returnToken(res, checkUser, loginHistory._id);
+                        }
+                        else{
+                            return res.status(400).send(this.errorMsgFormat({
+                                'message': 'Device id is not found.'
+                            }));
                         }
                     }
                     else {
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
-                        console.log('Success:');
                         return { status: true }
                     }
 
                 }
                 else {
-                    await otpHistory.findOneAndUpdate({ user_id:id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
+                    await otpHistory.findOneAndUpdate({ user_id: id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'OTP is expired.'
                     }));
-                    
+
                 }
 
 
@@ -622,7 +628,7 @@ class User extends controller {
     }
     async resendOtpForEmail(req, res, typeFor = "login") {
         let data = req.body.data.attributes;
-       
+
         const isChecked = await otpHistory.findOne({ user_id: data.user_id, is_active: false, type_for: typeFor });
         if (isChecked) {
             if (isChecked.count <= config.get('otpForEmail.hmt')) {
@@ -928,8 +934,8 @@ class User extends controller {
             white_list_address: Joi.boolean().optional(),
             g2f_code: Joi.string(),
             white_list_address: Joi.boolean().optional(),
-            otp:Joi.string().optional(),
-            type:Joi.string().optional()
+            otp: Joi.string().optional(),
+            type: Joi.string().optional()
         });
 
         return Joi.validate(req, schema, {
@@ -948,26 +954,30 @@ class User extends controller {
                 requestData.is_active = userHash.is_active;
             }
             if (type != 'withCallPatchSetting' && type != 'disable') {
-                let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
-                if (check) {
-                    let isChecked = await this.postVerifyG2F(req, res, 'setting');
-                    if (isChecked.status == false) {
-                        return res.status(400).send(this.errorFormat({
-                            'message': 'Incorrect code'
-                        }, 'user', 400));
+
+                if (requestData.type && (requestData.type =='anti spoofing' || requestData.type =='whitelist')) {
+                    let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
+                    if (check) {
+                        let isChecked = await this.postVerifyG2F(req, res, 'setting');
+                        if (isChecked.status == false) {
+                            return res.status(400).send(this.errorFormat({
+                                'message': 'Incorrect code'
+                            }, 'user', 400));
+                        }
                     }
-                }
-                else{
-                    if(requestData.otp == null || undefined){
-                        return res.status(400).send(this.errorFormat({
-                            'message': 'Otp must be provide'
-                        }, 'user', 400));
+                    else {
+                        if (requestData.otp == null || undefined) {
+                            return res.status(400).send(this.errorFormat({
+                                'message': 'Otp must be provide'
+                            }, 'user', 400));
+                        }
+                        req.body.data['id'] = req.user.user;
+                        await this.validateOtpForEmail(req, res, requestData.type);
                     }
-                    req.body.data['id']=req.user.user;
-                    await this.validateOtpForEmail(req,res,requestData.type);
                 }
             }
             if (req.body.data.id !== undefined && Object.keys(requestData).length) {
+        
                 // find and update the reccord
                 let update = await users.findOneAndUpdate({
                     _id: req.body.data.id

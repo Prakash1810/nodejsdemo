@@ -331,11 +331,10 @@ router.patch('/favourite', auth, async (req, res) => {
 })
 
 
-router.get('/generate/otp',auth, async (req,res) =>
+router.post('/generate/otp',auth, async (req,res) =>
 {
     try{
-        console.log("User:",req.user.user)
-        await user.generatorOtpforEmail(req.user.user,req.query.type,res);
+        await user.generatorOtpforEmail(req.user.user,req.body.data.attributes.type.type,res);
     }
     catch(err){
         return res.status(500).send(controller.errorMsgFormat({
