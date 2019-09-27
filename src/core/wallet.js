@@ -81,7 +81,6 @@ class Wallet extends controller{
     async getAssetAddress(req, res) {
         let asset = req.body.data.attributes.asset;
         let isCheckDelist = await this.assetDelist(asset);
-        console.log("Data:", isCheckDelist);
         if (isCheckDelist.status == false) {
             return res.status(400).send(this.errorFormat({
                 'message': isCheckDelist.err
@@ -144,7 +143,6 @@ class Wallet extends controller{
 
     async coinAddressValidate(address, asset) {
         let getAsset = await assets.findOne({ _id: asset });
-        console.log("GetAsset:", getAsset)
         let asset_code;
         if (getAsset) {
             if (getAsset.token != null && getAsset.token != undefined) {
@@ -195,7 +193,12 @@ class Wallet extends controller{
                 }, 'user', 400));
             }
             req.body.data['id']=req.user.user;
-            await user.validateOtpForEmail(req,res,"withdraw address");
+            let checkOtp = await user.validateOtpForEmail(req,res,"withdraw address");
+            if(checkOtp.status == false){
+                return res.status(400).send(this.errorFormat({
+                    'message':checkOtp.err
+                }, 'user', 400));
+            }
         }
         // check addres is valid or not
         let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
@@ -422,7 +425,6 @@ class Wallet extends controller{
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
-        console.log('FormatResponse:', formatedResponse);
         return res.status(200).json(this.successFormat({
             "data": formatedResponse
         }, null, 'asset-balance', 200));
@@ -430,8 +432,6 @@ class Wallet extends controller{
 
     currencyConversion(matchResponse, marketResponse, assetsJson) {
         let formatedAssetBalnce = {};
-        console.log("MarketResponse:", marketResponse.data);
-        console.log("MatchResponse:", matchResponse);
         for (let result in matchResponse) {
             let btc = marketResponse.data[assetsJson[result]].btc;
             let usd = marketResponse.data[assetsJson[result]].usd;
@@ -482,7 +482,6 @@ class Wallet extends controller{
                         "totalCount": 0
                     }, null, 'transactions', 200));
                 } else {
-                    console.log("TotalCount:", totalCount);
                     transactions
                         .find(payloads)
                         .select('address amount final_amount date tx_hash confirmation amount status txtime fee')
@@ -571,7 +570,6 @@ class Wallet extends controller{
                 payloads.user_id = req.user.user_id;
                 asset.push(getAsset.asset_code.toUpperCase());
                 payloads.asset = asset
-                console.log("Payloads:", payloads);
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available
                 if (available !== undefined && amount <= available) {
@@ -597,8 +595,13 @@ class Wallet extends controller{
     async postWithdraw(req, res) {
         let withdraw = null;
         let requestData = req.body.data.attributes;
-        let checkG2f= await users.findOne({_id:req.user.user,google_auth:true});
-        if(checkG2f)
+        let checkUser= await users.findOne({_id:req.user.user});
+        if(!checkUser.withdraw){
+            return res.status(400).send(this.errorFormat({
+                'message': 'Your withdrawal has been disabled for 24 hours from the time your change password'
+            }, 'user', 400));
+        }
+        else if(checkUser.google_auth)
         {
             if (!requestData.g2f_code) {
                 return res.status(400).send(this.errorFormat({
@@ -620,7 +623,12 @@ class Wallet extends controller{
                 }, 'user', 400));
             }
             req.body.data['id']=req.user.user;
-            await user.validateOtpForEmail(req,res,"withdraw confirmation");
+            let checkOtp = await user.validateOtpForEmail(req,res,"withdraw confirmation");
+            if(checkOtp.status == false){
+                return res.status(400).send(this.errorFormat({
+                    'message':checkOtp.err
+                }, 'user', 400));
+            }
         }
         if (requestData.asset != undefined) {
 
@@ -776,7 +784,6 @@ class Wallet extends controller{
             'address': data.address,
             'verification_code': data.verification_code
         };
-
         return apiServices.sendEmailNotification(serviceData);
     }
 
@@ -833,7 +840,6 @@ class Wallet extends controller{
                 if (getSeconds > duration.asSeconds()) {
                     // update the details to matching engine and transactions
                     let response = await this.updateWithdrawRequest(notify, req, res);
-                    console.log("Response:", response);
                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
                         // change the withdraw notificaiton status
                         notify.status = 2;
@@ -897,7 +903,6 @@ class Wallet extends controller{
                 "change": (requestData.accept) ? `-${transaction.amount+transaction.fee}` : `${transaction.final_amount}`,
                 "detial": {}
             }
-            console.log("Payload:", payloads);
             let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
             return response;
         } else {
