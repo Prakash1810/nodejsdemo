@@ -43,6 +43,9 @@
 		"timeExpiry":7200,
 		"limit":0
 	},
+	"withdrawActive":{
+		"timeExpiry":86400
+	},
 	"topic" : "order-"
 
 }

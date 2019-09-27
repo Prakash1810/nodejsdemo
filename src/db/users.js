@@ -32,7 +32,9 @@ const usersSchema = mongoose.Schema({
     modified_by: Number,
     is_deleted: { type: Boolean, default: false },
     taker_fee : {type:String},
-    maker_fee:{type:String}
+    maker_fee:{type:String},
+    withdraw : {type:Boolean,default:true},
+    password_reset_time: {type:Date}
 });
 
 // autoIncrement.initialize(mongooseConnect.connect());

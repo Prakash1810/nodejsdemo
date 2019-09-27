@@ -368,7 +368,7 @@ class User extends controller {
             if (typeFor == "login") {
                 return { status: true }
             }
-            console.log("ello");
+           
             return res.status(200).send(this.successFormat({
                 'message': "Send a OTP on your email"
             }, user))
@@ -553,12 +553,8 @@ class User extends controller {
 
     async validateOtpForEmail(req, res, typeFor = "login") {
         try {
-            console.log(req.body.data);
-            console.log("TypeFOr:", typeFor);
-
             let data = req.body.data.attributes;
             let id = req.body.data.id
-            console.log('id:', id);
             let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
             const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
             if (isChecked) {
@@ -567,7 +563,6 @@ class User extends controller {
                 let duration = moment.duration(moment().diff(isChecked.create_date_time));
                 if (getSeconds > duration.asSeconds()) {
                     if (typeFor == "login") {
-                        console.log("Hello");
                         let isCheckedDevice = await deviceMangement.findOne({ _id: data.device_id })
                         if (isCheckedDevice) {
                             const loginHistory = await this.insertLoginHistory(req, id, isCheckedDevice._id, timeNow);
@@ -604,6 +599,9 @@ class User extends controller {
                 }
                 else {
                     await otpHistory.findOneAndUpdate({ user_id: id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
+                    if(typeFor!=='login'){
+                        return {status:false,err:'OTP is expired.'}
+                    }
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'OTP is expired.'
                     }));
@@ -613,12 +611,18 @@ class User extends controller {
 
             }
             else {
+                if(typeFor!=='login'){
+                    return {status:false,err:'Invalid OTP'}
+                }
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Invalid OTP'
                 }));
             }
         }
         catch (err) {
+            if(typeFor!=='login'){
+                return {status:false,err:err.message}
+            }
             return res.status(500).send(this.errorMsgFormat({
                 'message': err.message
             }, 'users', 500));
@@ -626,9 +630,19 @@ class User extends controller {
 
 
     }
-    async resendOtpForEmail(req, res, typeFor = "login") {
-        let data = req.body.data.attributes;
 
+    async resendOtpValidation(req){
+            let schema = Joi.object().keys({
+                user_id: Joi.string().required(),
+                type: Joi.string().required(),
+            });
+    
+            return Joi.validate(req, schema, {
+                abortEarly: false,
+            });
+    }
+    async resendOtpForEmail(req, res,typeFor) {
+        let data = req.body.data.attributes;
         const isChecked = await otpHistory.findOne({ user_id: data.user_id, is_active: false, type_for: typeFor });
         if (isChecked) {
             if (isChecked.count <= config.get('otpForEmail.hmt')) {
@@ -857,7 +871,6 @@ class User extends controller {
 
         if (deviceHash.data.user_id) {
             let check = await mangHash.findOne({ email: deviceHash.data.email, type_for: "new_authorize_device", hash: req.params.hash });
-            console.log("Check:", check)
             if (!check) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': "The link has been expired, please click the latest authorize link from your email or try to resend again."
@@ -955,7 +968,12 @@ class User extends controller {
             }
             if (type != 'withCallPatchSetting' && type != 'disable') {
 
-                if (requestData.type && (requestData.type =='anti spoofing' || requestData.type =='whitelist')) {
+                if (requestData.hasOwnProperty('anti_spoofing') || requestData.hasOwnProperty('whitelist')){
+                       if(!requestData.type){
+                        return res.status(400).send(this.errorFormat({
+                            'message': 'Incorrect data'
+                        }, 'user', 400));
+                       }
                     let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
                     if (check) {
                         let isChecked = await this.postVerifyG2F(req, res, 'setting');
@@ -972,7 +990,13 @@ class User extends controller {
                             }, 'user', 400));
                         }
                         req.body.data['id'] = req.user.user;
-                        await this.validateOtpForEmail(req, res, requestData.type);
+                        let checkOtp= await this.validateOtpForEmail(req, res, requestData.type);
+                        if(checkOtp.status == false){
+                            return res.status(400).send(this.errorFormat({
+                                'message':checkOtp.err
+                            }, 'user', 400));
+                        }
+                        
                     }
                 }
             }
@@ -1387,7 +1411,31 @@ class User extends controller {
 
     }
 
-
+        async withdrawActive(user,res){
+            let checkUser = await users.findOne({_id:user})
+            if(!checkUser){
+                return res.status(400).send(this.errorFormat({
+                    'message': 'User not found'
+                }));
+            }
+            if(!checkUser.withdraw){
+                let date = new Date(checkUser.password_reset_time);
+                let getSeconds = date.getSeconds() + config.get('withdrawActive.timeExpiry');
+                let duration = moment.duration(moment().diff(checkUser.password_reset_time));
+                if (getSeconds > duration.asSeconds()) {
+                    return res.status(400).send(this.errorFormat({
+                        'message': `Your withdrawal has been disabled for 24 hours from the time your change password`
+                    }));
+            }
+            else{
+                checkUser.withdraw=true;
+                checkUser.save();
+                return res.status(200).send(this.successFormat({
+                    'message': 'You can be proceed withdraw'
+                }),null,'user',200);
+            }
+        }
+    }
 
 
 }

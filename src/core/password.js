@@ -115,7 +115,6 @@ class Password extends Controller {
 
         let userHash = JSON.parse(helpers.decrypt(req.params.hash));
         let checkHash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash });
-        console.log("CheckHash:", checkHash);
         if (checkHash) {
             if (checkHash.is_active) {
                 return res.status(400).send(this.errorMsgFormat({
@@ -166,7 +165,6 @@ class Password extends Controller {
         let date = new Date(startDate);
         let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
         let duration = moment.duration(moment().diff(startDate));
-        console.log('Second:', duration.asSeconds());
         if (getSeconds > duration.asSeconds()) {
             return true;
         }
@@ -219,7 +217,7 @@ class Password extends Controller {
                                 user_id: req.body.data.attributes.user_id
                             }
                             await apiServices.sendEmailNotification(serviceData);
-
+                            await Users.findOneAndUpdate({_id:req.body.data.id},{withdraw:false, password_reset_time:moment().format('YYYY-MM-DD HH:mm:ss')})
                             return res.status(202).send(this.successFormat({
                                 'message': 'Your password updated successfully.'
                             }, user._id, 'users', 202));
@@ -235,7 +233,7 @@ class Password extends Controller {
                             user_id: user._id
                         }
                         await apiServices.sendEmailNotification(serviceData);
-
+                        
                         return res.status(202).send(this.successFormat({
                             'message': 'Your password updated successfully.'
                         }, user._id, 'users', 202));
@@ -298,7 +296,12 @@ class Password extends Controller {
                             'message': 'Otp must be provide'
                         }, 'user', 400));
                     }
-                    await user.validateOtpForEmail(req, res, "change password");
+                    let checkOtp = await user.validateOtpForEmail(req, res, "change password");
+                    if(checkOtp.status == false){
+                        return res.status(400).send(this.errorFormat({
+                            'message':checkOtp.err
+                        }, 'user', 400));
+                    }
                 }
                 let passwordCompare = bcrypt.compareSync(req.body.data.attributes.old_password, result.password);
 

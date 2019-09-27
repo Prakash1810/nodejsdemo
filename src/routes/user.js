@@ -19,11 +19,11 @@ router.get('/activation/:hash', (req, res) => {
     }
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     try {
         let {
             error
-        } = user.validate(req.body.data.attributes);
+        } = await user.validate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -46,10 +46,15 @@ router.post('/validate/otp', (req, res) => {
         }, 'users', 500));
     }
 });
-router.post('/resend/otp/', (req, res) => {
+router.post('/resend/otp/', async (req, res) => {
     try {
-        user.resendOtpForEmail(req, res);
-
+        let {error} = await user.resendOtpValidation(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        } else {
+            user.resendOtpForEmail(req, res,req.body.data.attributes.type);
+        }
+    
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -127,7 +132,6 @@ router.patch('/change-password', auth, (req, res) => {
 
 router.get('/get-user-id', (req, res) => {
     try {
-        console.log("Token:", req.headers);
         if (req.headers.authorization) {
 
             return user.getTokenToUserId(req, res);
@@ -334,7 +338,15 @@ router.patch('/favourite', auth, async (req, res) => {
 router.post('/generate/otp',auth, async (req,res) =>
 {
     try{
-        await user.generatorOtpforEmail(req.user.user,req.body.data.attributes.type.type,res);
+        if(req.body.data.attributes.type)
+        {
+            await user.generatorOtpforEmail(req.user.user,req.body.data.attributes.type,res);
+        }else{
+            return res.status(400).send(controller.errorMsgFormat({
+                'message': "Type is required"
+            }, 'users', 400));
+        }
+        
     }
     catch(err){
         return res.status(500).send(controller.errorMsgFormat({
@@ -343,5 +355,16 @@ router.post('/generate/otp',auth, async (req,res) =>
     }
 })
 
+router.get('/withdraw/active ',auth, async (req,res) =>
+{
+    try{
+        await user.withdrawActive(req.user.user,res);
+    }
+    catch(err){
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
 
 module.exports = router;

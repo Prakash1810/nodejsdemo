@@ -108,7 +108,7 @@
             }
         },
         "user/generate/otp": {
-            "get": {
+            "post": {
                 "tags": [
                     "users"
                 ],
@@ -123,15 +123,16 @@
                         "description": "access_token",
                         "required": true,
                         "type": "string"
-                    },
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "description": "type for",
+                    },{
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "generate otp",
                         "required": true,
-                        "type": "string"
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/generateOtp"
+                        }
                     }
-
                 ]
             }
         },
@@ -1711,6 +1712,22 @@
                 }
             }
         },
+        "generateOtp": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "type":"whitelist"
+                        }
+                    }
+                }
+            }
+        },
         "validate": {
             "properties": {
                 "lang": {
@@ -1719,12 +1736,11 @@
                     "example": "en"
                 },
                 "data": {
-                    "id":"123456789",
                     "example": {
+                        "id":"123456789",
                         "attributes": {
                             "otp":"BEL-12345",
                             "device_id":"123456789",
-                          
                             "region":"Tamil Nadu",
                             "city":"Chennai",
                             "ip":"171.78.139.181"
@@ -1744,7 +1760,8 @@
                 "data": {
                     "example": {
                         "attributes": {
-                            "user_id":"123456789"
+                            "user_id":"123456789",
+                            "type":"login"
                         }
                     }
                 }
