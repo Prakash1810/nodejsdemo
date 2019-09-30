@@ -18,7 +18,7 @@ const _ = require('lodash');
 const Redis = require('ioredis');
 class Api extends Controller {
 
-    async sendEmailNotification(data) {
+    async sendEmailNotification(data,type='login') {
 
         if (data.email_for !== 'registration') {
             
@@ -28,7 +28,9 @@ class Api extends Controller {
                     'is_active': false
                 });
 
-            
+            if(data.email_for=='otp-login'){
+                data.type=type
+            }
             if(data.email_for == 'wallet-withdraw')
             {
                 data.code = helpers.encrypt(JSON.stringify(
