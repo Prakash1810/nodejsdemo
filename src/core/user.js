@@ -364,7 +364,7 @@ class User extends controller {
                 otp: Math.floor(rand),
                 user_id: user
             }
-            await apiServices.sendEmailNotification(serviceData);
+            await apiServices.sendEmailNotification(serviceData,typeFor);
             if (typeFor == "login") {
                 return { status: true }
             }
@@ -657,7 +657,7 @@ class User extends controller {
                     otp: Math.floor(rand),
                     user_id: data.user_id
                 }
-                await apiServices.sendEmailNotification(serviceData);
+                await apiServices.sendEmailNotification(serviceData,typeFor);
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false, type_for: typeFor }, { count: inCount, otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
 
                 return res.status(200).send(this.successFormat({
@@ -968,12 +968,6 @@ class User extends controller {
             }
             if (type != 'withCallPatchSetting' && type != 'disable') {
 
-                if (requestData.hasOwnProperty('anti_spoofing') || requestData.hasOwnProperty('whitelist')){
-                       if(!requestData.type){
-                        return res.status(400).send(this.errorFormat({
-                            'message': 'Incorrect data'
-                        }, 'user', 400));
-                       }
                     let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
                     if (check) {
                         let isChecked = await this.postVerifyG2F(req, res, 'setting');
@@ -984,6 +978,12 @@ class User extends controller {
                         }
                     }
                     else {
+                        if (requestData.hasOwnProperty('anti_spoofing') || requestData.hasOwnProperty('white_list_address') || requestData.hasOwnProperty('anti_spoofing_code')){
+                            if(!requestData.type){
+                             return res.status(400).send(this.errorFormat({
+                                 'message': 'Incorrect data'
+                             }, 'user', 400));
+                            }
                         if (requestData.otp == null || undefined) {
                             return res.status(400).send(this.errorFormat({
                                 'message': 'Otp must be provide'
