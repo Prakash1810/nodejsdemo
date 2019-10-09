@@ -1,18 +1,21 @@
 const mongoose = require('mongoose');
-
-const assetsSchema = mongoose.Schema({
-    _id: mongoose.Schema.Types.ObjectId,
-    asset_name: String,
-    asset_code: String,
+require('mongoose-type-url');
+const assetsSchema = new mongoose.Schema({
+    asset_name: { type: String, unique: true, index: true },
+    asset_code: { type: String, unique: true, index: true },
     unit: String,
-    logo_url: String,
-    url: String,
-    address_url: String,
-    block_url: String,
+    logo_url: { type: mongoose.SchemaTypes.Url, required: true },
+    url: { type: mongoose.SchemaTypes.Url, required: true },
+    address_url: { type: mongoose.SchemaTypes.Url, required: true },
+    block_url: { type: mongoose.SchemaTypes.Url, required: true },
     confirm_times: Number,
     parent_code: String,
-    minimum_withdraw: Number,
+    exchange_confirmations: Number,
+    minimum_product_withdraw: Number,
+    coin_confirmations: Number,
+    minimum_product_withdraw: Number,
     maximum_withdraw: Number,
+    is_default: Boolean,
     gas: Number,
     enable_withdraw: Boolean,
     enable_charge: Boolean,
@@ -20,16 +23,17 @@ const assetsSchema = mongoose.Schema({
     reset_address_status: Boolean,
     is_suspend: Boolean,
     created_date: { type: Date, default: Date.now },
-    created_by: Number,
+    created_by: String,
     modified_date: Date,
     modified_by: Number,
     is_deleted: Boolean,
     withdrawal_fee: Number,
     minimum_withdrawal: Number,
-    delist:{type:Boolean, default:false } ,
-    depoist:{ type:Boolean, default:true },
-    withdraw:{ type:Boolean, default:true },
-    token :{ type:String, default:null}
+    delist: { type: Boolean, default: false },
+    deposit: { type: Boolean, default: true },
+    withdraw: { type: Boolean, default: true },
+    token: { type: String, default: null },
+    status: { type: Number, default: 2 }  // 1 => Pending   2 => list 
 });
 
 module.exports = mongoose.model('assets', assetsSchema);

@@ -18,18 +18,15 @@ const _ = require('lodash');
 const Redis = require('ioredis');
 class Api extends Controller {
 
-    async sendEmailNotification(data,type='login') {
+    async sendEmailNotification(data,res) {
 
+
+        
         if (data.email_for !== 'registration') {
             
-            
-               let disableData = JSON.stringify({
-                    'user_id': data.user_id,
-                    'is_active': false
-                });
-
-            if(data.email_for=='otp-login'){
-                data.type=type
+            if(!data.user_id){
+                console.log('Error');
+                return res.status(400).send(controller.errorFormat({"message":"User id is not define"}, 'users', 400));
             }
             if(data.email_for == 'wallet-withdraw')
             {
@@ -40,11 +37,7 @@ class Api extends Controller {
                         code:data.verification_code
                     }))
             }
-            data.disable_code = helpers.encrypt(disableData);
-
-            let user = await users.findById(data.user_id);
-            data.to_email = user.email
-            data.anti_spoofing_code = (user.anti_spoofing) ? user.anti_spoofing_code : false;
+          
 
         }
         console.log("Data:", data);
