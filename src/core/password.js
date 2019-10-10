@@ -61,7 +61,7 @@ class Password extends Controller {
                         'email_for': 'forget-password',
                         'user_id': user._id
                     };
-                    await apiServices.sendEmailNotification(serviceData);
+                    await apiServices.sendEmailNotification(serviceData,res);
                     await mangHash.update({ email: user.email, is_active: false, type_for: "reset" }, { $set: { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') } })
                     await new mangHash({ email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
                     return res.status(200).json(this.successFormat({
@@ -96,7 +96,7 @@ class Password extends Controller {
                 'user_id': user._id
             };
 
-            await apiServices.sendEmailNotification(serviceData);
+            await apiServices.sendEmailNotification(serviceData,res);
             return res.status(200).json(this.successFormat({
                 'message': 'We have sent a email to your email address.',
                 'hash': encryptedHash
@@ -216,7 +216,7 @@ class Password extends Controller {
                                 email: req.body.data.attributes.email,
                                 user_id: req.body.data.attributes.user_id
                             }
-                            await apiServices.sendEmailNotification(serviceData);
+                            await apiServices.sendEmailNotification(serviceData,res);
                             await Users.findOneAndUpdate({_id:req.body.data.id},{withdraw:false, password_reset_time:moment().format('YYYY-MM-DD HH:mm:ss')})
                             return res.status(202).send(this.successFormat({
                                 'message': 'Your password updated successfully.'
@@ -232,7 +232,7 @@ class Password extends Controller {
                             email: user.email,
                             user_id: user._id
                         }
-                        await apiServices.sendEmailNotification(serviceData);
+                        await apiServices.sendEmailNotification(serviceData,res);
                         
                         return res.status(202).send(this.successFormat({
                             'message': 'Your password updated successfully.'

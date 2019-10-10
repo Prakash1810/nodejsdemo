@@ -355,7 +355,7 @@ router.post('/generate/otp',auth, async (req,res) =>
     }
 })
 
-router.get('/withdraw/active ',auth, async (req,res) =>
+router.get('/withdraw/active', auth, async (req,res) =>
 {
     try{
         await user.withdrawActive(req.user.user,res);

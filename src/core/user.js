@@ -364,7 +364,7 @@ class User extends controller {
                 otp: Math.floor(rand),
                 user_id: user
             }
-            await apiServices.sendEmailNotification(serviceData,typeFor);
+            await apiServices.sendEmailNotification(serviceData,res);
             if (typeFor == "login") {
                 return { status: true }
             }
@@ -398,10 +398,10 @@ class User extends controller {
             "anti_spoofing_code": result.anti_spoofing_code,
             'white_list_address': result.white_list_address,
             "loggedIn": timeNow,
+            "withdraw":result.withdraw,
             "expiresIn": config.get('secrete.expiry'),
             "taker_fee": result.taker_fee,
             "maker_fee": result.maker_fee
-
         }, result._id));
     }
 
@@ -436,7 +436,7 @@ class User extends controller {
 
                 }
                 else {
-                    const isChecked = await this.generatorOtpforEmail(userID);
+                    const isChecked = await this.generatorOtpforEmail(userID,"login",res);
                     if (isChecked.status) {
                         res.status(200).send(this.successFormat({
                             'message': "Send a OTP on your email",
@@ -486,7 +486,7 @@ class User extends controller {
                                 "ip": req.body.data.attributes.ip,
                                 "hash": urlHash,
                                 "user_id": userID
-                            })
+                            },res)
                             let check = await mangHash.findOne({ email: req.body.data.attributes.email, type_for: 'new_authorize_device', is_active: false });
                             if (check) {
                                 await mangHash.findOneAndUpdate({ email: req.body.data.attributes.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
@@ -527,7 +527,7 @@ class User extends controller {
                                 }, userID))
                             }
                             else {
-                                const isChecked = await this.generatorOtpforEmail(userID);
+                                const isChecked = await this.generatorOtpforEmail(userID,'login',res);
                                 if (isChecked.status) {
                                     res.status(200).send(this.successFormat({
                                         'message': "Send a OTP on your email",
@@ -577,7 +577,7 @@ class User extends controller {
                                     'browser_version': isCheckedDevice.browser_version,
                                     'os': isCheckedDevice.os,
                                     'user_id': id
-                                });
+                                },res);
                             }
 
                             let checkUser = await users.findOne({ _id: id });
@@ -657,7 +657,7 @@ class User extends controller {
                     otp: Math.floor(rand),
                     user_id: data.user_id
                 }
-                await apiServices.sendEmailNotification(serviceData,typeFor);
+                await apiServices.sendEmailNotification(serviceData,res);
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false, type_for: typeFor }, { count: inCount, otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
 
                 return res.status(200).send(this.successFormat({
@@ -672,7 +672,7 @@ class User extends controller {
             }
         }
         else {
-            let isChecked = await this.generatorOtpforEmail(data.user_id)
+            let isChecked = await this.generatorOtpforEmail(data.user_id,typeFor,res)
             if (isChecked.status) {
                 res.status(200).send(this.successFormat({
                     'message': "Send a OTP on your email"
@@ -688,12 +688,12 @@ class User extends controller {
 
 
     // send email notification to the authorize device
-    sendNotificationForAuthorize(data) {
-        return apiServices.sendEmailNotification(data);
+    sendNotificationForAuthorize(data,res) {
+        return apiServices.sendEmailNotification(data,res);
     }
 
     // send email notification to the registered user
-    sendNotification(data) {
+    sendNotification(data,res) {
         let serviceData = {
             "subject": `Successful Login From IP ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
             "email_for": "user-login",
@@ -703,7 +703,7 @@ class User extends controller {
             "user_id": data.user_id
         };
 
-        return apiServices.sendEmailNotification(serviceData);
+        return apiServices.sendEmailNotification(serviceData,res);
     }
 
     insertDevice(req, userID, verify = false, cb) {

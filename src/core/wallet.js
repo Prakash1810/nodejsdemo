@@ -668,7 +668,7 @@ class Wallet extends controller{
                             is_deleted: false,
                             created_date: timeNow
                         };
-                        let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount);
+                        let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount,res);
                         return res.status(200).json(this.successFormat({
                             'message': 'Your withdrawal request posted successfully. Waiting for your confirmation. Please check your email'
                         }, returnId, 'withdraw', 200));
@@ -704,7 +704,7 @@ class Wallet extends controller{
 
 
     }
-    async insertNotification(data, responseAmount) {
+    async insertNotification(data, responseAmount,res) {
 
         let amount = Number(responseAmount);
         let asset = await assets.findById(data.asset);
@@ -768,12 +768,12 @@ class Wallet extends controller{
 
 
         // send an confirmation notification
-        this.sendWithdrawNotification(emailData);
+        this.sendWithdrawNotification(emailData,res);
 
         return notifyId;
     }
 
-    sendWithdrawNotification(data) {
+    sendWithdrawNotification(data,res) {
         let serviceData = {
             "subject": `Confirm Your Withdraw Request From ${data.ip} ( ${data.time} )`,
             "email_for": "wallet-withdraw",
@@ -784,7 +784,7 @@ class Wallet extends controller{
             'address': data.address,
             'verification_code': data.verification_code
         };
-        return apiServices.sendEmailNotification(serviceData);
+        return apiServices.sendEmailNotification(serviceData,res);
     }
 
     async resendWithdrawNotification(req, res) {
@@ -794,7 +794,7 @@ class Wallet extends controller{
             });
             if (data && data.notify_data.email_data !== undefined && data.status === 1) {
                 // send an confirmation notification
-                this.sendWithdrawNotification(data.notify_data.email_data);
+                this.sendWithdrawNotification(data.notify_data.email_data,res);
                 return res.status(200).json(this.successFormat({
                     "message": "Mail resended successfully"
                 }, 'withdraw'));
