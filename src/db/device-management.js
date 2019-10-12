@@ -13,7 +13,7 @@ const deviceSchema = mongoose.Schema({
     country: String,
     verified: Boolean,
     created_date: { type: Date, default: Date.now },
-    modified_date: Date,
+    modified_date: { type: Date, default: Date.now },
     is_deleted: {type:Boolean, default:false},
     ip:{ type :String, required :true}
 });

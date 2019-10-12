@@ -40,7 +40,7 @@ class Api extends Controller {
           
 
         }
-        console.log("Data:", data);
+        console.log('data:',data);
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
             .then((res) => {
                 console.log(res.data);

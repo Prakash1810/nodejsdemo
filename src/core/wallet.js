@@ -48,7 +48,7 @@ class Wallet extends controller{
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal depoist withdraw delist', query, async (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist', query, async (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -86,6 +86,13 @@ class Wallet extends controller{
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
         }
+        let isChecked = await assets.findOne({ _id: asset });
+        if(!isChecked.deposit){
+            return res.status(400).send(this.errorFormat({
+                'message': ' This symbol does not proccess of depoist'
+            }, 'asset-balance', 400));
+        }
+
         if (asset !== undefined && asset !== '' && asset !== null) {
             let getAddress = await userAddress.findOne({
                 asset: asset,
@@ -93,10 +100,6 @@ class Wallet extends controller{
             });
 
             if (!getAddress) {
-
-                let isChecked = await assets.findOne({ _id: asset })
-
-
                 let data =
                 {
                     coin: isChecked.asset_code,
@@ -631,7 +634,12 @@ class Wallet extends controller{
             }
         }
         if (requestData.asset != undefined) {
-
+            let checkWithdraw = await assets.findOne({_id:requestData.asset});
+            if(!checkWithdraw.withdraw){
+                return res.status(400).send(this.errorFormat({
+                    'message': ' This symbol does not proccess of withdraw'
+                }, 'withdraw', 400));
+            }
             let validateWithdraw = await this.withdrawValidate(req, res);
             if (validateWithdraw.status) {
 
@@ -699,10 +707,6 @@ class Wallet extends controller{
                 "message": "Invalid request"
             }, 'withdraw'));
         }
-
-
-
-
     }
     async insertNotification(data, responseAmount,res) {
 

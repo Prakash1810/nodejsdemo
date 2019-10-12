@@ -296,6 +296,23 @@ class User extends controller {
         });
     }
 
+    deviceValidate(data) {
+        let schema = Joi.object().keys({
+            is_browser: Joi.boolean().required(),
+            is_mobile: Joi.boolean().required(),
+            ip: Joi.string().required(),
+            country: Joi.string().required(),
+            os: Joi.string().allow('').optional(),
+            os_byte: Joi.string().allow('').optional(),
+            browser: Joi.string().allow('').optional(),
+            browser_version: Joi.string().allow('').optional(),
+            city: Joi.string().allow('').optional(),
+            region: Joi.string().allow('').optional(),
+        })
+        return Joi.validate(data, schema, {
+            abortEarly: false
+        });
+    }
     removeUser(email, res) {
         users.deleteOne({
             email: email
@@ -364,11 +381,11 @@ class User extends controller {
                 otp: Math.floor(rand),
                 user_id: user
             }
-            await apiServices.sendEmailNotification(serviceData,res);
+            await apiServices.sendEmailNotification(serviceData, res);
             if (typeFor == "login") {
                 return { status: true }
             }
-           
+
             return res.status(200).send(this.successFormat({
                 'message': "Send a OTP on your email"
             }, user))
@@ -386,9 +403,30 @@ class User extends controller {
 
     }
 
-    async returnToken(res, result, loginHistory) {
+    async returnToken(req,res,result,type) {
+        console.log("Vaild:");
+        const device = await this.insertDevice(req,res, result._id, true ,'withValidation');
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
+        let data ={
+            user:result._id,
+            device: device._id,
+            auth_type: type ,
+            login_date_time: timeNow
+        }
+        let loginHistory = await this.insertLoginHistory(data);
         let tokens = await this.storeToken(result, loginHistory);
+
+        let isCheckedDevice = await deviceMangement.find({ user:result._id, region: device.region, city: device.city, ip: device.ip });
+        if(isCheckedDevice.length == 0){
+            this.sendNotification({
+                'ip': device.ip,
+                'time': timeNow,
+                'browser': device.browser,
+                'browser_version': device.browser_version,
+                'os': device.os,
+                'user_id': result._id
+            }, res);
+        }
         return res.status(200).send(this.successFormat({
             "token": tokens.accessToken,
             "refreshToken": tokens.refreshToken,
@@ -398,7 +436,7 @@ class User extends controller {
             "anti_spoofing_code": result.anti_spoofing_code,
             'white_list_address': result.white_list_address,
             "loggedIn": timeNow,
-            "withdraw":result.withdraw,
+            "withdraw": result.withdraw,
             "expiresIn": config.get('secrete.expiry'),
             "taker_fee": result.taker_fee,
             "maker_fee": result.maker_fee
@@ -407,155 +445,100 @@ class User extends controller {
 
     async checkDevice(req, res, user) {
         let userID = user._id;
+        let data = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-        // Find some documents
-        deviceMangement.countDocuments({
-            user: userID
-        }, async (err, count) => {
-            if (!count) {
-                const device = await this.insertDevice(req, userID, true);
-                let isAuth = await users.findOne({
-                    _id: userID, $or: [
-                        {
-                            "sms_auth": true
-                        },
-                        {
-                            "google_auth": true
-                        }
-                    ]
-                })
-                if (isAuth) {
-                    let loginHistoryId = await this.insertLoginHistory(req, userID, device._id, timeNow);
+        let result = await deviceMangement.findOne({
+            user: userID,
+            browser: data.browser,
+            region: data.region,
+            city: data.city,
+            os: data.os,
+            verified: true,
+            is_deleted: false
+        });
+        if (!result) {
+            // insert new device records
+            await this.insertDevice(req, res,userID);
+            let urlHash = this.encryptHash({
+                "user_id": userID,
+                "email": data.email,
+                "ip": data.ip,
+                "browser": data.browser,
+                "verified": true
+            });
+
+            // send email notification
+            this.sendNotificationForAuthorize({
+                "subject": `Authorize New Device/Location ${data.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
+                "email_for": "user-authorize",
+                "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
+                "location": `${data.city} ${data.country}`,
+                "ip": data.ip,
+                "hash": urlHash,
+                "user_id": userID
+            }, res)
+            let check = await mangHash.findOne({ email: data.email, type_for: 'new_authorize_device', is_active: false });
+            if (check) {
+                await mangHash.findOneAndUpdate({ email: data.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+            }
+            else {
+                await new mangHash({
+                    email: data.email,
+                    type_for: 'new_authorize_device',
+                    hash: urlHash,
+                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                }).save()
+            }
+            return res.status(401).send(this.errorMsgFormat({
+                'msg': 'unauthorized',
+                'hash': urlHash
+            }, 'users', 401));
+        }
+        else {
+            let isAuth = await users.findOne({
+                _id: userID, $or: [
+                    {
+                        "sms_auth": true
+                    },
+                    {
+                        "google_auth": true
+                    }
+                ]
+            })
+            if (isAuth) {
+                res.status(200).send(this.successFormat({
+                    'message': "You are successfully logged in.",
+                    "google_auth": isAuth.google_auth,
+                    "sms_auth": isAuth.sms_auth,
+
+                }, userID))
+
+            }
+            else {
+                const isChecked = await this.generatorOtpforEmail(userID, "login", res);
+                if (isChecked.status) {
                     res.status(200).send(this.successFormat({
-                        'message': "You are successfully logged in.",
-                        "login_history": loginHistoryId._id,
-                        "google_auth": isAuth.google_auth,
-                        "sms_auth": isAuth.sms_auth,
-
+                        'message': "Send a OTP on your email",
+                        "region": data.region,
+                        "city": data.city,
+                        "ip": data.ip
                     }, userID))
-
                 }
                 else {
-                    const isChecked = await this.generatorOtpforEmail(userID,"login",res);
-                    if (isChecked.status) {
-                        res.status(200).send(this.successFormat({
-                            'message': "Send a OTP on your email",
-                            "device_id": device._id,
-                            "region": req.body.data.attributes.region,
-                            "city": req.body.data.attributes.city,
-                            "ip": req.body.data.attributes.ip
-                        }, userID))
-                    }
-                    else {
-                        return res.status(500).send(this.errorMsgFormat({
-                            'message': isChecked.error
-                        }, 'users', 500));
-                    }
+                    return res.status(500).send(this.errorMsgFormat({
+                        'message': isChecked.error
+                    }, 'users', 500));
                 }
-
-
-            } else {
-                deviceMangement.findOne({
-                    user: userID,
-                    browser: req.body.data.attributes.browser,
-                    region: req.body.data.attributes.region,
-                    city: req.body.data.attributes.city,
-                    os: req.body.data.attributes.os,
-                    verified: true,
-                    is_deleted: false
-                })
-                    .exec()
-                    .then(async (result) => {
-                        if (!result) {
-                            // insert new device records
-                            await this.insertDevice(req, userID);
-                            let urlHash = this.encryptHash({
-                                "user_id": userID,
-                                "email": req.body.data.attributes.email,
-                                "ip": req.body.data.attributes.ip,
-                                "browser": req.body.data.attributes.browser,
-                                "verified": true
-                            });
-
-                            // send email notification
-                            this.sendNotificationForAuthorize({
-                                "subject": `Authorize New Device/Location ${req.body.data.attributes.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
-                                "email_for": "user-authorize",
-                                "device": `${req.body.data.attributes.browser} ${req.body.data.attributes.browser_version} ( ${req.body.data.attributes.os} )`,
-                                "location": `${req.body.data.attributes.city} ${req.body.data.attributes.country}`,
-                                "ip": req.body.data.attributes.ip,
-                                "hash": urlHash,
-                                "user_id": userID
-                            },res)
-                            let check = await mangHash.findOne({ email: req.body.data.attributes.email, type_for: 'new_authorize_device', is_active: false });
-                            if (check) {
-                                await mangHash.findOneAndUpdate({ email: req.body.data.attributes.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
-                            }
-                            else {
-                                await new mangHash({
-                                    email: req.body.data.attributes.email,
-                                    type_for: 'new_authorize_device',
-                                    hash: urlHash,
-                                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                                }).save()
-                            }
-                            return res.status(401).send(this.errorMsgFormat({
-                                'msg': 'unauthorized',
-                                'hash': urlHash
-                            }, 'users', 401));
-                        } else {
-                            const device = await this.insertDevice(req, userID, true);
-                            let isAuth = await users.findOne({
-                                _id: userID, $or: [
-                                    {
-                                        "sms_auth": true
-                                    },
-                                    {
-                                        "google_auth": true
-                                    }
-                                ]
-                            })
-                            if (isAuth) {
-
-                                let loginHistoryId = await this.insertLoginHistory(req, userID, device._id, timeNow);
-                                res.status(200).send(this.successFormat({
-                                    'message': "You are successfully logged in.",
-                                    "login_history": loginHistoryId._id,
-                                    "google_auth": isAuth.google_auth,
-                                    "sms_auth": isAuth.sms_auth,
-
-                                }, userID))
-                            }
-                            else {
-                                const isChecked = await this.generatorOtpforEmail(userID,'login',res);
-                                if (isChecked.status) {
-                                    res.status(200).send(this.successFormat({
-                                        'message': "Send a OTP on your email",
-                                        "device_id": device._id,
-                                        "region": req.body.data.attributes.region,
-                                        "city": req.body.data.attributes.city,
-                                        "ip": req.body.data.attributes.ip
-                                    }, userID))
-                                }
-                                else {
-                                    return res.status(500).send(this.errorMsgFormat({
-                                        'message': isChecked.error
-                                    }, 'users', 500));
-                                }
-                            }
-
-                        }
-                    });
             }
-        });
-    }
+        }
 
+
+    }
 
     async validateOtpForEmail(req, res, typeFor = "login") {
         try {
             let data = req.body.data.attributes;
             let id = req.body.data.id
-            let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
             const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
             if (isChecked) {
                 let date = new Date(isChecked.create_date_time);
@@ -563,33 +546,10 @@ class User extends controller {
                 let duration = moment.duration(moment().diff(isChecked.create_date_time));
                 if (getSeconds > duration.asSeconds()) {
                     if (typeFor == "login") {
-                        let isCheckedDevice = await deviceMangement.findOne({ _id: data.device_id })
-                        if (isCheckedDevice) {
-                            const loginHistory = await this.insertLoginHistory(req, id, isCheckedDevice._id, timeNow);
-                            // send email notification
-                            let isCheckedDeviceManagement = await deviceMangement.findOne({ region: data.region, city: data.city, ip: data.ip })
-                            if (!isCheckedDeviceManagement) {
-
-                                this.sendNotification({
-                                    'ip': data.ip,
-                                    'time': timeNow,
-                                    'browser': isCheckedDevice.browser,
-                                    'browser_version': isCheckedDevice.browser_version,
-                                    'os': isCheckedDevice.os,
-                                    'user_id': id
-                                },res);
-                            }
-
                             let checkUser = await users.findOne({ _id: id });
-                            
                             await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
-                            await this.returnToken(res, checkUser, loginHistory._id);
-                        }
-                        else{
-                            return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Device id is not found.'
-                            }));
-                        }
+                            delete data.otp;
+                            await this.returnToken(req, res, checkUser,1);
                     }
                     else {
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
@@ -599,8 +559,8 @@ class User extends controller {
                 }
                 else {
                     await otpHistory.findOneAndUpdate({ user_id: id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
-                    if(typeFor!=='login'){
-                        return {status:false,err:'OTP is expired.'}
+                    if (typeFor !== 'login') {
+                        return { status: false, err: 'OTP is expired.' }
                     }
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'OTP is expired.'
@@ -611,8 +571,8 @@ class User extends controller {
 
             }
             else {
-                if(typeFor!=='login'){
-                    return {status:false,err:'Invalid OTP'}
+                if (typeFor !== 'login') {
+                    return { status: false, err: 'Invalid OTP' }
                 }
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Invalid OTP'
@@ -620,8 +580,8 @@ class User extends controller {
             }
         }
         catch (err) {
-            if(typeFor!=='login'){
-                return {status:false,err:err.message}
+            if (typeFor !== 'login') {
+                return { status: false, err: err.message }
             }
             return res.status(500).send(this.errorMsgFormat({
                 'message': err.message
@@ -631,17 +591,17 @@ class User extends controller {
 
     }
 
-    async resendOtpValidation(req){
-            let schema = Joi.object().keys({
-                user_id: Joi.string().required(),
-                type: Joi.string().required(),
-            });
-    
-            return Joi.validate(req, schema, {
-                abortEarly: false,
-            });
+    async resendOtpValidation(req) {
+        let schema = Joi.object().keys({
+            user_id: Joi.string().required(),
+            type: Joi.string().required(),
+        });
+
+        return Joi.validate(req, schema, {
+            abortEarly: false,
+        });
     }
-    async resendOtpForEmail(req, res,typeFor) {
+    async resendOtpForEmail(req, res, typeFor) {
         let data = req.body.data.attributes;
         const isChecked = await otpHistory.findOne({ user_id: data.user_id, is_active: false, type_for: typeFor });
         if (isChecked) {
@@ -657,7 +617,7 @@ class User extends controller {
                     otp: Math.floor(rand),
                     user_id: data.user_id
                 }
-                await apiServices.sendEmailNotification(serviceData,res);
+                await apiServices.sendEmailNotification(serviceData, res);
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false, type_for: typeFor }, { count: inCount, otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
 
                 return res.status(200).send(this.successFormat({
@@ -672,7 +632,7 @@ class User extends controller {
             }
         }
         else {
-            let isChecked = await this.generatorOtpforEmail(data.user_id,typeFor,res)
+            let isChecked = await this.generatorOtpforEmail(data.user_id, typeFor, res)
             if (isChecked.status) {
                 res.status(200).send(this.successFormat({
                     'message': "Send a OTP on your email"
@@ -688,12 +648,12 @@ class User extends controller {
 
 
     // send email notification to the authorize device
-    sendNotificationForAuthorize(data,res) {
-        return apiServices.sendEmailNotification(data,res);
+    sendNotificationForAuthorize(data, res) {
+        return apiServices.sendEmailNotification(data, res);
     }
 
     // send email notification to the registered user
-    sendNotification(data,res) {
+    sendNotification(data, res) {
         let serviceData = {
             "subject": `Successful Login From IP ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
             "email_for": "user-login",
@@ -703,37 +663,44 @@ class User extends controller {
             "user_id": data.user_id
         };
 
-        return apiServices.sendEmailNotification(serviceData,res);
+        return apiServices.sendEmailNotification(serviceData, res);
     }
 
-    insertDevice(req, userID, verify = false, cb) {
+    async insertDevice(req, res, userID, verify = false, type='withoutValidation') {
+        if(type!='withoutValidation'){
+            let { error } = await this.deviceValidate(req.body.data.attributes);
+            if (error) {
+                return res.status(400).send(this.errorFormat(error, 'users', 400));
+            }
+        }
+        let attributes = req.body.data.attributes;
         let data = {
             user: userID,
-            is_browser: req.body.data.attributes.is_browser,
-            is_mobile: req.body.data.attributes.is_mobile,
-            os: req.body.data.attributes.os,
-            os_byte: req.body.data.attributes.os_byte,
-            browser: req.body.data.attributes.browser,
-            browser_version: req.body.data.attributes.browser_version,
-            ip: req.body.data.attributes.ip,
-            city: req.body.data.attributes.city,
-            region: req.body.data.attributes.region,
-            country: req.body.data.attributes.country,
+            is_browser: attributes.is_browser,
+            is_mobile: attributes.is_mobile,
+            os: attributes.os,
+            os_byte: attributes.os_byte,
+            browser: attributes.browser,
+            browser_version: attributes.browser_version,
+            ip: attributes.ip,
+            city: attributes.city,
+            region: attributes.region,
+            country: attributes.country,
             verified: verify
         };
 
         return new deviceMangement(data).save();
     }
 
-    async insertLoginHistory(req, userID, deviceID, timeNow) {
+    async insertLoginHistory(data) {
 
-        let data = {
-            user: userID,
-            device: deviceID,
-            auth_type: req.body.data.attributes.auth_type ? req.body.data.attributes.auth_type : 1,
-            login_date_time: timeNow
+        let attributes = {
+            user:data.user,
+            device: data.device,
+            auth_type: data.auth_type ,
+            login_date_time: data.login_date_time
         }
-        return new loginHistory(data).save();
+        return new loginHistory(attributes).save();
     }
 
     getLoginHistory(req, res) {
@@ -968,40 +935,40 @@ class User extends controller {
             }
             if (type != 'withCallPatchSetting' && type != 'disable') {
 
-                    let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
-                    if (check) {
-                        let isChecked = await this.postVerifyG2F(req, res, 'setting');
-                        if (isChecked.status == false) {
+                let check = await users.findOne({ _id: req.body.data.id, google_auth: true });
+                if (check) {
+                    let isChecked = await this.postVerifyG2F(req, res, 'setting');
+                    if (isChecked.status == false) {
+                        return res.status(400).send(this.errorFormat({
+                            'message': 'Incorrect code'
+                        }, 'user', 400));
+                    }
+                }
+                else {
+                    if (requestData.hasOwnProperty('anti_spoofing') || requestData.hasOwnProperty('white_list_address') || requestData.hasOwnProperty('anti_spoofing_code')) {
+                        if (!requestData.type) {
                             return res.status(400).send(this.errorFormat({
-                                'message': 'Incorrect code'
+                                'message': 'Incorrect data'
                             }, 'user', 400));
                         }
-                    }
-                    else {
-                        if (requestData.hasOwnProperty('anti_spoofing') || requestData.hasOwnProperty('white_list_address') || requestData.hasOwnProperty('anti_spoofing_code')){
-                            if(!requestData.type){
-                             return res.status(400).send(this.errorFormat({
-                                 'message': 'Incorrect data'
-                             }, 'user', 400));
-                            }
                         if (requestData.otp == null || undefined) {
                             return res.status(400).send(this.errorFormat({
                                 'message': 'Otp must be provide'
                             }, 'user', 400));
                         }
                         req.body.data['id'] = req.user.user;
-                        let checkOtp= await this.validateOtpForEmail(req, res, requestData.type);
-                        if(checkOtp.status == false){
+                        let checkOtp = await this.validateOtpForEmail(req, res, requestData.type);
+                        if (checkOtp.status == false) {
                             return res.status(400).send(this.errorFormat({
-                                'message':checkOtp.err
+                                'message': checkOtp.err
                             }, 'user', 400));
                         }
-                        
+
                     }
                 }
             }
             if (req.body.data.id !== undefined && Object.keys(requestData).length) {
-        
+
                 // find and update the reccord
                 let update = await users.findOneAndUpdate({
                     _id: req.body.data.id
@@ -1121,6 +1088,7 @@ class User extends controller {
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
 
         try {
+            let data = req.body.data.attributes;
             let opts = {
                 beforeDrift: 2,
                 afterDrift: 2,
@@ -1128,11 +1096,13 @@ class User extends controller {
                 step: 30
             };
             let counter = Math.floor(Date.now() / 1000 / opts.step);
-            let returnStatus = await g2fa.verifyHOTP(google_secrete_key, req.body.data.attributes.g2f_code, counter, opts);
+            let returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
             if (returnStatus === true) {
                 if (method == 'withoutAuth' && type != 'boolean') {
                     let user = await users.findOne({ _id: req.body.data.id });
-                    await this.returnToken(res, user, req.body.data.attributes.login_history)
+                    delete data.g2f_code;
+                    delete data.google_secrete_key;
+                    await this.returnToken(req,res, user,2)
                 }
                 else if (method == 'setting' || type == 'boolean') {
                     return { status: true };
@@ -1411,28 +1381,28 @@ class User extends controller {
 
     }
 
-        async withdrawActive(user,res){
-            let checkUser = await users.findOne({_id:user})
-            if(!checkUser){
+    async withdrawActive(user, res) {
+        let checkUser = await users.findOne({ _id: user })
+        if (!checkUser) {
+            return res.status(400).send(this.errorFormat({
+                'message': 'User not found'
+            }));
+        }
+        if (!checkUser.withdraw) {
+            let date = new Date(checkUser.password_reset_time);
+            let getSeconds = date.getSeconds() + config.get('withdrawActive.timeExpiry');
+            let duration = moment.duration(moment().diff(checkUser.password_reset_time));
+            if (getSeconds > duration.asSeconds()) {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'User not found'
+                    'message': `Your withdrawal has been disabled for 24 hours from the time your change password`
                 }));
             }
-            if(!checkUser.withdraw){
-                let date = new Date(checkUser.password_reset_time);
-                let getSeconds = date.getSeconds() + config.get('withdrawActive.timeExpiry');
-                let duration = moment.duration(moment().diff(checkUser.password_reset_time));
-                if (getSeconds > duration.asSeconds()) {
-                    return res.status(400).send(this.errorFormat({
-                        'message': `Your withdrawal has been disabled for 24 hours from the time your change password`
-                    }));
-            }
-            else{
-                checkUser.withdraw=true;
+            else {
+                checkUser.withdraw = true;
                 checkUser.save();
                 return res.status(200).send(this.successFormat({
                     'message': 'You can be proceed withdraw'
-                }),null,'user',200);
+                }), null, 'user', 200);
             }
         }
     }
