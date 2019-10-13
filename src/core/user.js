@@ -404,9 +404,21 @@ class User extends controller {
     }
 
     async returnToken(req,res,result,type) {
-        console.log("Vaild:");
-        const device = await this.insertDevice(req,res, result._id, true ,'withValidation');
+        let attributes = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
+        let isCheckedDevice = await deviceMangement.find({ user:result._id, region: attributes.region, city: attributes.city, ip: attributes.ip });
+        if(isCheckedDevice.length == 0){
+            this.sendNotification({
+                'ip': attributes.ip,
+                'time': timeNow,
+                'browser': attributes.browser,
+                'browser_version': attributes.browser_version,
+                'os': attributes.os,
+                'user_id': result._id
+            }, res);
+        }
+        const device = await this.insertDevice(req,res, result._id, true ,'withValidation');
+       
         let data ={
             user:result._id,
             device: device._id,
@@ -416,17 +428,7 @@ class User extends controller {
         let loginHistory = await this.insertLoginHistory(data);
         let tokens = await this.storeToken(result, loginHistory);
 
-        let isCheckedDevice = await deviceMangement.find({ user:result._id, region: device.region, city: device.city, ip: device.ip });
-        if(isCheckedDevice.length == 0){
-            this.sendNotification({
-                'ip': device.ip,
-                'time': timeNow,
-                'browser': device.browser,
-                'browser_version': device.browser_version,
-                'os': device.os,
-                'user_id': result._id
-            }, res);
-        }
+        
         return res.status(200).send(this.successFormat({
             "token": tokens.accessToken,
             "refreshToken": tokens.refreshToken,
@@ -447,54 +449,8 @@ class User extends controller {
         let userID = user._id;
         let data = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-        let result = await deviceMangement.findOne({
-            user: userID,
-            browser: data.browser,
-            region: data.region,
-            city: data.city,
-            os: data.os,
-            verified: true,
-            is_deleted: false
-        });
-        if (!result) {
-            // insert new device records
-            await this.insertDevice(req, res,userID);
-            let urlHash = this.encryptHash({
-                "user_id": userID,
-                "email": data.email,
-                "ip": data.ip,
-                "browser": data.browser,
-                "verified": true
-            });
-
-            // send email notification
-            this.sendNotificationForAuthorize({
-                "subject": `Authorize New Device/Location ${data.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
-                "email_for": "user-authorize",
-                "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
-                "location": `${data.city} ${data.country}`,
-                "ip": data.ip,
-                "hash": urlHash,
-                "user_id": userID
-            }, res)
-            let check = await mangHash.findOne({ email: data.email, type_for: 'new_authorize_device', is_active: false });
-            if (check) {
-                await mangHash.findOneAndUpdate({ email: data.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
-            }
-            else {
-                await new mangHash({
-                    email: data.email,
-                    type_for: 'new_authorize_device',
-                    hash: urlHash,
-                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                }).save()
-            }
-            return res.status(401).send(this.errorMsgFormat({
-                'msg': 'unauthorized',
-                'hash': urlHash
-            }, 'users', 401));
-        }
-        else {
+        let count = await deviceMangement.countDocuments();
+        if(count == 0){
             let isAuth = await users.findOne({
                 _id: userID, $or: [
                     {
@@ -530,8 +486,94 @@ class User extends controller {
                     }, 'users', 500));
                 }
             }
+        }else{
+            let result = await deviceMangement.findOne({
+                user: userID,
+                browser: data.browser,
+                region: data.region,
+                city: data.city,
+                os: data.os,
+                verified: true,
+                is_deleted: false
+            });
+            if (!result) {
+                // insert new device records
+                await this.insertDevice(req, res,userID);
+                let urlHash = this.encryptHash({
+                    "user_id": userID,
+                    "email": data.email,
+                    "ip": data.ip,
+                    "browser": data.browser,
+                    "verified": true
+                });
+    
+                // send email notification
+                this.sendNotificationForAuthorize({
+                    "subject": `Authorize New Device/Location ${data.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
+                    "email_for": "user-authorize",
+                    "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
+                    "location": `${data.city} ${data.country}`,
+                    "ip": data.ip,
+                    "hash": urlHash,
+                    "user_id": userID
+                }, res)
+                let check = await mangHash.findOne({ email: data.email, type_for: 'new_authorize_device', is_active: false });
+                if (check) {
+                    await mangHash.findOneAndUpdate({ email: data.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                }
+                else {
+                    await new mangHash({
+                        email: data.email,
+                        type_for: 'new_authorize_device',
+                        hash: urlHash,
+                        created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                    }).save()
+                }
+                return res.status(401).send(this.errorMsgFormat({
+                    'msg': 'unauthorized',
+                    'hash': urlHash
+                }, 'users', 401));
+            }
+            else {
+                let isAuth = await users.findOne({
+                    _id: userID, $or: [
+                        {
+                            "sms_auth": true
+                        },
+                        {
+                            "google_auth": true
+                        }
+                    ]
+                })
+                if (isAuth) {
+                    res.status(200).send(this.successFormat({
+                        'message': "You are successfully logged in.",
+                        "google_auth": isAuth.google_auth,
+                        "sms_auth": isAuth.sms_auth,
+    
+                    }, userID))
+    
+                }
+                else {
+                    const isChecked = await this.generatorOtpforEmail(userID, "login", res);
+                    if (isChecked.status) {
+                        res.status(200).send(this.successFormat({
+                            'message': "Send a OTP on your email",
+                            "region": data.region,
+                            "city": data.city,
+                            "ip": data.ip
+                        }, userID))
+                    }
+                    else {
+                        return res.status(500).send(this.errorMsgFormat({
+                            'message': isChecked.error
+                        }, 'users', 500));
+                    }
+                }
+            }
+    
         }
-
+        
 
     }
 

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
-const userTempSchema = mongoose.Schema({
+const userTempSchema = new mongoose.Schema({
     email: String,
     password: String,
     referral_code: { type: String, default: null },

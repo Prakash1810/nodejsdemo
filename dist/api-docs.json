@@ -1740,10 +1740,16 @@
                         "id":"123456789",
                         "attributes": {
                             "otp":"BEL-12345",
-                            "device_id":"123456789",
-                            "region":"Tamil Nadu",
-                            "city":"Chennai",
-                            "ip":"171.78.139.181"
+                            "is_browser": true,
+                            "is_mobile": false,
+                            "os": "Linux",
+                            "os_byte": "x86_64",
+                            "browser": "Chrome",
+                            "browser_version": "71.0.3578.11",
+                            "ip": "171.78.139.181",
+                            "city": "Chennai",
+                            "region": "Tamil Nadu",
+                            "country": "India"
 
                         }
                     }
@@ -2043,7 +2049,17 @@
                         "id": "{{user_id}}",
                         "attributes": {
                             "google_secrete_key": "dsa31dsae2132",
-                            "g2f_code": "1234567S"
+                            "g2f_code": "1234567S",
+                            "is_browser": true,
+                            "is_mobile": false,
+                            "os": "Linux",
+                            "os_byte": "x86_64",
+                            "browser": "Chrome",
+                            "browser_version": "71.0.3578.11",
+                            "ip": "171.78.139.181",
+                            "city": "Chennai",
+                            "region": "Tamil Nadu",
+                            "country": "India"
                         }
                     }
                 }
