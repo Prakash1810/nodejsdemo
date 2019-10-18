@@ -136,7 +136,7 @@ class Registration extends Controller {
         return false;
     }
 
-    insertUser(req, res) {
+    async insertUser(req, res) {
         let data = req.body.data.attributes;
         if (data.referrer_code) {
             let check = await users.find({ referral_code: data.referrer_code });
