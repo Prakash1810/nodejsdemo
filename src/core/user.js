@@ -22,7 +22,7 @@ const addMarket = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
-const service = require('../services/api');
+
 const _ = require('lodash');
 const kyc = require('./kyc');
 
@@ -70,7 +70,7 @@ class User extends controller {
                     'message': 'Token is expired.'
                 }));
             }
-        }
+       }
         else {
             if (userTemp.removeUserTemp(userHash.id)) {
                 await accountActive.deleteOne({ email: userHash.email, type_for: 'register' })
@@ -107,7 +107,6 @@ class User extends controller {
                 }
             });
             //create referal code
-            console.log("result:", result.email);
             let subString = result.email.substring(0, 4);
             let randomNumber = Math.floor(Math.random() * (99 - 10) + 10);
 
@@ -115,8 +114,6 @@ class User extends controller {
             let sub = str.indexOf("@");
             var getChar = str.substring(sub, 0);
             let twoChar = getChar.substring(sub, getChar.length - 2)
-
-            //chechk referrercode
             let user = await users.create({
                 email: result.email,
                 password: result.password,
@@ -134,7 +131,7 @@ class User extends controller {
                 await accountActive.deleteOne({ email: result.email, type_for: 'register' })
                 await apiServices.initAddressCreation(user);
                 //welcome mail
-                await this.updateBalance(inc.login_seq);
+                await this.updateBalance(inc.login_seq,res);
                 //deposit mail
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulation!, Your account has been activated.`
@@ -824,7 +821,7 @@ class User extends controller {
                     .limit(query.limit)
                     .populate({
                         path: 'device',
-                        select: '_id user created_date __v'
+                        select: '_id user created_date ip country city'
                     })
                     .sort({ _id: 'desc' })
                     .exec()
@@ -1518,30 +1515,29 @@ class User extends controller {
                 check.kyc_verified = true;
                 check.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
                 check.save();
-                await this.updateBalance(check.user_id);
+                await this.updateBalance(check.user_id,res);
 
             }
             let checkUser = await users.findOne({ referral_code: check.referrer_code });
             if (checkUser) {
-                await this.updateBalance(checkUser.user_id);
+                await this.updateBalance(checkUser.user_id,res);
             }
         }
     }
-    async updateBalance(user) {
-        let data = {
-            data: {
-                attributes: {
+    async updateBalance(user,res) {
+
+        let payloads = {
                     "user_id": user,
-                    "asset": "BTC",
+                    "asset": "BDX",
                     "business": "deposit",
                     "business_id": user,
                     "change": "50",
                     "detial": {}
                 }
-            }
-        }
-        await service.matchingEngineRequest('patch', 'balance/update', data, res, 'register');
-        return;
+        console.log("data:",payloads)
+        let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+        return response;
+        
     }
 }
 

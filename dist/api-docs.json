@@ -1679,7 +1679,7 @@
                             "email": "xyz@gmail.com",
                             "password": "1234567S",
                             "password_confirmation": "1234567S",
-                            "referral_code": "BELDEX_001"
+                            "referrer_code": "BELDEX_001"
                         }
                     }
                 }
