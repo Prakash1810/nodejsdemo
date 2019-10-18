@@ -277,7 +277,7 @@ class Api extends Controller {
     }
 
     async matchingEngineRequest(method, path, data, res, type = 'json') {
-        console.log("data:", data);
+        console.log("data1:", data);
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;

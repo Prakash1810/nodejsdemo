@@ -10,6 +10,7 @@ const mangHash = require('../db/management-hash');
 const config = require('config');
 const bcrypt = require('bcrypt');
 const accountActive = require('../db/account-active');
+const users = require('../db/users');
 
 class Registration extends Controller {
 
@@ -38,7 +39,7 @@ class Registration extends Controller {
                 }
             }).label('password'),
             password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
-            referral_code: Joi.string().allow('').optional()
+            referrer_code: Joi.string().allow('').optional()
         });
 
         return Joi.validate(req, schema, { abortEarly: false })
