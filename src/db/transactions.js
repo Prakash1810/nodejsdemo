@@ -7,13 +7,13 @@ const transactionSchema = mongoose.Schema({
     type: String,
     amount: Number,
     tx_hash: { type: String, default: null },
-    fee: { type: Number, default: null },
-    final_amount: { type: Number, default: null },
+    fee: { type: Number, default: 0 },
+    final_amount: { type: Number, default: 0},
     status: { type: Number, default: 0}, // 1 => Pending / 2 => Success / 3 => Failure / 4 => Waiting for an approval 
     date: { 
         type: Date,
         default: Date.now,
-        alias: 'created_date'
+        
     },
     updated_date: Date,
     is_deleted: { type: Boolean, default: false },
