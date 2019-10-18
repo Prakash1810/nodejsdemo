@@ -367,4 +367,28 @@ router.get('/withdraw/active', auth, async (req,res) =>
     }
 })
 
+router.get('/kyc-session', auth, async (req,res) =>
+{
+    try{
+        await user.kycSession(req,res);
+    }
+    catch(err){
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
+
+router.post('/kyc-update',  async (req,res) =>
+{
+    try{
+        await user.kycUpdate(req,res);
+    }
+    catch(err){
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
+
 module.exports = router;

@@ -16,6 +16,7 @@ const usersSchema = mongoose.Schema({
     },
     mobile_code: { type: String, default: null },
     referral_code: { type: String, default: null },
+    referrer_code:{type: String, default: null },
     sms_auth: { type: Boolean, default: false },
     google_auth: { type: Boolean, default: false },
     google_secrete_key: { type: String, default: null },
@@ -34,7 +35,12 @@ const usersSchema = mongoose.Schema({
     taker_fee : {type:String},
     maker_fee:{type:String},
     withdraw : {type:Boolean,default:true},
-    password_reset_time: {type:Date}
+    password_reset_time: {type:Date},  total_btc: { type: Number, default: 0 },
+    total_usdt: { type: Number, default: 0 },
+    kyc_verified: { type: Boolean, default: false },
+    kyc_verified_date: Date,
+    vip: { type: Boolean, default: false },
+    trade: { type: Boolean, default: true }
 });
 
 // autoIncrement.initialize(mongooseConnect.connect());

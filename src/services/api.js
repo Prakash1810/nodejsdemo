@@ -19,9 +19,6 @@ const Redis = require('ioredis');
 class Api extends Controller {
 
     async sendEmailNotification(data,res) {
-
-
-        
         if (data.email_for !== 'registration') {
             
             if(!data.user_id){
@@ -37,8 +34,6 @@ class Api extends Controller {
                         code:data.verification_code
                     }))
             }
-          
-
         }
         console.log('data:',data);
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
@@ -56,7 +51,6 @@ class Api extends Controller {
             let results = await assets.find({
                 is_default: true
             });
-            console.log('Result:', results);
             results.forEach((result) => {
                 let data = {
                     "coin": result.asset_code,
@@ -287,7 +281,7 @@ class Api extends Controller {
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;
-
+        console.log("Result:",result);
         if (result.status) {
             let value = result.result.result;
             if (type === 'json') {

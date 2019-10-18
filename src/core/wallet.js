@@ -855,7 +855,8 @@ class Wallet extends controller{
                             is_deleted: false
                         }, {
                             $set: {
-                                status: 1
+                                status: 1,
+                                updated_date:moment().format('YYYY-MM-DD HH:mm:ss')
                             }
                         });
                         return res.status(200).json(this.successFormat({
@@ -958,6 +959,8 @@ class Wallet extends controller{
         }
 
     }
+
+  
 
 }
 

@@ -1,8 +1,10 @@
 const moment = require('moment');
+const axios = require('axios');
 const users = require('../db/users');
 const fee = require('../db/matching-engine-config');
 const apiServices = require('../services/api');
 const deviceMangement = require('../db/device-management');
+const deviceWhitelist = require('../db/device-whitelist');
 const loginHistory = require('../db/login-history');
 const userTemp = require('../db/user-temp');
 const helpers = require('../helpers/helper.functions');
@@ -22,6 +24,7 @@ const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
 const service = require('../services/api');
 const _ = require('lodash');
+const kyc = require('./kyc');
 
 
 class User extends controller {
@@ -84,19 +87,41 @@ class User extends controller {
         }
 
     }
+    async getRandomString() {
+        var result = '';
+        var characters = 'abcdefghijklmnopqrstuvwxyz';
+        var charactersLength = characters.length;
+        for (var i = 0; i < 2; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
 
     async insertUser(result, res) {
 
         try {
+            let referrerCode = null;
             let inc = await sequence.findOneAndUpdate({ sequence_type: "users" }, {
                 $inc: {
                     login_seq: 1
                 }
             });
+            //create referal code
+            console.log("result:", result.email);
+            let subString = result.email.substring(0, 4);
+            let randomNumber = Math.floor(Math.random() * (99 - 10) + 10);
+
+            let str = result.email;
+            let sub = str.indexOf("@");
+            var getChar = str.substring(sub, 0);
+            let twoChar = getChar.substring(sub, getChar.length - 2)
+
+            //chechk referrercode
             let user = await users.create({
                 email: result.email,
                 password: result.password,
-                referral_code: result.referral_code,
+                referral_code: `${subString}${randomNumber}${await this.getRandomString()}${twoChar}`,
+                referrer_code: referrerCode,
                 created_date: result.created_date,
                 user_id: inc.login_seq,
                 taker_fee: (await fee.findOne({ config: 'takerFeeRate' })).value,
@@ -108,7 +133,9 @@ class User extends controller {
                 // address creation;
                 await accountActive.deleteOne({ email: result.email, type_for: 'register' })
                 await apiServices.initAddressCreation(user);
-
+                //welcome mail
+                await this.updateBalance(inc.login_seq);
+                //deposit mail
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulation!, Your account has been activated.`
                 }));
@@ -403,11 +430,11 @@ class User extends controller {
 
     }
 
-    async returnToken(req,res,result,type) {
+    async returnToken(req, res, result, type) {
         let attributes = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-        let isCheckedDevice = await deviceMangement.find({ user:result._id, region: attributes.region, city: attributes.city, ip: attributes.ip });
-        if(isCheckedDevice.length == 0){
+        let isCheckedDevice = await deviceMangement.find({ user: result._id, region: attributes.region, city: attributes.city, ip: attributes.ip });
+        if (isCheckedDevice.length == 0) {
             this.sendNotification({
                 'ip': attributes.ip,
                 'time': timeNow,
@@ -417,18 +444,17 @@ class User extends controller {
                 'user_id': result._id
             }, res);
         }
-        const device = await this.insertDevice(req,res, result._id, true ,'withValidation');
-       
-        let data ={
-            user:result._id,
+        const device = await this.insertDevice(req, res, result._id, true, 'withValidation');
+
+        let data = {
+            user: result._id,
             device: device._id,
-            auth_type: type ,
+            auth_type: type,
             login_date_time: timeNow
         }
         let loginHistory = await this.insertLoginHistory(data);
-        let tokens = await this.storeToken(result, loginHistory);
-
-        
+        let tokens = await this.storeToken(result, loginHistory._id);
+        await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') })
         return res.status(200).send(this.successFormat({
             "token": tokens.accessToken,
             "refreshToken": tokens.refreshToken,
@@ -441,16 +467,32 @@ class User extends controller {
             "withdraw": result.withdraw,
             "expiresIn": config.get('secrete.expiry'),
             "taker_fee": result.taker_fee,
-            "maker_fee": result.maker_fee
+            "maker_fee": result.maker_fee,
+            "kyc_verified": result.kyc_verified,
+            "trade": result.trade,
+            "referral-code": result.referral_code
+
         }, result._id));
+    }
+
+    async addWhitelist(data, userID, verify = false) {
+        return await new deviceWhitelist({
+            user: userID,
+            browser: data.browser,
+            region: data.region,
+            city: data.city,
+            os: data.os,
+            verified: verify,
+        }).save();
+
     }
 
     async checkDevice(req, res, user) {
         let userID = user._id;
         let data = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-        let count = await deviceMangement.countDocuments();
-        if(count == 0){
+        let count = await deviceWhitelist.countDocuments();
+        if (count == 0) {
             let isAuth = await users.findOne({
                 _id: userID, $or: [
                     {
@@ -462,6 +504,7 @@ class User extends controller {
                 ]
             })
             if (isAuth) {
+                await this.addWhitelist(data, userID, true);
                 res.status(200).send(this.successFormat({
                     'message': "You are successfully logged in.",
                     "google_auth": isAuth.google_auth,
@@ -473,6 +516,7 @@ class User extends controller {
             else {
                 const isChecked = await this.generatorOtpforEmail(userID, "login", res);
                 if (isChecked.status) {
+                    await this.addWhitelist(data, userID, true);
                     res.status(200).send(this.successFormat({
                         'message': "Send a OTP on your email",
                         "region": data.region,
@@ -486,19 +530,18 @@ class User extends controller {
                     }, 'users', 500));
                 }
             }
-        }else{
-            let result = await deviceMangement.findOne({
+        } else {
+            let result = await deviceWhitelist.findOne({
                 user: userID,
                 browser: data.browser,
                 region: data.region,
                 city: data.city,
                 os: data.os,
                 verified: true,
-                is_deleted: false
             });
             if (!result) {
                 // insert new device records
-                await this.insertDevice(req, res,userID);
+                await this.insertDevice(req, res, userID);
                 let urlHash = this.encryptHash({
                     "user_id": userID,
                     "email": data.email,
@@ -506,7 +549,7 @@ class User extends controller {
                     "browser": data.browser,
                     "verified": true
                 });
-    
+
                 // send email notification
                 this.sendNotificationForAuthorize({
                     "subject": `Authorize New Device/Location ${data.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
@@ -529,6 +572,7 @@ class User extends controller {
                         created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                     }).save()
                 }
+                await this.addWhitelist(data, userID, false);
                 return res.status(401).send(this.errorMsgFormat({
                     'msg': 'unauthorized',
                     'hash': urlHash
@@ -550,9 +594,9 @@ class User extends controller {
                         'message': "You are successfully logged in.",
                         "google_auth": isAuth.google_auth,
                         "sms_auth": isAuth.sms_auth,
-    
+
                     }, userID))
-    
+
                 }
                 else {
                     const isChecked = await this.generatorOtpforEmail(userID, "login", res);
@@ -571,9 +615,9 @@ class User extends controller {
                     }
                 }
             }
-    
+
         }
-        
+
 
     }
 
@@ -588,10 +632,10 @@ class User extends controller {
                 let duration = moment.duration(moment().diff(isChecked.create_date_time));
                 if (getSeconds > duration.asSeconds()) {
                     if (typeFor == "login") {
-                            let checkUser = await users.findOne({ _id: id });
-                            await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
-                            delete data.otp;
-                            await this.returnToken(req, res, checkUser,1);
+                        let checkUser = await users.findOne({ _id: id });
+                        await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+                        delete data.otp;
+                        await this.returnToken(req, res, checkUser, 1);
                     }
                     else {
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
@@ -708,8 +752,8 @@ class User extends controller {
         return apiServices.sendEmailNotification(serviceData, res);
     }
 
-    async insertDevice(req, res, userID, verify = false, type='withoutValidation') {
-        if(type!='withoutValidation'){
+    async insertDevice(req, res, userID, verify = false, type = 'withoutValidation') {
+        if (type != 'withoutValidation') {
             let { error } = await this.deviceValidate(req.body.data.attributes);
             if (error) {
                 return res.status(400).send(this.errorFormat(error, 'users', 400));
@@ -737,9 +781,9 @@ class User extends controller {
     async insertLoginHistory(data) {
 
         let attributes = {
-            user:data.user,
+            user: data.user,
             device: data.device,
-            auth_type: data.auth_type ,
+            auth_type: data.auth_type,
             login_date_time: data.login_date_time
         }
         return new loginHistory(attributes).save();
@@ -780,7 +824,7 @@ class User extends controller {
                     .limit(query.limit)
                     .populate({
                         path: 'device',
-                        select: '-_id -user -created_date -__v'
+                        select: '_id user created_date __v'
                     })
                     .sort({ _id: 'desc' })
                     .exec()
@@ -935,7 +979,8 @@ class User extends controller {
                     'message': 'Invalid device.'
                 }));
             } else {
-                await mangHash.findOneAndUpdate({ email: hash.data.email, hash: req.params.hash, type_for: 'new_authorize_device', }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                await mangHash.findOneAndUpdate({ email: hash.data.email, hash: req.params.hash, type_for: 'new_authorize_device', }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+                await deviceWhitelist.findOneAndUpdate({ user: hash.data.user_id, verified: false }, { verified: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                 return res.status(202).send(this.successFormat({
                     'message': 'Your IP address whitelisted Now you can able to login..'
                 }, device.user, 'users', 202));
@@ -1144,7 +1189,7 @@ class User extends controller {
                     let user = await users.findOne({ _id: req.body.data.id });
                     delete data.g2f_code;
                     delete data.google_secrete_key;
-                    await this.returnToken(req,res, user,2)
+                    await this.returnToken(req, res, user, 2)
                 }
                 else if (method == 'setting' || type == 'boolean') {
                     return { status: true };
@@ -1448,8 +1493,56 @@ class User extends controller {
             }
         }
     }
+    async kycSession(req, res) {
 
+        let token = req.headers.authorization;
+        let userId = req.user.user;
+        let result = await kyc.init(userId, token)
+        if (result) {
+            return res.status(200).send(this.successFormat(
+                result
+            ), null, 'user', 200);
+        }
+        else {
+            return res.status(400).send(this.errorFormat({
+                'message': `Something wrong`
+            }));
+        }
+    }
 
+    async kycUpdate(req, res) {
+        let data = req.body.data.attributes;
+        if (data) {
+            let check = await users.findOne({ _id: userId });
+            if (check) {
+                check.kyc_verified = true;
+                check.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
+                check.save();
+                await this.updateBalance(check.user_id);
+
+            }
+            let checkUser = await users.findOne({ referral_code: check.referrer_code });
+            if (checkUser) {
+                await this.updateBalance(checkUser.user_id);
+            }
+        }
+    }
+    async updateBalance(user) {
+        let data = {
+            data: {
+                attributes: {
+                    "user_id": user,
+                    "asset": "BTC",
+                    "business": "deposit",
+                    "business_id": user,
+                    "change": "50",
+                    "detial": {}
+                }
+            }
+        }
+        await service.matchingEngineRequest('patch', 'balance/update', data, res, 'register');
+        return;
+    }
 }
 
 module.exports = new User;

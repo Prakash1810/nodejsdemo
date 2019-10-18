@@ -137,10 +137,20 @@ class Registration extends Controller {
     }
 
     insertUser(req, res) {
+        let data = req.body.data.attributes;
+        if (data.referrer_code) {
+            let check = await users.find({ referral_code: data.referrer_code });
+            if (check.length==0) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Your referrer code did not match'
+                }));
+            }
+        }
+
         UserTemp.create({
-            email: req.body.data.attributes.email,
-            password: req.body.data.attributes.password,
-            referral_code: req.body.data.attributes.referral_code ? req.body.data.attributes.referral_code : null
+            email: data.email,
+            password: data.password,
+            referrer_code: data.referrer_code ? data.referrer_code : null
         }, async (err, user) => {
             if (err) {
                 return res.status(500).json(this.errorFormat({ 'message': err.message }));
@@ -151,7 +161,7 @@ class Registration extends Controller {
                
                 if (isChecked) {
                     await new accountActive({
-                        email :req.body.data.attributes.email,
+                        email :data.email,
                         type_for : 'register',
                     }).save();
                     return res.status(200).json(this.successFormat({
@@ -179,11 +189,19 @@ class Registration extends Controller {
             "email_for": "registration"
         };
         //check how to many time click a resend button
-
         await apiServices.sendEmailNotification(serviceData);
         if(type == 'withoutResend')
         {
-            await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { hash: encryptedHash, count:1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+            let checked = await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" })
+            if(checked){
+                checked.hash=encryptedHash;
+                checked.count = 1
+                checked.created_date=moment().format('YYYY-MM-DD HH:mm:ss');
+                checked.save();
+            }
+            else{
+                await new mangHash({ email: user.email, hash: encryptedHash, type_for: "registration", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
+            }
         }
         else{
             let checkCount = await mangHash.findOne({ email: user.email, is_active: false, type_for: "registration" });
