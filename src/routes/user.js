@@ -391,4 +391,16 @@ router.post('/kyc-update',  async (req,res) =>
     }
 })
 
+router.get('/referrer-history/:code',  async (req,res) =>
+{
+    try{
+        await user.referrerHistory(req,res);
+    }
+    catch(err){
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
+
 module.exports = router;
