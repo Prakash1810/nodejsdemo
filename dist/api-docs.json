@@ -574,6 +574,29 @@
                 ]
             }
         },
+        "user/kyc-session": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "get kyc response",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "Setting",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/logout"
+                        }
+                    }
+                ]
+            }
+        },
         "user/whitelist": {
             "delete": {
                 "tags": [

@@ -1,5 +1,4 @@
 const moment = require('moment');
-const axios = require('axios');
 const users = require('../db/users');
 const fee = require('../db/matching-engine-config');
 const apiServices = require('../services/api');
@@ -22,6 +21,8 @@ const addMarket = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
+const referralHistory = require('../db/referral-history');
+const fs = require('fs')
 
 const _ = require('lodash');
 const kyc = require('./kyc');
@@ -70,7 +71,7 @@ class User extends controller {
                     'message': 'Token is expired.'
                 }));
             }
-       }
+        }
         else {
             if (userTemp.removeUserTemp(userHash.id)) {
                 await accountActive.deleteOne({ email: userHash.email, type_for: 'register' })
@@ -131,7 +132,7 @@ class User extends controller {
                 await accountActive.deleteOne({ email: result.email, type_for: 'register' })
                 await apiServices.initAddressCreation(user);
                 //welcome mail
-                await this.updateBalance(inc.login_seq,res);
+                await this.updateBalance(inc.login_seq, res);
                 //deposit mail
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulation!, Your account has been activated.`
@@ -1508,6 +1509,11 @@ class User extends controller {
     }
 
     async kycUpdate(req, res) {
+        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${JSON.stringify(req)} : ${JSON.stringify(req.body)}`
+        fs.appendFile('kycresponse.txt', `\n${fileConent} `, function (err) {
+            if (err)
+                console.log("Error:", err);
+        });
         let data = req.body.data.attributes;
         if (data) {
             let check = await users.findOne({ _id: userId });
@@ -1515,29 +1521,54 @@ class User extends controller {
                 check.kyc_verified = true;
                 check.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
                 check.save();
-                await this.updateBalance(check.user_id,res);
+                await this.updateBalance(check.user_id, res);
 
             }
             let checkUser = await users.findOne({ referral_code: check.referrer_code });
             if (checkUser) {
-                await this.updateBalance(checkUser.user_id,res);
+                await this.updateBalance(checkUser.user_id, res);
+                await new referralHistory({
+                    user_id: userId,
+                    referrer_code: check.referrer_code,
+                    created_date:  moment().format('YYYY-MM-DD HH:mm:ss')
+                }).save()
             }
         }
     }
-    async updateBalance(user,res) {
+
+    async referrerHistory(req,res){
+
+        let checkReferrerCode = await referralHistory
+        .find({referrer_code:req.params.code})
+        .populate({
+            path: 'user',
+            select: 'email referral_code'
+        })
+        .exec()
+        if(checkReferrerCode.length==0){
+            return res.status(200).json(this.successFormat({
+                "data": [],
+            }, null, 'user', 200));
+        }
+        return res.status(200).json(this.successFormat({
+            "data": checkReferrerCode,
+        }, null, 'user', 200));
+    }
+    
+    async updateBalance(user, res) {
 
         let payloads = {
-                    "user_id": user,
-                    "asset": "BDX",
-                    "business": "deposit",
-                    "business_id": user,
-                    "change": "50",
-                    "detial": {}
-                }
-        console.log("data:",payloads)
+            "user_id": user,
+            "asset": "BDX",
+            "business": "deposit",
+            "business_id": user,
+            "change": "50",
+            "detial": {}
+        }
+        console.log("data:", payloads)
         let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
         return response;
-        
+
     }
 }
 
