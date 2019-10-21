@@ -22,8 +22,8 @@ const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
 const referralHistory = require('../db/referral-history');
+const kycDetials = require('../db/kyc-detials');
 const fs = require('fs')
-
 const _ = require('lodash');
 const kyc = require('./kyc');
 
@@ -132,7 +132,7 @@ class User extends controller {
                 await accountActive.deleteOne({ email: result.email, type_for: 'register' })
                 await apiServices.initAddressCreation(user);
                 //welcome mail
-                await this.updateBalance(inc.login_seq, res);
+                await this.updateBalance(inc.login_seq, user._id, res);
                 //deposit mail
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulation!, Your account has been activated.`
@@ -468,7 +468,7 @@ class User extends controller {
             "maker_fee": result.maker_fee,
             "kyc_verified": result.kyc_verified,
             "trade": result.trade,
-            "referral-code": result.referral_code
+            "referral_code": result.referral_code
 
         }, result._id));
     }
@@ -578,12 +578,12 @@ class User extends controller {
                     os: data.os,
                     verified: false,
                 })
-                if(!checkWhiteList){
+                if (!checkWhiteList) {
                     await this.addWhitelist(data, userID, false);
                 }
-               
+
                 return res.status(401).send(this.errorMsgFormat({
-                    'msg': 'unauthorized',
+                    'message': 'unauthorized',
                     'hash': urlHash
                 }, 'users', 401));
             }
@@ -928,50 +928,57 @@ class User extends controller {
     }
 
     async patchWhiteListIP(req, res) {
+        try{
+            let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
 
-        let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
-
-        if (deviceHash.data.user_id) {
-            let check = await mangHash.findOne({ email: deviceHash.data.email, type_for: "new_authorize_device", hash: req.params.hash });
-            if (!check) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': "The link has been expired, please click the latest authorize link from your email or try to resend again."
+            if (deviceHash.data.user_id) {
+                let check = await mangHash.findOne({ email: deviceHash.data.email, type_for: "new_authorize_device", hash: req.params.hash });
+                if (!check) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': "The link has been expired, please click the latest authorize link from your email or try to resend again."
+                    }));
+                }
+                if (check.is_active) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': "The link has already authroized. Please try to login."
+                    }));
+                }
+                let date = new Date(check.created_date);
+                let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
+                let duration = moment.duration(moment().diff(check.created_date));
+                if (getSeconds > duration.asSeconds()) {
+                    deviceMangement.findOne({
+                        browser: deviceHash.data.browser,
+                        user: deviceHash.data.user_id
+                    })
+                        .exec()
+                        .then((result) => {
+                            if (!result) {
+                                return res.status(400).send(this.errorMsgFormat({
+                                    'message': 'Invalid token. may be token as expired!'
+                                }));
+                            } else {
+                                this.updateWhiteListIP(deviceHash, req, res);
+                            }
+                        });
+                }
+                else {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'The link has been expired, please try to resend again.'
+                    }));
+                }
+            } else {
+                return res.status(404).send(this.errorMsgFormat({
+                    'message': 'Invalid token '
                 }));
             }
-            if (check.is_active) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': "The link has already authroized. Please try to login."
-                }));
-            }
-            let date = new Date(check.created_date);
-            let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
-            let duration = moment.duration(moment().diff(check.created_date));
-            if (getSeconds > duration.asSeconds()) {
-                deviceMangement.findOne({
-                    browser: deviceHash.data.browser,
-                    user: deviceHash.data.user_id
-                })
-                    .exec()
-                    .then((result) => {
-                        if (!result) {
-                            return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Invalid token. may be token as expired!'
-                            }));
-                        } else {
-                            this.updateWhiteListIP(deviceHash, req, res);
-                        }
-                    });
-            }
-            else {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'The link has been expired, please try to resend again.'
-                }));
-            }
-        } else {
-            return res.status(404).send(this.errorMsgFormat({
-                'message': 'Invalid token '
-            }));
         }
+        catch(err){
+            return res.status(500).send(this.errorMsgFormat({
+                'message': err.message
+            }, 'users', 500));
+        }
+       
     }
 
     updateWhiteListIP(hash, req, res) {
@@ -1532,31 +1539,31 @@ class User extends controller {
                 check.kyc_verified = true;
                 check.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
                 check.save();
-                await this.updateBalance(check.user_id, res);
+                await this.updateBalance(check.user_id,check._id , res);
 
             }
             let checkUser = await users.findOne({ referral_code: check.referrer_code });
             if (checkUser) {
-                await this.updateBalance(checkUser.user_id, res);
+                await this.updateBalance(checkUser.user_id,checkUser._id , res);
                 await new referralHistory({
                     user_id: userId,
                     referrer_code: check.referrer_code,
-                    created_date:  moment().format('YYYY-MM-DD HH:mm:ss')
+                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                 }).save()
             }
         }
     }
 
-    async referrerHistory(req,res){
+    async referrerHistory(req, res) {
 
         let checkReferrerCode = await referralHistory
-        .find({referrer_code:req.params.code})
-        .populate({
-            path: 'user',
-            select: 'email referral_code'
-        })
-        .exec()
-        if(checkReferrerCode.length==0){
+            .find({ referrer_code: req.params.code })
+            .populate({
+                path: 'user',
+                select: 'email referral_code'
+            })
+            .exec()
+        if (checkReferrerCode.length == 0) {
             return res.status(200).json(this.successFormat({
                 "data": [],
             }, null, 'user', 200));
@@ -1566,7 +1573,7 @@ class User extends controller {
         }, null, 'user', 200));
     }
 
-    async updateBalance(user, res) {
+    async updateBalance(user, userId, res) {
 
         let payloads = {
             "user_id": user,
@@ -1576,10 +1583,39 @@ class User extends controller {
             "change": "50",
             "detial": {}
         }
-        console.log("data:", payloads)
         let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-        return response;
+        let serviceData = {
+            "subject": ` ${payloads.asset} - Deposit Confirmation`,
+            "email_for": "deposit-notification",
+            "amt":payloads.change,
+            "coin":payloads.asset,
+            "user_id": userId
 
+        };
+
+        return apiServices.sendEmailNotification(serviceData, res);
+
+    }
+
+    async kycDetialsValidation(req) {
+        let schema = Joi.object().keys({
+            first_name: Joi.string().required(),
+            middle_name: Joi.string().optional(),
+            surname: Joi.boolean().optional(),
+            date_of_birth: Joi.string().required(),
+            address: Joi.string().required()
+        });
+
+        return Joi.validate(req, schema, {
+            abortEarly: false
+        });
+    }
+
+    async kycDetials(req, res) {
+        let data = req.body.data.attributes;
+        data.user = req.user.user;
+        await new kycDetials(data).save();
+        return res.status(200).send(this.successFormat({ "message": "Added successfully" }, null, 'user', 200))
     }
 }
 
