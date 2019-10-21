@@ -597,6 +597,37 @@
                 ]
             }
         },
+        "user/kyc-detials": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "store kyc detials",
+                "operationId": "",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "Parameters",
+                        "in": "body",
+                        "description": "Setting",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/detials"
+                        }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "description": "kyc detials",
+                        "required": true,
+                        "type": "string"
+                    }
+                ]
+            }
+        },
         "user/whitelist": {
             "delete": {
                 "tags": [
@@ -714,7 +745,29 @@
                 ]
             }
         },
-       
+        "user/referrer-history/{code}": {
+            "patch": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Working IP check",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "description": "ID to fetch",
+                        "required": true,
+                        "type": "string",
+                        "schema": {
+                            "$ref": "#/definitions/whitelist"
+                        }
+                    }
+                ]
+            }
+        },
         "wallet/assets": {
             "get": {
                 "tags": [
@@ -2120,6 +2173,26 @@
                             "anti_spoofing_code": "satz",
                             "anti_spoofing": "true",
                             "g2f_code":"674145"
+                        }
+                    }
+                }
+            }
+        },
+        "detials": {
+            "properties": {
+                "lang": {
+                    "required": true,
+                    "type": "string",
+                    "example": "en"
+                },
+                "data": {
+                    "example": {
+                        "attributes": {
+                            "first_name": "mathan",
+                            "middle_name": "kumar",
+                            "surname": "jebasingh",
+                            "date_of_birth": "23-10-1995",
+                            "address": "2/3 East street Tirunelvlei"
                         }
                     }
                 }
