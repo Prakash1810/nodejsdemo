@@ -583,7 +583,7 @@ class User extends controller {
                 }
 
                 return res.status(401).send(this.errorMsgFormat({
-                    'msg': 'unauthorized',
+                    'message': 'unauthorized',
                     'hash': urlHash
                 }, 'users', 401));
             }
