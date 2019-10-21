@@ -570,7 +570,18 @@ class User extends controller {
                         created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                     }).save()
                 }
-                await this.addWhitelist(data, userID, false);
+                let checkWhiteList = await deviceWhitelist.findOne({
+                    user: userID,
+                    browser: data.browser,
+                    region: data.region,
+                    city: data.city,
+                    os: data.os,
+                    verified: false,
+                })
+                if(!checkWhiteList){
+                    await this.addWhitelist(data, userID, false);
+                }
+               
                 return res.status(401).send(this.errorMsgFormat({
                     'msg': 'unauthorized',
                     'hash': urlHash
@@ -1554,7 +1565,7 @@ class User extends controller {
             "data": checkReferrerCode,
         }, null, 'user', 200));
     }
-    
+
     async updateBalance(user, res) {
 
         let payloads = {
