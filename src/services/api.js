@@ -19,10 +19,9 @@ const Redis = require('ioredis');
 class Api extends Controller {
 
     async sendEmailNotification(data,res) {
-        if (data.email_for !== 'registration') {
+        if (data.email_for !== 'registration' && data.email_for !== 'welcome') {
             
             if(!data.user_id){
-                console.log('Error');
                 return res.status(400).send(controller.errorFormat({"message":"User id is not define"}, 'users', 400));
             }
             if(data.email_for == 'wallet-withdraw')

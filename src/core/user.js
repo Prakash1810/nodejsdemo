@@ -26,6 +26,7 @@ const kycDetials = require('../db/kyc-detials');
 const fs = require('fs')
 const _ = require('lodash');
 const kyc = require('./kyc');
+const settings = require('../db/settings');
 
 
 class User extends controller {
@@ -115,10 +116,11 @@ class User extends controller {
             let sub = str.indexOf("@");
             var getChar = str.substring(sub, 0);
             let twoChar = getChar.substring(sub, getChar.length - 2)
+            let code =`${subString}${randomNumber}${await this.getRandomString()}${twoChar}`;
             let user = await users.create({
                 email: result.email,
                 password: result.password,
-                referral_code: `${subString}${randomNumber}${await this.getRandomString()}${twoChar}`,
+                referral_code: code,
                 referrer_code: referrerCode,
                 created_date: result.created_date,
                 user_id: inc.login_seq,
@@ -132,8 +134,15 @@ class User extends controller {
                 await accountActive.deleteOne({ email: result.email, type_for: 'register' })
                 await apiServices.initAddressCreation(user);
                 //welcome mail
-                await this.updateBalance(inc.login_seq, user._id, res);
-                //deposit mail
+                let serviceData ={
+                    subject :"Welcome to Beldex",
+                    email_for:"welcome",
+                    to_email:user.email,
+                    link:`${process.env.LINKURL}${code}`
+                }
+                await apiServices.sendEmailNotification(serviceData, res);
+                await this.updateBalance(inc.login_seq, user._id, res,'registration_reaward');
+                //deposit mail,
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulation!, Your account has been activated.`
                 }));
@@ -1539,12 +1548,12 @@ class User extends controller {
                 check.kyc_verified = true;
                 check.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
                 check.save();
-                await this.updateBalance(check.user_id,check._id , res);
+                await this.updateBalance(check.user_id,check._id , res,'kyc_verified_reward');
 
             }
             let checkUser = await users.findOne({ referral_code: check.referrer_code });
             if (checkUser) {
-                await this.updateBalance(checkUser.user_id,checkUser._id , res);
+                await this.updateBalance(checkUser.user_id,checkUser._id , res,'referrer_reward');
                 await new referralHistory({
                     user_id: userId,
                     referrer_code: check.referrer_code,
@@ -1573,26 +1582,30 @@ class User extends controller {
         }, null, 'user', 200));
     }
 
-    async updateBalance(user, userId, res) {
-
-        let payloads = {
-            "user_id": user,
-            "asset": "BDX",
-            "business": "deposit",
-            "business_id": user,
-            "change": "50",
-            "detial": {}
+    async updateBalance(user, userId, res,type) {
+        let checkSetting = await settings.findOne({type:type});
+        console.log("Setting:",checkSetting);
+        if(checkSetting){
+            let payloads = {
+                "user_id": user,
+                "asset": "BDX",
+                "business": "deposit",
+                "business_id": user,
+                "change": checkSetting.amount,
+                "detial": {}
+            }
+            await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+            let serviceData = {
+                "subject": ` ${payloads.asset} - Deposit Confirmation`,
+                "email_for": "deposit-notification",
+                "amt":payloads.change,
+                "coin":payloads.asset,
+                "user_id": userId
+    
+            };
+    
         }
-        let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-        let serviceData = {
-            "subject": ` ${payloads.asset} - Deposit Confirmation`,
-            "email_for": "deposit-notification",
-            "amt":payloads.change,
-            "coin":payloads.asset,
-            "user_id": userId
-
-        };
-
+      
         return apiServices.sendEmailNotification(serviceData, res);
 
     }
@@ -1603,7 +1616,7 @@ class User extends controller {
             middle_name: Joi.string().optional(),
             surname: Joi.boolean().optional(),
             date_of_birth: Joi.string().required(),
-            address: Joi.string().required()
+            address: Joi.string().required().max(100)
         });
 
         return Joi.validate(req, schema, {
