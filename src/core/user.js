@@ -1566,7 +1566,7 @@ class User extends controller {
                     'message': 'User not found'
                 }, 'user', 400));
             }
-            checkUser.kyc_statistics = "PROCESSING"
+            checkUser.kyc_statistics = "PENDING"
             checkUser.save();
 
         }
