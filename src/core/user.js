@@ -1666,6 +1666,7 @@ class User extends controller {
 
     async kycDetails(req, res) {
         let data = req.body.data.attributes;
+        let sessionResponse;
         data.user = req.user.user;
         let checkUser = await users.findOne({_id:data.user})
         if(!checkUser){
@@ -1688,10 +1689,18 @@ class User extends controller {
         
         let response = await this.kycSession(req,res,'details');
         if(response.status){
-            let sessionResponse = response.result.parsedResponse;
+            sessionResponse = response.result.parsedResponse;
             data.session_id = sessionResponse.session_id;
             data.client_session_token = sessionResponse.client_session_token;
-            await new kycDetails(data).save();
+            let check = await kycDetails.findOne({user:data.user})
+          
+            if(check){
+                check.session_id = sessionResponse.session_id,
+                check.client_session_token =sessionResponse.client_session_token;
+                check.save();
+            }else{
+                await new kycDetails(data).save();
+            }
             let getData ={
                 session_id : sessionResponse.session_id,
                 client_session_token : sessionResponse.client_session_token
