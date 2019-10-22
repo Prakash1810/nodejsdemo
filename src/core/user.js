@@ -22,11 +22,12 @@ const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
 const referralHistory = require('../db/referral-history');
-const kycDetials = require('../db/kyc-details');
+const kycDetails = require('../db/kyc-details');
 const fs = require('fs')
 const _ = require('lodash');
 const kyc = require('./kyc');
 const settings = require('../db/settings');
+const NodeRSA = require('node-rsa');
 
 
 class User extends controller {
@@ -421,7 +422,7 @@ class User extends controller {
             }
 
             return res.status(200).send(this.successFormat({
-                'message': "Send a OTP on your email"
+                'message': "The OTP has been sent your registered email ID. Please check"
             }, user))
 
         }
@@ -621,7 +622,7 @@ class User extends controller {
                     const isChecked = await this.generatorOtpforEmail(userID, "login", res);
                     if (isChecked.status) {
                         res.status(200).send(this.successFormat({
-                            'message': "Send a OTP on your email",
+                            'message': "The OTP has been sent your registered email ID. Please check",
                             "region": data.region,
                             "city": data.city,
                             "ip": data.ip
@@ -1527,17 +1528,23 @@ class User extends controller {
             }
         }
     }
-    async kycSession(req, res) {
+    async kycSession(req, res,type='session') {
 
         let token = req.headers.authorization;
         let userId = req.user.user;
         let result = await kyc.init(userId, token)
         if (result) {
+            if(type=='details'){
+                return {status:true,result:result};
+            }
             return res.status(200).send(this.successFormat(
                 result
             ), null, 'user', 200);
         }
         else {
+            if(type=='details'){
+                return {status:false,error:`Something wrong`};
+            }
             return res.status(400).send(this.errorFormat({
                 'message': `Something wrong`
             }));
@@ -1545,32 +1552,54 @@ class User extends controller {
     }
 
     async kycUpdate(req, res) {
-        console.log("Kyc_Request:",req);
-        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${JSON.stringify(req)} : ${JSON.stringify(req.body)}`
-        fs.appendFile('kycresponse.txt', `\n${fileConent} `, function (err) {
-            if (err)
-                console.log("Error:", err);
-        });
-        let data = req.body.data.attributes;
-        if (data) {
-            let check = await users.findOne({ _id: userId });
-            if (check) {
-                check.kyc_verified = true;
-                check.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
-                check.save();
-                await this.updateBalance(check.user_id,check._id , res,'kyc_verified_reward');
+        
+        let data = req.body;
+        console.log("Data:",data);
+        if(data.topic == 'resource_update'){
+            let checkSessionId = await kycDetails.findOne({session_id:data.session_id});
+            let checkUser = await users.findOne({_id:checkSessionId.user});
+            if(!checkUser){
+                return res.status(400).send(this.errorFormat({
+                    'message': 'User not found'
+                }, 'user', 400));
+            }
+            checkUser.kyc_statistics = "PROCESSING"
+            checkUser.save();
 
-            }
-            let checkUser = await users.findOne({ referral_code: check.referrer_code });
-            if (checkUser) {
-                await this.updateBalance(checkUser.user_id,checkUser._id , res,'referrer_reward');
-                await new referralHistory({
-                    user_id: userId,
-                    referrer_code: check.referrer_code,
-                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                }).save()
-            }
         }
+        if(data.topic == 'check_completion'){
+            let contents = await fs.readFileSync('./Beldex-KYC-access-security.pem', 'utf8');
+            console.log(contents);
+            var key = new NodeRSA();
+            key.importKey(contents, "pkcs1-private-pem");
+            var encrypted = key.encrypt("hello", 'base64');
+            console.log("Encrpyted:",encrypted)
+        }
+        // let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${JSON.stringify(req)} : ${JSON.stringify(req.body)}`
+        // fs.appendFile('kycresponse.txt', `\n${fileConent} `, function (err) {
+        //     if (err)
+        //         console.log("Error:", err);
+        // });
+        // let data = req.body.data.attributes;
+        // if (data) {
+        //     let check = await users.findOne({ _id: userId });
+        //     if (check) {
+        //         check.kyc_verified = true;
+        //         check.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
+        //         check.save();
+        //         await this.updateBalance(check.user_id,check._id , res,'kyc_verified_reward');
+
+        //     }
+        //     let checkUser = await users.findOne({ referral_code: check.referrer_code });
+        //     if (checkUser) {
+        //         await this.updateBalance(checkUser.user_id,checkUser._id , res,'referrer_reward');
+        //         await new referralHistory({
+        //             user_id: userId,
+        //             referrer_code: check.referrer_code,
+        //             created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+        //         }).save()
+        //     }
+        // }
     }
 
     async referrerHistory(req, res) {
@@ -1623,9 +1652,11 @@ class User extends controller {
         let schema = Joi.object().keys({
             first_name: Joi.string().required(),
             middle_name: Joi.string().optional(),
-            surname: Joi.boolean().optional(),
+            surname: Joi.string().optional(),
             date_of_birth: Joi.string().required(),
-            address: Joi.string().required().max(100)
+            address: Joi.string().required().max(100),
+            g2f_code: Joi.string(),
+            otp: Joi.string(),
         });
 
         return Joi.validate(req, schema, {
@@ -1636,8 +1667,43 @@ class User extends controller {
     async kycDetails(req, res) {
         let data = req.body.data.attributes;
         data.user = req.user.user;
-        await new kycDetials(data).save();
-        return res.status(200).send(this.successFormat({ "message": "Added successfully" }, null, 'user', 200))
+        let checkUser = await users.findOne({_id:data.user})
+        if(!checkUser){
+            return res.status(400).send(this.errorFormat({
+                'message': 'User not found'
+            }, 'user', 400));
+        }
+       
+            if (data.otp == null || undefined) {
+                return res.status(400).send(this.errorFormat({
+                    'message': 'Otp must be provide'
+                }, 'user', 400));
+            }
+            let checkOtp = await this.validateOtpForEmail(req, res, "kyc details");
+            if(checkOtp.status == false){
+                return res.status(400).send(this.errorFormat({
+                    'message':checkOtp.err
+                }, 'user', 400));
+            }
+        
+        let response = await this.kycSession(req,res,'details');
+        if(response.status){
+            let sessionResponse = response.result.parsedResponse;
+            data.session_id = sessionResponse.session_id;
+            data.client_session_token = sessionResponse.client_session_token;
+            await new kycDetails(data).save();
+            let getData ={
+                session_id : sessionResponse.session_id,
+                client_session_token : sessionResponse.client_session_token
+            }
+            return res.status(200).send(this.successFormat(getData, null, 'user', 200))
+        }
+        else{
+            return res.status(400).send(this.errorFormat({
+                'message':response.error
+            }, 'user', 400));
+        }
+        
     }
 }
 

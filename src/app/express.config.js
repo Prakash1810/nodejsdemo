@@ -44,7 +44,7 @@ app.use(`/api/${config.get('site.version')}`, cors() , (req, res, next) => {
       request: req.body,
       response: null,
       path: req.path,
-      ip_address: (req.body.data.attributes !== undefined && req.body.data.attributes.ip !== undefined) ? req.body.data.attributes.ip : ''
+      //ip_address: (req.body.data.attributes !== undefined && req.body.data.attributes.ip !== undefined) ? req.body.data.attributes.ip : ''
     });
   } 
   next();
