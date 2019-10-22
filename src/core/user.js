@@ -1638,7 +1638,7 @@ class User extends controller {
     }
 
     async referrerHistory(req, res) {
-
+        
         let checkReferrerCode = await referralHistory
             .find({ referrer_code: req.params.code })
             .populate({
@@ -1657,9 +1657,10 @@ class User extends controller {
     }
 
     async updateBalance(user, userId, res, type) {
+        let payloads;
         let checkSetting = await settings.findOne({ type: type });
         if (checkSetting) {
-            let payloads = {
+             payloads = {
                 "user_id": user,
                 "asset": "BDX",
                 "business": "deposit",
