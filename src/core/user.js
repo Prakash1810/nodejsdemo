@@ -23,7 +23,7 @@ const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
 const referralHistory = require('../db/referral-history');
 const kycDetails = require('../db/kyc-details');
-const fs = require('fs')
+const fs = require('fs');
 const _ = require('lodash');
 const kyc = require('./kyc');
 const settings = require('../db/settings');
@@ -1401,7 +1401,7 @@ class User extends controller {
     }
 
     async addMarkets(req, res) {
-        let market = await service.matchingEngineRequestForMarketList('market/list', req, res, 'withAdd');
+        let market = await apiServices.matchingEngineRequestForMarketList('market/list', req, res, 'withAdd');
 
         if (market.status) {
             let data = market.result;
@@ -1568,12 +1568,13 @@ class User extends controller {
 
         }
         if(data.topic == 'check_completion'){
-            let contents = await fs.readFileSync('./Beldex-KYC-access-security.pem', 'utf8');
-            console.log(contents);
-            var key = new NodeRSA();
-            key.importKey(contents, "pkcs1-private-pem");
-            var encrypted = key.encrypt("hello", 'base64');
-            console.log("Encrpyted:",encrypted)
+            // let text =
+            // let contents = await fs.readFileSync(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem');
+            // let key = new NodeRSA();
+            // key.importKey(contents, "pkcs1-private-pem");
+            // var encrypted = key.encrypt("hello", 'base64');
+
+          
         }
         // let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${JSON.stringify(req)} : ${JSON.stringify(req.body)}`
         // fs.appendFile('kycresponse.txt', `\n${fileConent} `, function (err) {
