@@ -498,7 +498,8 @@ class User extends controller {
         let userID = user._id;
         let data = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-        let count = await deviceWhitelist.countDocuments();
+        let count = await deviceWhitelist.countDocuments({user:userID});
+        console.log("Count:",count)
         if (count == 0) {
             let isAuth = await users.findOne({
                 _id: userID, $or: [
