@@ -7,7 +7,9 @@ const kycSchema = mongoose.Schema({
     middle_name: { type: String },
     surname: { type: String },
     date_of_birth: { type: String, required: true },
-    address: { type: String, required: true }
+    address: { type: String, required: true },
+    session_id: { type: String, required: true },
+    client_session_token: { type: String, required: true }
 });
 
 

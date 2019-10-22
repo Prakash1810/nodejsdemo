@@ -597,7 +597,7 @@
                 ]
             }
         },
-        "user/kyc-detials": {
+        "user/kyc-details": {
             "post": {
                 "tags": [
                     "users"
@@ -615,7 +615,7 @@
                         "required": true,
                         "type": "string",
                         "schema": {
-                            "$ref": "#/definitions/detials"
+                            "$ref": "#/definitions/details"
                         }
                     },
                     {
@@ -2178,7 +2178,7 @@
                 }
             }
         },
-        "detials": {
+        "details": {
             "properties": {
                 "lang": {
                     "required": true,
@@ -2188,6 +2188,7 @@
                 "data": {
                     "example": {
                         "attributes": {
+                            "otp":"BEL-12345",
                             "first_name": "mathan",
                             "middle_name": "kumar",
                             "surname": "jebasingh",
