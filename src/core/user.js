@@ -1,4 +1,5 @@
 const moment = require('moment');
+const axios = require('axios');
 const users = require('../db/users');
 const fee = require('../db/matching-engine-config');
 const apiServices = require('../services/api');
@@ -28,6 +29,8 @@ const _ = require('lodash');
 const kyc = require('./kyc');
 const settings = require('../db/settings');
 const NodeRSA = require('node-rsa');
+const uuidv4 = require('uuid/v4');
+const { RequestBuilder, Payload } = require('yoti');
 
 
 class User extends controller {
@@ -117,7 +120,7 @@ class User extends controller {
             let sub = str.indexOf("@");
             var getChar = str.substring(sub, 0);
             let twoChar = getChar.substring(sub, getChar.length - 2)
-            let code =`${subString}${randomNumber}${await this.getRandomString()}${twoChar}`;
+            let code = `${subString}${randomNumber}${await this.getRandomString()}${twoChar}`;
             let user = await users.create({
                 email: result.email,
                 password: result.password,
@@ -135,14 +138,14 @@ class User extends controller {
                 await accountActive.deleteOne({ email: result.email, type_for: 'register' })
                 await apiServices.initAddressCreation(user);
                 //welcome mail
-                let serviceData ={
-                    subject :"Welcome to Beldex",
-                    email_for:"welcome",
-                    to_email:user.email,
-                    link:`${process.env.LINKURL}${code}`
+                let serviceData = {
+                    subject: "Welcome to Beldex",
+                    email_for: "welcome",
+                    to_email: user.email,
+                    link: `${process.env.LINKURL}${code}`
                 }
                 await apiServices.sendEmailNotification(serviceData, res);
-                await this.updateBalance(inc.login_seq, user._id, res,'registration_reaward');
+                await this.updateBalance(inc.login_seq, user._id, res, 'registration_reaward');
                 //deposit mail,
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulation!, Your account has been activated.`
@@ -499,8 +502,8 @@ class User extends controller {
         let userID = user._id;
         let data = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-        let count = await deviceWhitelist.countDocuments({user:userID});
-        console.log("Count:",count)
+        let count = await deviceWhitelist.countDocuments({ user: userID });
+        console.log("Count:", count)
         if (count == 0) {
             let isAuth = await users.findOne({
                 _id: userID, $or: [
@@ -939,7 +942,7 @@ class User extends controller {
     }
 
     async patchWhiteListIP(req, res) {
-        try{
+        try {
             let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
 
             if (deviceHash.data.user_id) {
@@ -984,12 +987,12 @@ class User extends controller {
                 }));
             }
         }
-        catch(err){
+        catch (err) {
             return res.status(500).send(this.errorMsgFormat({
                 'message': err.message
             }, 'users', 500));
         }
-       
+
     }
 
     updateWhiteListIP(hash, req, res) {
@@ -1122,19 +1125,19 @@ class User extends controller {
         let requestedData = req.body.data.attributes;
         let userHash = JSON.parse(helpers.decrypt(requestedData.code));
         if (userHash.is_active !== undefined) {
-            let checkActive = await users.findOne({ _id: req.body.data.id});
+            let checkActive = await users.findOne({ _id: req.body.data.id });
             if (!checkActive) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'User not found',
                 }, 'users', 400));
-                
+
             }
-            if(checkActive.is_active == false){
+            if (checkActive.is_active == false) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'This account has already disable, Please contact our beldex support team',
                 }, 'users', 400));
             }
-            else{
+            else {
                 let checked = await this.patchSettings(req, res, 'disable');
                 if (checked.status) {
                     return res.status(202).send(this.successFormat({
@@ -1147,7 +1150,7 @@ class User extends controller {
                     }, 'users', 400));
                 }
             }
-            
+
         } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Invalid request..'
@@ -1524,26 +1527,26 @@ class User extends controller {
                 checkUser.save();
                 return res.status(200).send(this.successFormat({
                     'message': 'You can be proceed withdraw'
-                }), null, 'user', 200);
+                }, null, 'user', 200));
             }
         }
     }
-    async kycSession(req, res,type='session') {
+    async kycSession(req, res, type = 'session') {
 
         let token = req.headers.authorization;
         let userId = req.user.user;
         let result = await kyc.init(userId, token)
         if (result) {
-            if(type=='details'){
-                return {status:true,result:result};
+            if (type == 'details') {
+                return { status: true, result: result };
             }
             return res.status(200).send(this.successFormat(
                 result
             ), null, 'user', 200);
         }
         else {
-            if(type=='details'){
-                return {status:false,error:`Something wrong`};
+            if (type == 'details') {
+                return { status: false, error: `Something wrong` };
             }
             return res.status(400).send(this.errorFormat({
                 'message': `Something wrong`
@@ -1552,13 +1555,13 @@ class User extends controller {
     }
 
     async kycUpdate(req, res) {
-        
+
         let data = req.body;
-        console.log("Data:",data);
-        if(data.topic == 'resource_update'){
-            let checkSessionId = await kycDetails.findOne({session_id:data.session_id});
-            let checkUser = await users.findOne({_id:checkSessionId.user});
-            if(!checkUser){
+        console.log("Data:", data);
+        if (data.topic == 'resource_update') {
+            let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
+            let checkUser = await users.findOne({ _id: checkSessionId.user });
+            if (!checkUser) {
                 return res.status(400).send(this.errorFormat({
                     'message': 'User not found'
                 }, 'user', 400));
@@ -1567,40 +1570,71 @@ class User extends controller {
             checkUser.save();
 
         }
-        if(data.topic == 'check_completion'){
-            // let text =
-            // let contents = await fs.readFileSync(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem');
-            // let key = new NodeRSA();
-            // key.importKey(contents, "pkcs1-private-pem");
-            // var encrypted = key.encrypt("hello", 'base64');
-
-          
+        if (data.topic == 'check_completion') {
+            let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
+            let checkUser = await users.findOne({ _id: checkSessionId.user });
+            if (!checkUser) {
+                return res.status(400).send(this.errorFormat({
+                    'message': 'User not found'
+                }, 'user', 400));
+            }
+            let date = new Date();
+            let timestamp = date.valueOf();
+            console.log("Timestamp:",timestamp);
+            let uuid = uuidv4();
+            let url = `https://api.yoti.com/idverify/v1/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`;
+            let text = `GET&/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`
+            let contents = await fs.readFileSync(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem');
+            let key = new NodeRSA(contents, "pkcs1",{ encryptionScheme: 'pkcs1' });
+            //key.importKey(contents, "pkcs1");
+            let encrypted = key.encrypt(text, 'base64');
+            console.log("Encrypted:",encrypted)
+            // let response = await axios.get(url, {
+            //     headers: {
+            //         'X-Yoti-Auth-Digest': encrypted,
+            //         'X-Yoti-Auth-Id': `${process.env.CLIENT_SDK_ID}`
+            //     }
+            // })
+            let request = new RequestBuilder()
+            .withBaseUrl(process.env.YOTI_BASE_URL)
+            .withPemFilePath(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem')
+            .withEndpoint(`/sessions/${data.session_id}`)
+            .withMethod('GET')
+            .withQueryParam('sdkId', process.env.CLIENT_SDK_ID)
+            .withQueryParam('nonce',uuid)
+            .withQueryParam('timestamp',timestamp)
+            .withHeader('X-Yoti-Auth-Digest',encrypted)
+            .withHeader('X-Yoti-Auth-Id',process.env.CLIENT_SDK_ID)
+            .build();
+            let response = await request.execute()
+            console.log("Response:", response);
+            let attributes = response.checks[0].report.recommendation.value;
+            if (attributes == 'APPROVE') {
+                checkUser.kyc_verified = true;
+                checkUser.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
+                checkUser.kyc_statistics = "APPROVE"
+                checkUser.save();
+                await this.updateBalance(checkUser.user_id, checkUser._id, res, 'kyc_verified_reward');
+                let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
+                if (checkReferrerCode) {
+                    let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
+                    await new referralHistory({
+                        user_id: userId,
+                        referrer_code: check.referrer_code,
+                        amount: amount,
+                        created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                    }).save()
+                }
+            }
+            if (attributes == 'REJECT') {
+                checkUser.kyc_statistics = "REJECT"
+                checkUser.save();
+            }
+            if (attributes == 'NOT_AVAILABLE') {
+                checkUser.kyc_statistics = "NOT_AVAILABLE"
+                checkUser.save();
+            }
         }
-        // let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${JSON.stringify(req)} : ${JSON.stringify(req.body)}`
-        // fs.appendFile('kycresponse.txt', `\n${fileConent} `, function (err) {
-        //     if (err)
-        //         console.log("Error:", err);
-        // });
-        // let data = req.body.data.attributes;
-        // if (data) {
-        //     let check = await users.findOne({ _id: userId });
-        //     if (check) {
-        //         check.kyc_verified = true;
-        //         check.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
-        //         check.save();
-        //         await this.updateBalance(check.user_id,check._id , res,'kyc_verified_reward');
-
-        //     }
-        //     let checkUser = await users.findOne({ referral_code: check.referrer_code });
-        //     if (checkUser) {
-        //         await this.updateBalance(checkUser.user_id,checkUser._id , res,'referrer_reward');
-        //         await new referralHistory({
-        //             user_id: userId,
-        //             referrer_code: check.referrer_code,
-        //             created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-        //         }).save()
-        //     }
-        // }
     }
 
     async referrerHistory(req, res) {
@@ -1622,9 +1656,9 @@ class User extends controller {
         }, null, 'user', 200));
     }
 
-    async updateBalance(user, userId, res,type) {
-        let checkSetting = await settings.findOne({type:type});
-        if(checkSetting){
+    async updateBalance(user, userId, res, type) {
+        let checkSetting = await settings.findOne({ type: type });
+        if (checkSetting) {
             let payloads = {
                 "user_id": user,
                 "asset": "BDX",
@@ -1637,15 +1671,15 @@ class User extends controller {
             let serviceData = {
                 "subject": ` ${payloads.asset} - Deposit Confirmation`,
                 "email_for": "deposit-notification",
-                "amt":payloads.change,
-                "coin":payloads.asset,
+                "amt": payloads.change,
+                "coin": payloads.asset,
                 "user_id": userId
-    
+
             };
             await apiServices.sendEmailNotification(serviceData, res);
         }
-      
-        return 
+
+        return payloads.change
 
     }
 
@@ -1669,51 +1703,65 @@ class User extends controller {
         let data = req.body.data.attributes;
         let sessionResponse;
         data.user = req.user.user;
-        let checkUser = await users.findOne({_id:data.user})
-        if(!checkUser){
+        let checkUser = await users.findOne({ _id: data.user })
+        if (!checkUser) {
             return res.status(400).send(this.errorFormat({
                 'message': 'User not found'
             }, 'user', 400));
         }
-       
-            if (data.otp == null || undefined) {
-                return res.status(400).send(this.errorFormat({
-                    'message': 'Otp must be provide'
-                }, 'user', 400));
-            }
-            let checkOtp = await this.validateOtpForEmail(req, res, "kyc details");
-            if(checkOtp.status == false){
-                return res.status(400).send(this.errorFormat({
-                    'message':checkOtp.err
-                }, 'user', 400));
-            }
-        
-        let response = await this.kycSession(req,res,'details');
-        if(response.status){
+
+        if (data.otp == null || undefined) {
+            return res.status(400).send(this.errorFormat({
+                'message': 'Otp must be provide'
+            }, 'user', 400));
+        }
+        let checkOtp = await this.validateOtpForEmail(req, res, "kyc details");
+        if (checkOtp.status == false) {
+            return res.status(400).send(this.errorFormat({
+                'message': checkOtp.err
+            }, 'user', 400));
+        }
+
+        let response = await this.kycSession(req, res, 'details');
+        if (response.status) {
             sessionResponse = response.result.parsedResponse;
             data.session_id = sessionResponse.session_id;
             data.client_session_token = sessionResponse.client_session_token;
-            let check = await kycDetails.findOne({user:data.user})
-          
-            if(check){
+            let check = await kycDetails.findOne({ user: data.user })
+
+            if (check) {
                 check.session_id = sessionResponse.session_id,
-                check.client_session_token =sessionResponse.client_session_token;
+                    check.client_session_token = sessionResponse.client_session_token;
                 check.save();
-            }else{
+            } else {
                 await new kycDetails(data).save();
             }
-            let getData ={
-                session_id : sessionResponse.session_id,
-                client_session_token : sessionResponse.client_session_token
+            let getData = {
+                session_id: sessionResponse.session_id,
+                client_session_token: sessionResponse.client_session_token
             }
             return res.status(200).send(this.successFormat(getData, null, 'user', 200))
         }
-        else{
+        else {
             return res.status(400).send(this.errorFormat({
-                'message':response.error
+                'message': response.error
             }, 'user', 400));
         }
-        
+
+    }
+
+    async kycStatistics(req,res){
+        let checkUser = await users.findOne({_id:req.user.user});
+        if(checkUser){
+            return res.status(200).send(this.successFormat({
+                'kyc_statistics': checkUser.kyc_statistics
+            }, null, 'user', 200));
+        }
+        else{
+            return res.status(400).send(this.errorFormat({
+                'message': 'User not found'
+            }, 'user', 400));
+        }
     }
 }
 
