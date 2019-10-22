@@ -1,6 +1,5 @@
 const app        = require('./src/app/express.config');
 const mongoose = require('./src/app/db.config');
-const swagger    = require('./docs');
 const compression = require('compression');
 
 
@@ -9,8 +8,8 @@ const compression = require('compression');
 mongoose.connect();
 
 app.use(compression());
-// swagger api documentation
-app.use('/doc', swagger);
+
+
 
 
 
