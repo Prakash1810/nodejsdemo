@@ -11,4 +11,4 @@ const kycSchema = mongoose.Schema({
 });
 
 
-module.exports = mongoose.model('kyc-detials', kycSchema);
+module.exports = mongoose.model('kyc-details', kycSchema);

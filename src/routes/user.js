@@ -403,14 +403,14 @@ router.get('/referrer-history/:code', async (req,res) =>
     }
 })
 
-router.post('/kyc-detials', auth,async (req,res) =>
+router.post('/kyc-details', auth,async (req,res) =>
 {
     try{
-        let { error } = user.kycDetialsValidation(req.body.data.attributes);
+        let { error } = user.kycDetailsValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         }
-        await user.kycDetials(req,res);
+        await user.kycDetails(req,res);
     }
     catch(err){
         return res.status(500).send(controller.errorMsgFormat({

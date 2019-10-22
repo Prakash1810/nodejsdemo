@@ -40,7 +40,7 @@ app.use(`/api/${config.get('site.version')}`, cors() , (req, res, next) => {
 
   if( Object.keys(req.body).length !== 0 ) {
     AuditLog.collection.insert({
-      user_id : (req.body.data.user_id !== undefined) ? req.body.data.user_id : '',
+      //user_id : (req.body.data.user_id !== undefined) ? req.body.data.user_id : '',
       request: req.body,
       response: null,
       path: req.path,

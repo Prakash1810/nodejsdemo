@@ -22,7 +22,7 @@ const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
 const referralHistory = require('../db/referral-history');
-const kycDetials = require('../db/kyc-detials');
+const kycDetials = require('../db/kyc-details');
 const fs = require('fs')
 const _ = require('lodash');
 const kyc = require('./kyc');
@@ -498,7 +498,8 @@ class User extends controller {
         let userID = user._id;
         let data = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-        let count = await deviceWhitelist.countDocuments();
+        let count = await deviceWhitelist.countDocuments({user:userID});
+        console.log("Count:",count)
         if (count == 0) {
             let isAuth = await users.findOne({
                 _id: userID, $or: [
@@ -1120,24 +1121,32 @@ class User extends controller {
         let requestedData = req.body.data.attributes;
         let userHash = JSON.parse(helpers.decrypt(requestedData.code));
         if (userHash.is_active !== undefined) {
-            let checkActive = await users.findOne({ _id: req.body.data.id, is_active: false });
-            if (checkActive) {
+            let checkActive = await users.findOne({ _id: req.body.data.id});
+            if (!checkActive) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'User not found',
+                }, 'users', 400));
+                
+            }
+            if(checkActive.is_active == false){
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'This account has already disable, Please contact our beldex support team',
                 }, 'users', 400));
             }
-
-            let checked = await this.patchSettings(req, res, 'disable');
-            if (checked.status) {
-                return res.status(202).send(this.successFormat({
-                    'message': 'Your request is updated successfully.'
-                }, null, 'users', 202));
+            else{
+                let checked = await this.patchSettings(req, res, 'disable');
+                if (checked.status) {
+                    return res.status(202).send(this.successFormat({
+                        'message': 'Your request is updated successfully.'
+                    }, null, 'users', 202));
+                }
+                else {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Invalid request..'
+                    }, 'users', 400));
+                }
             }
-            else {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid request..'
-                }, 'users', 400));
-            }
+            
         } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Invalid request..'
@@ -1536,6 +1545,7 @@ class User extends controller {
     }
 
     async kycUpdate(req, res) {
+        console.log("Kyc_Request:",req);
         let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${JSON.stringify(req)} : ${JSON.stringify(req.body)}`
         fs.appendFile('kycresponse.txt', `\n${fileConent} `, function (err) {
             if (err)
@@ -1584,7 +1594,6 @@ class User extends controller {
 
     async updateBalance(user, userId, res,type) {
         let checkSetting = await settings.findOne({type:type});
-        console.log("Setting:",checkSetting);
         if(checkSetting){
             let payloads = {
                 "user_id": user,
@@ -1603,14 +1612,14 @@ class User extends controller {
                 "user_id": userId
     
             };
-    
+            await apiServices.sendEmailNotification(serviceData, res);
         }
       
-        return apiServices.sendEmailNotification(serviceData, res);
+        return 
 
     }
 
-    async kycDetialsValidation(req) {
+    async kycDetailsValidation(req) {
         let schema = Joi.object().keys({
             first_name: Joi.string().required(),
             middle_name: Joi.string().optional(),
@@ -1624,7 +1633,7 @@ class User extends controller {
         });
     }
 
-    async kycDetials(req, res) {
+    async kycDetails(req, res) {
         let data = req.body.data.attributes;
         data.user = req.user.user;
         await new kycDetials(data).save();

@@ -143,7 +143,7 @@ class Registration extends Controller {
             let check = await users.find({ referral_code: data.referrer_code });
             if (check.length==0) {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Your referrer code did not match'
+                    'message': 'Referrer is not valid, Pls check your referrer code'
                 }));
             }
         }
