@@ -1580,36 +1580,33 @@ class User extends controller {
             }
             let date = new Date();
             let timestamp = date.valueOf();
-            console.log("Timestamp:",timestamp);
+            console.log("Timestamp:", timestamp);
             let uuid = uuidv4();
             let url = `https://api.yoti.com/idverify/v1/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`;
             let text = `GET&/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`
             let contents = await fs.readFileSync(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem');
-            let key = new NodeRSA(contents, "pkcs1",{ encryptionScheme: 'pkcs1' });
+            let key = new NodeRSA(contents, "pkcs1", { encryptionScheme: 'pkcs1' });
             //key.importKey(contents, "pkcs1");
             let encrypted = key.encrypt(text, 'base64');
-            console.log("Encrypted:",encrypted)
+            console.log("Encrypted:", encrypted)
             // let response = await axios.get(url, {
             //     headers: {
             //         'X-Yoti-Auth-Digest': encrypted,
             //         'X-Yoti-Auth-Id': `${process.env.CLIENT_SDK_ID}`
             //     }
             // })
+            console.log()
             let request = new RequestBuilder()
-            .withBaseUrl(process.env.YOTI_BASE_URL)
-            .withPemFilePath(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem')
-            .withEndpoint(`/sessions/${data.session_id}`)
-            .withMethod('GET')
-            .withQueryParam('sdkId', process.env.CLIENT_SDK_ID)
-            .withQueryParam('nonce',uuid)
-            .withQueryParam('timestamp',timestamp)
-            .withHeader('X-Yoti-Auth-Digest',encrypted)
-            .withHeader('X-Yoti-Auth-Id',process.env.CLIENT_SDK_ID)
-            .build();
+                .withBaseUrl(process.env.YOTI_BASE_URL)
+                .withPemFilePath(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem')
+                .withEndpoint(`/sessions/${data.session_id}`)
+                .withMethod('GET')
+                .withQueryParam('sdkId', process.env.CLIENT_SDK_ID)
+                .build();
             let response = await request.execute()
             console.log("Response:", response);
-            let attributes = response.checks[0].report.recommendation.value;
-            if (attributes == 'APPROVE') {
+            let attributes = response.parsedResponse.checks[0].report.recommendation;
+            if (attributes.value == 'APPROVE') {
                 checkUser.kyc_verified = true;
                 checkUser.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
                 checkUser.kyc_statistics = "APPROVE"
@@ -1626,19 +1623,21 @@ class User extends controller {
                     }).save()
                 }
             }
-            if (attributes == 'REJECT') {
+            if (attributes.value == 'REJECT') {
                 checkUser.kyc_statistics = "REJECT"
                 checkUser.save();
+               
             }
-            if (attributes == 'NOT_AVAILABLE') {
+            if (attributes.value == 'NOT_AVAILABLE') {
                 checkUser.kyc_statistics = "NOT_AVAILABLE"
                 checkUser.save();
+            
             }
         }
     }
 
     async referrerHistory(req, res) {
-        
+
         let checkReferrerCode = await referralHistory
             .find({ referrer_code: req.params.code })
             .populate({
@@ -1660,7 +1659,7 @@ class User extends controller {
         let payloads;
         let checkSetting = await settings.findOne({ type: type });
         if (checkSetting) {
-             payloads = {
+            payloads = {
                 "user_id": user,
                 "asset": "BDX",
                 "business": "deposit",
@@ -1728,7 +1727,7 @@ class User extends controller {
             sessionResponse = response.result.parsedResponse;
             data.session_id = sessionResponse.session_id;
             data.client_session_token = sessionResponse.client_session_token;
-            checkUser.kyc_statistics='PENDING';
+            checkUser.kyc_statistics = 'PENDING';
             checkUser.save();
             let check = await kycDetails.findOne({ user: data.user })
 
@@ -1753,18 +1752,23 @@ class User extends controller {
 
     }
 
-    async kycStatistics(req,res){
-        let checkUser = await users.findOne({_id:req.user.user});
-        if(checkUser){
+    async kycStatistics(req, res) {
+        let checkUser = await users.findOne({ _id: req.user.user });
+        if (checkUser) {
             return res.status(200).send(this.successFormat({
                 'kyc_statistics': checkUser.kyc_statistics
             }, null, 'user', 200));
         }
-        else{
+        else {
             return res.status(400).send(this.errorFormat({
                 'message': 'User not found'
             }, 'user', 400));
         }
+    }
+
+    async removeUnderScore(str){
+        let removeUnderScore = str.replace(/_/g, " ").toLowerCase();
+        return removeUnderScore;
     }
 }
 
