@@ -1264,7 +1264,7 @@ class User extends controller {
         try {
             var method = "withoutAuth";
             if (req.headers.authorization && type != 'boolean') {
-                let isChecked = await service.authentication(req);
+                let isChecked = await apiServices.authentication(req);
                 if (!isChecked.status) {
                     return res.status(401).json(this.errorMsgFormat({
                         message: "Invalid authentication"
@@ -1728,6 +1728,8 @@ class User extends controller {
             sessionResponse = response.result.parsedResponse;
             data.session_id = sessionResponse.session_id;
             data.client_session_token = sessionResponse.client_session_token;
+            checkUser.kyc_statistics='PENDING';
+            checkUser.save();
             let check = await kycDetails.findOne({ user: data.user })
 
             if (check) {

@@ -39,7 +39,7 @@ const usersSchema = mongoose.Schema({
     total_usdt: { type: Number, default: 0 },
     kyc_verified: { type: Boolean, default: false },
     kyc_verified_date: Date,
-    kyc_statistics:{type:String,default:"PENDING"},
+    kyc_statistics:{type:String,default:null},
     vip: { type: Boolean, default: false },
     trade: { type: Boolean, default: true }
 });
