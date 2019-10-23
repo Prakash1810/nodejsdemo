@@ -1578,24 +1578,24 @@ class User extends controller {
                     'message': 'User not found'
                 }, 'user', 400));
             }
-            let date = new Date();
-            let timestamp = date.valueOf();
-            console.log("Timestamp:", timestamp);
-            let uuid = uuidv4();
-            let url = `https://api.yoti.com/idverify/v1/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`;
-            let text = `GET&/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`
-            let contents = await fs.readFileSync(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem');
-            let key = new NodeRSA(contents, "pkcs1", { encryptionScheme: 'pkcs1' });
-            //key.importKey(contents, "pkcs1");
-            let encrypted = key.encrypt(text, 'base64');
-            console.log("Encrypted:", encrypted)
-            // let response = await axios.get(url, {
-            //     headers: {
-            //         'X-Yoti-Auth-Digest': encrypted,
-            //         'X-Yoti-Auth-Id': `${process.env.CLIENT_SDK_ID}`
-            //     }
-            // })
-            console.log()
+            // let date = new Date();
+            // let timestamp = date.valueOf();
+            // console.log("Timestamp:", timestamp);
+            // let uuid = uuidv4();
+            // let url = `https://api.yoti.com/idverify/v1/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`;
+            // let text = `GET&/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`
+            // let contents = await fs.readFileSync(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem');
+            // let key = new NodeRSA(contents, "pkcs1", { encryptionScheme: 'pkcs1' });
+            // //key.importKey(contents, "pkcs1");
+            // let encrypted = key.encrypt(text, 'base64');
+            // console.log("Encrypted:", encrypted)
+            // // let response = await axios.get(url, {
+            // //     headers: {
+            // //         'X-Yoti-Auth-Digest': encrypted,
+            // //         'X-Yoti-Auth-Id': `${process.env.CLIENT_SDK_ID}`
+            // //     }
+            // // })
+            // console.log()
             let request = new RequestBuilder()
                 .withBaseUrl(process.env.YOTI_BASE_URL)
                 .withPemFilePath(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem')
