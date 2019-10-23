@@ -1616,25 +1616,46 @@ class User extends controller {
                 if (checkReferrerCode) {
                     let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
                     await new referralHistory({
-                        user_id: userId,
+                        user_id: checkUser._id,
                         referrer_code: check.referrer_code,
                         amount: amount,
                         created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                     }).save()
                 }
+                let serviceData = {
+                    "subject": `Your KYC verification was successful.`,
+                    "email_for": "kyc-success",
+                    "user_id": checkUser._id
+    
+                };
+                await apiServices.sendEmailNotification(serviceData, res);
             }
             if (attributes.value == 'REJECT') {
                 checkUser.kyc_statistics = "REJECT"
                 checkUser.save();
-               
+                let serviceData = {
+                    "subject": `Your KYC verification could not be processed.`,
+                    "email_for": "kyc-failure",
+                    "user_id": checkUser._id
+    
+                };
+                await apiServices.sendEmailNotification(serviceData, res);
             }
             if (attributes.value == 'NOT_AVAILABLE') {
                 checkUser.kyc_statistics = "NOT_AVAILABLE"
                 checkUser.save();
-            
+                let serviceData = {
+                    "subject": `Your KYC verification could not be processed.`,
+                    "email_for": "kyc-failure",
+                    "user_id": checkUser._id
+    
+                };
+                await apiServices.sendEmailNotification(serviceData, res);
             }
         }
+        return 
     }
+
 
     async referrerHistory(req, res) {
 
