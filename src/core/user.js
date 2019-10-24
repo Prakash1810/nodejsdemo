@@ -1598,10 +1598,8 @@ class User extends controller {
             // //         'X-Yoti-Auth-Id': `${process.env.CLIENT_SDK_ID}`
             // //     }
             // // })
-            console.log("welcome")
-
+          
             if ([null, "PENDING"].indexOf(checkUser.kyc_statistics) > -1) {
-                console.log("Hello");
                 let request = new RequestBuilder()
                     .withBaseUrl(process.env.YOTI_BASE_URL)
                     .withPemFilePath(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem')
