@@ -8,6 +8,7 @@ const kycSchema = mongoose.Schema({
     surname: { type: String },
     date_of_birth: { type: String, required: true },
     address: { type: String, required: true },
+    is_active:{type:Boolean,default:false},
     session_id: { type: String, required: true },
     client_session_token: { type: String, required: true }
 });

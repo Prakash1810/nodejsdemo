@@ -1620,7 +1620,7 @@ class User extends controller {
                         let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
                         await new referralHistory({
                             user_id: checkUser._id,
-                            referrer_code: check.referrer_code,
+                            referrer_code: checkReferrerCode.referrer_code,
                             amount: amount,
                             created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                         }).save()
@@ -1684,12 +1684,13 @@ class User extends controller {
     async updateBalance(user, userId, res, type) {
         let payloads;
         let checkSetting = await settings.findOne({ type: type });
+        let date = new Date();
         if (checkSetting) {
             payloads = {
                 "user_id": user,
                 "asset": "BDX",
                 "business": "deposit",
-                "business_id": user,
+                "business_id":  date.valueOf(),
                 "change": checkSetting.amount,
                 "detial": {}
             }
