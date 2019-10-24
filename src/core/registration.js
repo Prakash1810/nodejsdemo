@@ -78,14 +78,15 @@ class Registration extends Controller {
                                 }));
                             }
                             else {
-                                await accountActive.findOneAndUpdate({ email: data.email ,type_for : 'register'},{count:1,create_date:moment().format('YYYY-MM-DD HH:mm:ss')});
+
+                                await accountActive.findOneAndUpdate({ email: data.email ,type_for : 'register'},{count:0,create_date:moment().format('YYYY-MM-DD HH:mm:ss')});
                                 let user = await UserTemp.findOneAndUpdate({email:req.body.data.attributes.email},{
                                     password:data.password
                                 })
                                 await this.sendActivationEmail(user,'withoutResend');
                                 return res.status(200).json(this.successFormat({
                                     'message': `We have sent a confirmation email to your registered email address. ${data.email}. Please follow the instructions in the email to continue.`,
-                                }));
+                                },user._id));
                             }
 
                         }
@@ -103,9 +104,12 @@ class Registration extends Controller {
                                     password:data.password
                                 }})
                                 await this.sendActivationEmail(user,'withoutResend');
-                                return res.status(200).send(this.successFormat({
-                                    'message': `Your are about to exceed the maximum try - only ${config.get('accountActiveRegister.hmt') - isChecked.count + 1}  attempt${(config.get('accountActiveRegister.hmt') - isChecked.count) + 1 > 1 ? 's':''} left for user register`
-                                }));
+                                return res.status(202).send(this.successFormat({
+                                    'message': {
+                                        "warning":`Your are about to exceed the maximum try - only ${config.get('accountActiveRegister.hmt') - isChecked.count + 1}  attempt${(config.get('accountActiveRegister.hmt') - isChecked.count) + 1 > 1 ? 's':''} left for user register`,
+                                        "message":`We have sent a confirmation email to your registered email address. ${data.email}. Please follow the instructions in the email to continue.`
+                                    }
+                                },user._id));
                             }
                         }
                         
@@ -117,7 +121,7 @@ class Registration extends Controller {
                     await this.sendActivationEmail(user,'withoutResend');
                     return res.status(200).json(this.successFormat({
                         'message': `We have sent a confirmation email to your registered email address. ${data.email}. Please follow the instructions in the email to continue.`,
-                    }));
+                    },user._id));
                     
                    
                 } else {

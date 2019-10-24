@@ -1566,8 +1566,11 @@ class User extends controller {
                     'message': 'User not found'
                 }, 'user', 400));
             }
-            checkUser.kyc_statistics = "PENDING"
-            checkUser.save();
+            if(checkUser.kyc_statistics==null){
+                checkUser.kyc_statistics = "PENDING"
+                checkUser.save();
+            }
+          
 
         }
         if (data.topic == 'check_completion') {
@@ -1604,7 +1607,6 @@ class User extends controller {
                 .withQueryParam('sdkId', process.env.CLIENT_SDK_ID)
                 .build();
             let response = await request.execute()
-            console.log("Response:", response);
             let attributes = response.parsedResponse.checks[0].report.recommendation;
             if (attributes.value == 'APPROVE') {
                 checkUser.kyc_verified = true;
