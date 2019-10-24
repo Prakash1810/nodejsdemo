@@ -1566,11 +1566,11 @@ class User extends controller {
                     'message': 'User not found'
                 }, 'user', 400));
             }
-            if(checkUser.kyc_statistics==null){
+            if (checkUser.kyc_statistics == null) {
                 checkUser.kyc_statistics = "PENDING"
                 checkUser.save();
             }
-          
+
 
         }
         if (data.topic == 'check_completion') {
@@ -1598,64 +1598,69 @@ class User extends controller {
             // //         'X-Yoti-Auth-Id': `${process.env.CLIENT_SDK_ID}`
             // //     }
             // // })
-            // console.log()
-            let request = new RequestBuilder()
-                .withBaseUrl(process.env.YOTI_BASE_URL)
-                .withPemFilePath(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem')
-                .withEndpoint(`/sessions/${data.session_id}`)
-                .withMethod('GET')
-                .withQueryParam('sdkId', process.env.CLIENT_SDK_ID)
-                .build();
-            let response = await request.execute()
-            let attributes = response.parsedResponse.checks[0].report.recommendation;
-            if (attributes.value == 'APPROVE') {
-                checkUser.kyc_verified = true;
-                checkUser.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
-                checkUser.kyc_statistics = "APPROVE"
-                checkUser.save();
-                await this.updateBalance(checkUser.user_id, checkUser._id, res, 'kyc_verified_reward');
-                let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
-                if (checkReferrerCode) {
-                    let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
-                    await new referralHistory({
-                        user_id: checkUser._id,
-                        referrer_code: check.referrer_code,
-                        amount: amount,
-                        created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                    }).save()
+            console.log("welcome")
+
+            if ([null, "PENDING"].indexOf(checkUser.kyc_statistics) > -1) {
+                console.log("Hello");
+                let request = new RequestBuilder()
+                    .withBaseUrl(process.env.YOTI_BASE_URL)
+                    .withPemFilePath(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem')
+                    .withEndpoint(`/sessions/${data.session_id}`)
+                    .withMethod('GET')
+                    .withQueryParam('sdkId', process.env.CLIENT_SDK_ID)
+                    .build();
+                let response = await request.execute()
+                let attributes = response.parsedResponse.checks[0].report.recommendation;
+                if (attributes.value == 'APPROVE') {
+                    checkUser.kyc_verified = true;
+                    checkUser.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
+                    checkUser.kyc_statistics = "APPROVE"
+                    checkUser.save();
+                    await this.updateBalance(checkUser.user_id, checkUser._id, res, 'kyc_verified_reward');
+                    let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
+                    if (checkReferrerCode) {
+                        let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
+                        await new referralHistory({
+                            user_id: checkUser._id,
+                            referrer_code: check.referrer_code,
+                            amount: amount,
+                            created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                        }).save()
+                    }
+                    let serviceData = {
+                        "subject": `Your KYC verification was successful.`,
+                        "email_for": "kyc-success",
+                        "user_id": checkUser._id
+
+                    };
+                    await apiServices.sendEmailNotification(serviceData, res);
                 }
-                let serviceData = {
-                    "subject": `Your KYC verification was successful.`,
-                    "email_for": "kyc-success",
-                    "user_id": checkUser._id
-    
-                };
-                await apiServices.sendEmailNotification(serviceData, res);
+                if (attributes.value == 'REJECT') {
+                    checkUser.kyc_statistics = "REJECT"
+                    checkUser.save();
+                    let serviceData = {
+                        "subject": `Your KYC verification could not be processed.`,
+                        "email_for": "kyc-failure",
+                        "user_id": checkUser._id
+
+                    };
+                    await apiServices.sendEmailNotification(serviceData, res);
+                }
+                if (attributes.value == 'NOT_AVAILABLE') {
+                    checkUser.kyc_statistics = "NOT_AVAILABLE"
+                    checkUser.save();
+                    let serviceData = {
+                        "subject": `Your KYC verification could not be processed.`,
+                        "email_for": "kyc-failure",
+                        "user_id": checkUser._id
+
+                    };
+                    await apiServices.sendEmailNotification(serviceData, res);
+                }
             }
-            if (attributes.value == 'REJECT') {
-                checkUser.kyc_statistics = "REJECT"
-                checkUser.save();
-                let serviceData = {
-                    "subject": `Your KYC verification could not be processed.`,
-                    "email_for": "kyc-failure",
-                    "user_id": checkUser._id
-    
-                };
-                await apiServices.sendEmailNotification(serviceData, res);
-            }
-            if (attributes.value == 'NOT_AVAILABLE') {
-                checkUser.kyc_statistics = "NOT_AVAILABLE"
-                checkUser.save();
-                let serviceData = {
-                    "subject": `Your KYC verification could not be processed.`,
-                    "email_for": "kyc-failure",
-                    "user_id": checkUser._id
-    
-                };
-                await apiServices.sendEmailNotification(serviceData, res);
-            }
+
         }
-        return 
+        return
     }
 
 
@@ -1789,7 +1794,7 @@ class User extends controller {
         }
     }
 
-    async removeUnderScore(str){
+    async removeUnderScore(str) {
         let removeUnderScore = str.replace(/_/g, " ").toLowerCase();
         return removeUnderScore;
     }
