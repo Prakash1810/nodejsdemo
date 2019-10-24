@@ -33,7 +33,10 @@ const assetsSchema = new mongoose.Schema({
     deposit: { type: Boolean, default: true },
     withdraw: { type: Boolean, default: true },
     token: { type: String, default: null },
-    status: { type: Number, default: 2 }  // 1 => Pending   2 => list 
+    status: { type: Number, default: 2 },  // 1 => Pending   2 => list 
+    reason_for_deposit: { type: String, default: null },
+    reason_for_withdraw: { type: String, default: null }
+
 });
 
 module.exports = mongoose.model('assets', assetsSchema);

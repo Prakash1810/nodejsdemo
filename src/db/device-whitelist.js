@@ -8,7 +8,8 @@ const deviceWhitelistSchema = mongoose.Schema({
     region: String,
     verified: Boolean,
     created_date: { type: Date, default: Date.now },
-    modified_date: { type: Date, default: Date.now },   
+    modified_date: { type: Date, default: Date.now },  
+    is_deleted:{type:Boolean,default:false}, 
     last_login_ip:{ type :String}
 });
 

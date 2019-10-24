@@ -106,7 +106,6 @@ class User extends controller {
     async insertUser(result, res) {
 
         try {
-            let referrerCode = null;
             let inc = await sequence.findOneAndUpdate({ sequence_type: "users" }, {
                 $inc: {
                     login_seq: 1
@@ -125,7 +124,7 @@ class User extends controller {
                 email: result.email,
                 password: result.password,
                 referral_code: code,
-                referrer_code: referrerCode,
+                referrer_code: result.referrer_code,
                 created_date: result.created_date,
                 user_id: inc.login_seq,
                 taker_fee: (await fee.findOne({ config: 'takerFeeRate' })).value,
