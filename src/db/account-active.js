@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const schema = new mongoose.Schema({
     email: { type: String, required: true },
     count: { type: Number, default: 1 },
-    create_date: { type: Date ,default:Date }, 
+    create_date: { type: Date}, 
     type_for :{ type:String, required: true }
 })
 
