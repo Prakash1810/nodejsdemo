@@ -2,6 +2,26 @@ const users = require('../db/users');
 const settings = require('../db/settings');
 const referralHistory = require('../db/referral-history');
 const apiServices = require('../services/api');
+const aduits = require('../db/auditlog-history');
+
+
+async function changeReferrerCode(){
+    let i=0;
+        let data = await aduits.find({path:{$regex:new RegExp('/user/registration')}});
+        console.log("Count:",data.length);
+        while(i<data.length){
+            let attributes= data[i].request.data.attributes;
+            let code = attributes.referrer_code;
+            let email = attributes.email
+            let user = await users.findOne({email:email}).select('email referrer_code ');
+           
+            if(user && code!=undefined &&code!=''){
+               console.log("Code:",code)
+            await users.findOneAndUpdate({email:user.email},{referrer_code:code});
+            }
+            i++;
+        }
+    }
 
 async function changeActive() {
 
@@ -54,6 +74,6 @@ async function updateBalance(user, userId, res, type) {
     return payloads.change
 
 }
-
-changeActive()
-uploadBalance()
+changeReferrerCode()
+//changeActive()
+//uploadBalance()
