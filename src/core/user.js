@@ -1808,17 +1808,22 @@ class User extends controller {
             let checkReferrerCode = await users.findOne({ referral_code: checkUser[i].referrer_code });
             if (checkReferrerCode) {
                 let amount = await this.approveupdateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
-                // await new referralHistory({
-                //     user_id: checkUser[i]._id,
-                //     referrer_code: checkUser[i].referrer_code,
-                //     amount: amount,
-                //     created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                // }).save()
+                await new referralHistory({
+                    user_id: checkUser[i]._id,
+                    email: checkUser[i].email,
+                    type: "referral reward",
+                    referrer_code: checkUser[i].referrer_code,
+                    amount: amount,
+                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                }).save()
             }
             console.log("I:",i);
             i++;
         }
        
+        return res.status(200).send(this.successFormat({
+            'kyc_statistics': checkUser
+        }, null, 'user', 200));
     }
 
     async approveupdateBalance(user, userId, res, type) {
@@ -1835,7 +1840,7 @@ class User extends controller {
                 "detial": {}
             }
             //let matching = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-            console.log("Matching Response:",matching);
+            //console.log("Matching Response:",matching);
           
         }
     
