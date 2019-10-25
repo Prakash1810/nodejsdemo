@@ -432,5 +432,17 @@ router.get('/kyc_statistics', auth, async (req,res) =>
     }
 })
 
+router.get('/active',async (req,res) =>
+{
+    try{
+      
+        await user.active(req,res);
+    }
+    catch(err){
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
 
 module.exports = router;

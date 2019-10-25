@@ -24,11 +24,15 @@ async function changeReferrerCode(){
     }
 
 async function changeActive() {
-
+    let i=0;
     let check = await users.find({ kyc_verified: true });
-    check.kyc_statistics = "APPROVE"
-    check.save();
-    console.log("User:", check);
+    while(i<check.length){
+        check[i].kyc_statistics = "APPROVE"
+        check[i].save();
+        console.log("User:", check[i]);
+        i++;
+    }
+   
 }
 
 async function uploadBalance() {
@@ -60,15 +64,7 @@ async function updateBalance(user, userId, res, type) {
             "detial": {}
         }
         await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-        let serviceData = {
-            "subject": ` ${payloads.asset} - Deposit Confirmation`,
-            "email_for": "deposit-notification",
-            "amt": payloads.change,
-            "coin": payloads.asset,
-            "user_id": userId
-
-        };
-        await apiServices.sendEmailNotification(serviceData, res);
+      
     }
 
     return payloads.change

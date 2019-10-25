@@ -28,6 +28,7 @@ const fs = require('fs');
 const _ = require('lodash');
 const kyc = require('./kyc');
 const settings = require('../db/settings');
+const audits = require('../db/auditlog-history');
 const NodeRSA = require('node-rsa');
 const uuidv4 = require('uuid/v4');
 const { RequestBuilder, Payload } = require('yoti');
@@ -1619,7 +1620,9 @@ class User extends controller {
                         let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
                         await new referralHistory({
                             user_id: checkUser._id,
-                            referrer_code: checkReferrerCode.referrer_code,
+                            referrer_code:checkUser.referrer_code,
+                            email:checkUser.email,
+                            type:"referral code",
                             amount: amount,
                             created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                         }).save()
@@ -1796,6 +1799,51 @@ class User extends controller {
         let removeUnderScore = str.replace(/_/g, " ").toLowerCase();
         return removeUnderScore;
     }
+
+    async active(req,res){
+        let i=0;
+        let checkUser = await users.find({ kyc_verified: true });
+        while(i<checkUser.length){
+            await this.approveupdateBalance(checkUser[i].user_id, checkUser[i]._id, res, 'kyc_verified_reward');
+            let checkReferrerCode = await users.findOne({ referral_code: checkUser[i].referrer_code });
+            if (checkReferrerCode) {
+                let amount = await this.approveupdateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
+                // await new referralHistory({
+                //     user_id: checkUser[i]._id,
+                //     referrer_code: checkUser[i].referrer_code,
+                //     amount: amount,
+                //     created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                // }).save()
+            }
+            console.log("I:",i);
+            i++;
+        }
+       
+    }
+
+    async approveupdateBalance(user, userId, res, type) {
+        let payloads;
+        let checkSetting = await settings.findOne({ type: type });
+        let date = new Date();
+        if (checkSetting) {
+            payloads = {
+                "user_id": user,
+                "asset": "BDX",
+                "business": "deposit",
+                "business_id":  date.valueOf(),
+                "change": checkSetting.amount,
+                "detial": {}
+            }
+            //let matching = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+            console.log("Matching Response:",matching);
+          
+        }
+    
+        return payloads.change
+    
+    }
+
+
 }
 
 module.exports = new User;
