@@ -503,7 +503,6 @@ class User extends controller {
         let data = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let count = await deviceWhitelist.countDocuments({ user: userID });
-        console.log("Count:", count)
         if (count == 0) {
             let isAuth = await users.findOne({
                 _id: userID, $or: [
@@ -1557,7 +1556,7 @@ class User extends controller {
     async kycUpdate(req, res) {
 
         let data = req.body;
-        console.log("Data:", data);
+        // console.log("Data:", data);
         if (data.topic == 'resource_update') {
             let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
             let checkUser = await users.findOne({ _id: checkSessionId.user });
@@ -1817,7 +1816,7 @@ class User extends controller {
                     created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                 }).save()
             }
-            console.log("I:",i);
+            // console.log("I:",i);
             i++;
         }
        
