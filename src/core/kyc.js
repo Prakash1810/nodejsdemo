@@ -28,6 +28,19 @@ class kyc{
                 "type": "ID_DOCUMENT_AUTHENTICITY",
                 "config": {}
               },
+              {
+                "type": "LIVENESS",
+                "config": {
+                  "liveness_type": "ZOOM", // Required
+                  "max_retries": 3 // Required, must be greater than 1
+                }
+              },
+              {
+                "type": "ID_DOCUMENT_FACE_MATCH",
+                "config": {
+                  "manual_check": "FALLBACK" // | "NEVER" | "ALWAYS"
+                }
+              }
             ],
             "requested_tasks": [
               {
