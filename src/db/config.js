@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 
 const settingsSchema= mongoose.Schema({
-  type:mongoose.Schema.Types.Mixed
+ key:{type:String,required:true},
+ value:mongoose.Schema.Types.Mixed,
+ is_active:{type:Boolean,default:true}
 });
 
 settings = mongoose.model('config', settingsSchema);

@@ -1615,6 +1615,9 @@ class User extends controller {
                     let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
                     if (checkReferrerCode) {
                         let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referral reward-kyc');
+                        if(amount==null){
+                            return;
+                        }
                         await new referralHistory({
                             user_id: checkUser._id,
                             referrer_code: checkUser.referrer_code,
@@ -1683,16 +1686,15 @@ class User extends controller {
     async updateBalance(user, userId, res, type) {
         try {
             let payloads;
-            let checkSetting = await configs.find({});
-            console.log("CheckSetting:",checkSetting);
+            let checkSetting = await configs.findOne({key:type,is_active:true});
             let date = new Date();
             if (checkSetting) {
                 payloads = {
                     "user_id": user,
-                    "asset": checkSetting[0].type[type].reward_asset,
+                    "asset": checkSetting.value.reward_asset,
                     "business": "deposit",
                     "business_id": date.valueOf(),
-                    "change": checkSetting[0].type[type].reward,
+                    "change":checkSetting.value.reward,
                     "detial": {}
                 }
                 await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
@@ -1716,9 +1718,12 @@ class User extends controller {
 
                 };
                 await apiServices.sendEmailNotification(serviceData, res);
+                return payloads.change;
+            } else {
+                return  null;
             }
 
-            return payloads.change
+         
         }
         catch (err) {
             return res.status(500).send(controller.errorMsgFormat({
@@ -1817,36 +1822,35 @@ class User extends controller {
     }
 
     async active(req, res) {
-        // let data = {
-        //     type:{
-        //         "email verification":{
-        //             "reward":"50",
-        //             "reward_asset":"BDX",
-        //             "active":true
-        //         },
-        //         "kyc verification":{
-        //             "reward":"50",
-        //             "reward_asset":"BDX",
-        //             "active":true
-        //         },
-        //         "deposit verification":{
-        //             "reward":"50",
-        //             "reward_asset":"BDX",
-        //             "active":true
-        //         },
-        //         "referral reward-kyc":{
-        //             "reward":"50",
-        //             "reward_asset":"BDX",
-        //             "active":true
-        //         },
-        //         "referral reward-deposit":{
-        //             "reward":"50",
-        //             "reward_asset":"BDX",
-        //             "active":true
-        //         }
-        //     }
+        let data = {
+            key:"referral reward-deposit",
+            value:{
+                    "reward":"50",
+                    "reward_asset":"BDX",
+                }
+                // "kyc verification":{
+                //     "reward":"50",
+                //     "reward_asset":"BDX",
+                //     "active":true
+                // },
+                // "deposit verification":{
+                //     "reward":"50",
+                //     "reward_asset":"BDX",
+                //     "active":true
+                // },
+                // "referral reward-kyc":{
+                //     "reward":"50",
+                //     "reward_asset":"BDX",
+                //     "active":true
+                // },
+                // "referral reward-deposit":{
+                //     "reward":"50",
+                //     "reward_asset":"BDX",
+                //     "active":true
+                // }
+            }
             
-        // }
+    await new configs(data).save();
         // data.type
         
         // let i = 0;
