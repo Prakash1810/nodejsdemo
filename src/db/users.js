@@ -42,7 +42,8 @@ const usersSchema = mongoose.Schema({
     kyc_statistics:{type:String,default:null},
     vip: { type: Boolean, default: false },
     trade: { type: Boolean, default: true },
-    reason_for_withdraw: { type: String, default: null }
+    reason_for_withdraw: { type: String, default: null },
+    deposit_status:{type:Boolean,default:false}
 });
 
 // autoIncrement.initialize(mongooseConnect.connect());

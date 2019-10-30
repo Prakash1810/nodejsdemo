@@ -1,9 +1,8 @@
 const mongoose = require('mongoose');
 
 const settingsSchema= mongoose.Schema({
-  type:String,
-  amount:{type:String,default:1}
+  type:mongoose.Schema.Types.Mixed
 });
 
-settings = mongoose.model('setting', settingsSchema);
+settings = mongoose.model('config', settingsSchema);
 module.exports = settings;
