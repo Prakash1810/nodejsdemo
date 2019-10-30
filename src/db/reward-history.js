@@ -10,5 +10,4 @@ const rewardHistorySchema = mongoose.Schema({
     created_date: { type: Date, default: Date.now }
 });
 
-ReferralHistory = mongoose.model('reward-history', rewardHistorySchema);
-module.exports = ReferralHistory;
+module.exports =  mongoose.model('reward-history', rewardHistorySchema);
