@@ -1,5 +1,5 @@
 const moment = require('moment');
-const axios = require('axios');
+const assets = require('../db/assets');
 const users = require('../db/users');
 const fee = require('../db/matching-engine-config');
 const apiServices = require('../services/api');
@@ -546,6 +546,7 @@ class User extends controller {
                 region: data.region,
                 city: data.city,
                 os: data.os,
+                is_deleted: false,
                 verified: true,
             });
             if (!result) {
@@ -646,6 +647,7 @@ class User extends controller {
             let data = req.body.data.attributes;
             let id = req.body.data.id
             const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
+            console.log(isChecked);
             if (isChecked) {
                 let date = new Date(isChecked.create_date_time);
                 let getSeconds = date.getSeconds() + config.get('otpForEmail.timeExpiry');
@@ -1371,9 +1373,9 @@ class User extends controller {
         }
     }
 
-    async deleteWhitList(data, res) {
+    async deleteWhiteList(data, res) {
         try {
-            const deleteWhitList = await deviceMangement.updateMany({
+            const deleteWhiteLists = await deviceMangement.updateMany({
                 browser: data.browser,
                 browser_version: data.browser_version,
                 os: data.os,
@@ -1382,8 +1384,16 @@ class User extends controller {
             }, {
                 is_deleted: true
             });
+            await deviceWhitelist.updateMany({
+                browser: data.browser,
+                os: data.os,
+                user: data.user,
+                is_deleted: false
+            }, {
+                is_deleted: true
+            });
 
-            if (deleteWhitList.nModified != 0) {
+            if (deleteWhiteLists.nModified != 0) {
                 return res.status(200).send(this.successFormat({
                     'message': 'Delete WhiteList Success',
                 }));
@@ -1401,30 +1411,65 @@ class User extends controller {
     }
 
     async addMarkets(req, res) {
-        let market = await apiServices.matchingEngineRequestForMarketList('market/list', req, res, 'withAdd');
+        // let market = await apiServices.matchingEngineRequestForMarketList('market/list', req, res, 'withAdd');
 
-        if (market.status) {
-            let data = market.result;
-            for (var i = 0; i < data.length; i++) {
-                let isCheckMarket = await addMarket.findOne({ market_name: data[i].name });
-                if (!isCheckMarket) {
-                    let request = {
-                        market_name: data[i].name,
-                        market_pair: data[i].money
+        // if (market.status) {
+        //     let data = market.result;
+        //     for (var i = 0; i < data.length; i++) {
+        //         let isCheckMarket = await addMarket.findOne({ market_name: data[i].name });
+        //         if (!isCheckMarket) {
+        //             let request = {
+        //                 market_name: data[i].name,
+        //                 market_pair: data[i].money
+        //             }
+        //             await new addMarket(request).save();
+        //         }
+        //     }
+
+
+        //     return res.status(200).send(this.successFormat({
+        //         'message': 'Add Market',
+        //     }));
+        // }
+        // else {
+        //     return res.status(400).send(this.errorMsgFormat({
+        //         'message': "Data not found "
+        //     }, 'users', 400));
+        // }
+        let i=0;
+        let asset = await assets.find({});
+        if (asset.length != 0) {
+            while (i < asset.length) {
+                if (asset[i].asset_code != 'USDT') {
+                    if (asset[i].markets.length != 0) {
+                        let market = asset[i].markets;
+                        let j = 0;
+                        while (j < market.length) {
+                            if (asset[i].asset_code != market[j]) {
+                                let checkMarket = await addMarket.findOne({ market_name: `${asset[i].asset_code}${market[j]}` });
+                                if (!checkMarket) {
+                                    let request = {
+                                        asset: asset[i]._id,
+                                        market_name: `${asset[i].asset_code}${market[j]}`,
+                                        market_pair: market[j]
+                                    }
+                                    await new addMarket(request).save();
+                                }
+                            }
+                            j++
+                        }
                     }
-                    await new addMarket(request).save();
                 }
+
+                i++
             }
-
-
             return res.status(200).send(this.successFormat({
-                'message': 'Add Market',
-            }));
-        }
-        else {
-            return res.status(400).send(this.errorMsgFormat({
-                'message': "Data not found "
-            }, 'users', 400));
+                        'message': 'Add Market',
+                    }));
+        } else {
+            return res.status(404).send(this.errorMsgFormat({
+                'message': "No Data Found in Asset"
+            }, 'users', 404));
         }
     }
 
@@ -1527,6 +1572,10 @@ class User extends controller {
                 }, null, 'user', 200));
             }
         }
+        return res.status(400).send(this.errorFormat({
+            'message': 'You cannot be proceed withdraw'
+        }));
+
     }
     async kycSession(req, res, type = 'session') {
 
@@ -1611,11 +1660,11 @@ class User extends controller {
                     checkUser.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
                     checkUser.kyc_statistics = "APPROVE"
                     checkUser.save();
-                    await this.updateBalance(checkUser.user_id, checkUser._id, res,'kyc verification');
+                    await this.updateBalance(checkUser.user_id, checkUser._id, res, 'kyc verification');
                     let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
                     if (checkReferrerCode) {
                         let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referral reward-kyc');
-                        if(amount==null){
+                        if (amount == null) {
                             return;
                         }
                         await new referralHistory({
@@ -1686,7 +1735,7 @@ class User extends controller {
     async updateBalance(user, userId, res, type) {
         try {
             let payloads;
-            let checkSetting = await configs.findOne({key:type,is_active:true});
+            let checkSetting = await configs.findOne({ key: type, is_active: true });
             let date = new Date();
             if (checkSetting) {
                 payloads = {
@@ -1694,7 +1743,7 @@ class User extends controller {
                     "asset": checkSetting.value.reward_asset,
                     "business": "deposit",
                     "business_id": date.valueOf(),
-                    "change":checkSetting.value.reward,
+                    "change": checkSetting.value.reward,
                     "detial": {}
                 }
                 await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
@@ -1720,10 +1769,10 @@ class User extends controller {
                 await apiServices.sendEmailNotification(serviceData, res);
                 return payloads.change;
             } else {
-                return  null;
+                return null;
             }
 
-         
+
         }
         catch (err) {
             return res.status(500).send(controller.errorMsgFormat({
@@ -1823,36 +1872,36 @@ class User extends controller {
 
     async active(req, res) {
         let data = {
-            key:"referral reward-deposit",
-            value:{
-                    "reward":"50",
-                    "reward_asset":"BDX",
-                }
-                // "kyc verification":{
-                //     "reward":"50",
-                //     "reward_asset":"BDX",
-                //     "active":true
-                // },
-                // "deposit verification":{
-                //     "reward":"50",
-                //     "reward_asset":"BDX",
-                //     "active":true
-                // },
-                // "referral reward-kyc":{
-                //     "reward":"50",
-                //     "reward_asset":"BDX",
-                //     "active":true
-                // },
-                // "referral reward-deposit":{
-                //     "reward":"50",
-                //     "reward_asset":"BDX",
-                //     "active":true
-                // }
+            key: "referral reward-deposit",
+            value: {
+                "reward": "50",
+                "reward_asset": "BDX",
             }
-            
-    await new configs(data).save();
+            // "kyc verification":{
+            //     "reward":"50",
+            //     "reward_asset":"BDX",
+            //     "active":true
+            // },
+            // "deposit verification":{
+            //     "reward":"50",
+            //     "reward_asset":"BDX",
+            //     "active":true
+            // },
+            // "referral reward-kyc":{
+            //     "reward":"50",
+            //     "reward_asset":"BDX",
+            //     "active":true
+            // },
+            // "referral reward-deposit":{
+            //     "reward":"50",
+            //     "reward_asset":"BDX",
+            //     "active":true
+            // }
+        }
+
+        await new configs(data).save();
         // data.type
-        
+
         // let i = 0;
         // let checkUser = await users.find({ kyc_verified: true });
         // while (i < checkUser.length) {
