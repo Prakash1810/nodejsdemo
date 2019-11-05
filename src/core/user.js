@@ -25,6 +25,7 @@ const mangHash = require('../db/management-hash');
 const referralHistory = require('../db/referral-history');
 const rewardHistory = require('../db/reward-history');
 const kycDetails = require('../db/kyc-details');
+const transaction = require('../db/transactions');
 const fs = require('fs');
 const _ = require('lodash');
 const kyc = require('./kyc');
@@ -1871,12 +1872,16 @@ class User extends controller {
     }
 
     async active(req, res) {
-        let data = {
-            key: "referral reward-deposit",
-            value: {
-                "reward": "50",
-                "reward_asset": "BDX",
-            }
+        let data = await transaction.find({});
+        data.date = data.created_date;
+        data.create_date = null;
+        data.save();
+        // let data = {
+        //     key: "referral reward-deposit",
+        //     value: {
+        //         "reward": "50",
+        //         "reward_asset": "BDX",
+          //  }
             // "kyc verification":{
             //     "reward":"50",
             //     "reward_asset":"BDX",
@@ -1897,9 +1902,9 @@ class User extends controller {
             //     "reward_asset":"BDX",
             //     "active":true
             // }
-        }
+       // }
 
-        await new configs(data).save();
+        //await new configs(data).save();
         // data.type
 
         // let i = 0;
@@ -1922,9 +1927,7 @@ class User extends controller {
         //     i++;
         // }
 
-        // return res.status(200).send(this.successFormat({
-        //     'kyc_statistics': checkUser
-        // }, null, 'user', 200));
+        // return res.status(200).send(this.successFormat(done, null, 'user', 200));
     }
 
     async approveupdateBalance(user, userId, res, type) {

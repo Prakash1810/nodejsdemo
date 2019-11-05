@@ -714,7 +714,7 @@ class Wallet extends controller{
         let amount = Number(responseAmount);
         let asset = await assets.findById(data.asset);
         let fee = asset.withdrawal_fee;
-        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']);
+        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted']);
         let bal = amount - transaction.amount;
         if((bal-fee)>=0)
         {

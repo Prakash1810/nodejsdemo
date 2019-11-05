@@ -6,7 +6,7 @@ const referralHistorySchema = mongoose.Schema({
     amount:{type:String},
     email:{type:String},
     type:{type:String},
-    created_date: { type: Date, default: Date.now }
+    created_date: { type: Date, default:new Date() }
 });
 
 ReferralHistory = mongoose.model('referral-history', referralHistorySchema);

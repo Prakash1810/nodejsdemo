@@ -6,7 +6,7 @@ const auditLogSchema = mongoose.Schema({
     response: String,
     path: String,
     ip_address: String,
-    create_date_time: { type: Date, default: Date.now }
+    create_date_time: { type: Date, default:new Date() }
 });
 
 module.exports =  mongoose.model('auditlog-history', auditLogSchema);
