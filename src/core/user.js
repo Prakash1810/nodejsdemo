@@ -1668,7 +1668,7 @@ class User extends controller {
                             return;
                         }
                         await new referralHistory({
-                            user_id: checkUser._id,
+                            user: checkUser._id,
                             referrer_code: checkUser.referrer_code,
                             email: checkUser.email,
                             type: "referral code",
@@ -1910,7 +1910,7 @@ class User extends controller {
         //     if (checkReferrerCode) {
         //         let amount = await this.approveupdateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward', 'BDX');
         //         await new referralHistory({
-        //             user_id: checkUser[i]._id,
+        //             user: checkUser[i]._id,
         //             email: checkUser[i].email,
         //             type: "referral reward",
         //             referrer_code: checkUser[i].referrer_code,
