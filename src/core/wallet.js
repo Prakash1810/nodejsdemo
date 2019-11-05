@@ -675,7 +675,7 @@ class Wallet extends controller{
                             final_amount: requestData.amount,
                             status: 0,
                             is_deleted: false,
-                            created_date: timeNow
+                            date: timeNow
                         };
                         let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount,res);
                         return res.status(200).json(this.successFormat({
