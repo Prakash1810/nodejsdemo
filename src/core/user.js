@@ -1,5 +1,5 @@
 const moment = require('moment');
-const axios = require('axios');
+const assets = require('../db/assets');
 const users = require('../db/users');
 const fee = require('../db/matching-engine-config');
 const apiServices = require('../services/api');
@@ -23,14 +23,14 @@ const favourite = require('../db/favourite-user-market');
 const accountActive = require('../db/account-active');
 const mangHash = require('../db/management-hash');
 const referralHistory = require('../db/referral-history');
+const rewardHistory = require('../db/reward-history');
 const kycDetails = require('../db/kyc-details');
+const transaction = require('../db/transactions');
 const fs = require('fs');
 const _ = require('lodash');
 const kyc = require('./kyc');
-const settings = require('../db/settings');
+const configs = require('../db/config');
 const audits = require('../db/auditlog-history');
-const NodeRSA = require('node-rsa');
-const uuidv4 = require('uuid/v4');
 const { RequestBuilder, Payload } = require('yoti');
 
 
@@ -145,8 +145,7 @@ class User extends controller {
                     link: `${process.env.LINKURL}${code}`
                 }
                 await apiServices.sendEmailNotification(serviceData, res);
-                await this.updateBalance(inc.login_seq, user._id, res, 'registration_reaward');
-                //deposit mail,
+                await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulation!, Your account has been activated.`
                 }));
@@ -548,6 +547,7 @@ class User extends controller {
                 region: data.region,
                 city: data.city,
                 os: data.os,
+                is_deleted: false,
                 verified: true,
             });
             if (!result) {
@@ -648,6 +648,7 @@ class User extends controller {
             let data = req.body.data.attributes;
             let id = req.body.data.id
             const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
+            console.log(isChecked);
             if (isChecked) {
                 let date = new Date(isChecked.create_date_time);
                 let getSeconds = date.getSeconds() + config.get('otpForEmail.timeExpiry');
@@ -1373,9 +1374,9 @@ class User extends controller {
         }
     }
 
-    async deleteWhitList(data, res) {
+    async deleteWhiteList(data, res) {
         try {
-            const deleteWhitList = await deviceMangement.updateMany({
+            const deleteWhiteLists = await deviceMangement.updateMany({
                 browser: data.browser,
                 browser_version: data.browser_version,
                 os: data.os,
@@ -1384,8 +1385,16 @@ class User extends controller {
             }, {
                 is_deleted: true
             });
+            await deviceWhitelist.updateMany({
+                browser: data.browser,
+                os: data.os,
+                user: data.user,
+                is_deleted: false
+            }, {
+                is_deleted: true
+            });
 
-            if (deleteWhitList.nModified != 0) {
+            if (deleteWhiteLists.nModified != 0) {
                 return res.status(200).send(this.successFormat({
                     'message': 'Delete WhiteList Success',
                 }));
@@ -1403,30 +1412,65 @@ class User extends controller {
     }
 
     async addMarkets(req, res) {
-        let market = await apiServices.matchingEngineRequestForMarketList('market/list', req, res, 'withAdd');
+        // let market = await apiServices.matchingEngineRequestForMarketList('market/list', req, res, 'withAdd');
 
-        if (market.status) {
-            let data = market.result;
-            for (var i = 0; i < data.length; i++) {
-                let isCheckMarket = await addMarket.findOne({ market_name: data[i].name });
-                if (!isCheckMarket) {
-                    let request = {
-                        market_name: data[i].name,
-                        market_pair: data[i].money
+        // if (market.status) {
+        //     let data = market.result;
+        //     for (var i = 0; i < data.length; i++) {
+        //         let isCheckMarket = await addMarket.findOne({ market_name: data[i].name });
+        //         if (!isCheckMarket) {
+        //             let request = {
+        //                 market_name: data[i].name,
+        //                 market_pair: data[i].money
+        //             }
+        //             await new addMarket(request).save();
+        //         }
+        //     }
+
+
+        //     return res.status(200).send(this.successFormat({
+        //         'message': 'Add Market',
+        //     }));
+        // }
+        // else {
+        //     return res.status(400).send(this.errorMsgFormat({
+        //         'message': "Data not found "
+        //     }, 'users', 400));
+        // }
+        let i=0;
+        let asset = await assets.find({});
+        if (asset.length != 0) {
+            while (i < asset.length) {
+                if (asset[i].asset_code != 'USDT') {
+                    if (asset[i].markets.length != 0) {
+                        let market = asset[i].markets;
+                        let j = 0;
+                        while (j < market.length) {
+                            if (asset[i].asset_code != market[j]) {
+                                let checkMarket = await addMarket.findOne({ market_name: `${asset[i].asset_code}${market[j]}` });
+                                if (!checkMarket) {
+                                    let request = {
+                                        asset: asset[i]._id,
+                                        market_name: `${asset[i].asset_code}${market[j]}`,
+                                        market_pair: market[j]
+                                    }
+                                    await new addMarket(request).save();
+                                }
+                            }
+                            j++
+                        }
                     }
-                    await new addMarket(request).save();
                 }
+
+                i++
             }
-
-
             return res.status(200).send(this.successFormat({
-                'message': 'Add Market',
-            }));
-        }
-        else {
-            return res.status(400).send(this.errorMsgFormat({
-                'message': "Data not found "
-            }, 'users', 400));
+                        'message': 'Add Market',
+                    }));
+        } else {
+            return res.status(404).send(this.errorMsgFormat({
+                'message': "No Data Found in Asset"
+            }, 'users', 404));
         }
     }
 
@@ -1529,6 +1573,10 @@ class User extends controller {
                 }, null, 'user', 200));
             }
         }
+        return res.status(400).send(this.errorFormat({
+            'message': 'You cannot be proceed withdraw'
+        }));
+
     }
     async kycSession(req, res, type = 'session') {
 
@@ -1597,7 +1645,7 @@ class User extends controller {
             // //         'X-Yoti-Auth-Id': `${process.env.CLIENT_SDK_ID}`
             // //     }
             // // })
-          
+
             if ([null, "PENDING"].indexOf(checkUser.kyc_statistics) > -1) {
                 let request = new RequestBuilder()
                     .withBaseUrl(process.env.YOTI_BASE_URL)
@@ -1613,15 +1661,18 @@ class User extends controller {
                     checkUser.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
                     checkUser.kyc_statistics = "APPROVE"
                     checkUser.save();
-                    await this.updateBalance(checkUser.user_id, checkUser._id, res, 'kyc_verified_reward');
+                    await this.updateBalance(checkUser.user_id, checkUser._id, res, 'kyc verification');
                     let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
                     if (checkReferrerCode) {
-                        let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
+                        let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referral reward-kyc');
+                        if (amount == null) {
+                            return;
+                        }
                         await new referralHistory({
-                            user_id: checkUser._id,
-                            referrer_code:checkUser.referrer_code,
-                            email:checkUser.email,
-                            type:"referral code",
+                            user: checkUser._id,
+                            referrer_code: checkUser.referrer_code,
+                            email: checkUser.email,
+                            type: "referral code",
                             amount: amount,
                             created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                         }).save()
@@ -1683,31 +1734,52 @@ class User extends controller {
     }
 
     async updateBalance(user, userId, res, type) {
-        let payloads;
-        let checkSetting = await settings.findOne({ type: type });
-        let date = new Date();
-        if (checkSetting) {
-            payloads = {
-                "user_id": user,
-                "asset": "BDX",
-                "business": "deposit",
-                "business_id":  date.valueOf(),
-                "change": checkSetting.amount,
-                "detial": {}
+        try {
+            let payloads;
+            let checkSetting = await configs.findOne({ key: type, is_active: true });
+            let date = new Date();
+            if (checkSetting) {
+                payloads = {
+                    "user_id": user,
+                    "asset": checkSetting.value.reward_asset,
+                    "business": "deposit",
+                    "business_id": date.valueOf(),
+                    "change": checkSetting.value.reward,
+                    "detial": {}
+                }
+                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+
+                await new rewardHistory({
+                    user: userId,
+                    user_id: user,
+                    type: type,
+                    reward: payloads.change,
+                    reward_asset: payloads.asset,
+                    is_referral: type == 'referrer_reward' ? true : false,
+                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                }).save()
+
+                let serviceData = {
+                    "subject": ` ${payloads.asset} - Deposit Confirmation`,
+                    "email_for": "deposit-notification",
+                    "amt": payloads.change,
+                    "coin": payloads.asset,
+                    "user_id": userId
+
+                };
+                await apiServices.sendEmailNotification(serviceData, res);
+                return payloads.change;
+            } else {
+                return null;
             }
-            await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-            let serviceData = {
-                "subject": ` ${payloads.asset} - Deposit Confirmation`,
-                "email_for": "deposit-notification",
-                "amt": payloads.change,
-                "coin": payloads.asset,
-                "user_id": userId
 
-            };
-            await apiServices.sendEmailNotification(serviceData, res);
+
         }
-
-        return payloads.change
+        catch (err) {
+            return res.status(500).send(controller.errorMsgFormat({
+                'message': err.message
+            }, 'users', 500));
+        }
 
     }
 
@@ -1799,30 +1871,63 @@ class User extends controller {
         return removeUnderScore;
     }
 
-    async active(req,res){
-        let i=0;
-        let checkUser = await users.find({ kyc_verified: true });
-        while(i<checkUser.length){
-            await this.approveupdateBalance(checkUser[i].user_id, checkUser[i]._id, res, 'kyc_verified_reward');
-            let checkReferrerCode = await users.findOne({ referral_code: checkUser[i].referrer_code });
-            if (checkReferrerCode) {
-                let amount = await this.approveupdateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward');
-                await new referralHistory({
-                    user_id: checkUser[i]._id,
-                    email: checkUser[i].email,
-                    type: "referral reward",
-                    referrer_code: checkUser[i].referrer_code,
-                    amount: amount,
-                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                }).save()
-            }
-            // console.log("I:",i);
-            i++;
-        }
-       
-        return res.status(200).send(this.successFormat({
-            'kyc_statistics': checkUser
-        }, null, 'user', 200));
+    async active(req, res) {
+        let data = await transaction.find({});
+        data.date = data.created_date;
+        data.create_date = null;
+        data.save();
+        // let data = {
+        //     key: "referral reward-deposit",
+        //     value: {
+        //         "reward": "50",
+        //         "reward_asset": "BDX",
+          //  }
+            // "kyc verification":{
+            //     "reward":"50",
+            //     "reward_asset":"BDX",
+            //     "active":true
+            // },
+            // "deposit verification":{
+            //     "reward":"50",
+            //     "reward_asset":"BDX",
+            //     "active":true
+            // },
+            // "referral reward-kyc":{
+            //     "reward":"50",
+            //     "reward_asset":"BDX",
+            //     "active":true
+            // },
+            // "referral reward-deposit":{
+            //     "reward":"50",
+            //     "reward_asset":"BDX",
+            //     "active":true
+            // }
+       // }
+
+        //await new configs(data).save();
+        // data.type
+
+        // let i = 0;
+        // let checkUser = await users.find({ kyc_verified: true });
+        // while (i < checkUser.length) {
+        //     await this.approveupdateBalance(checkUser[i].user_id, checkUser[i]._id, res, 'kyc_verified_reward', "BDX");
+        //     let checkReferrerCode = await users.findOne({ referral_code: checkUser[i].referrer_code });
+        //     if (checkReferrerCode) {
+        //         let amount = await this.approveupdateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referrer_reward', 'BDX');
+        //         await new referralHistory({
+        //             user: checkUser[i]._id,
+        //             email: checkUser[i].email,
+        //             type: "referral reward",
+        //             referrer_code: checkUser[i].referrer_code,
+        //             amount: amount,
+        //             created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+        //         }).save()
+        //     }
+        //     // console.log("I:",i);
+        //     i++;
+        // }
+
+        // return res.status(200).send(this.successFormat(done, null, 'user', 200));
     }
 
     async approveupdateBalance(user, userId, res, type) {
@@ -1834,17 +1939,17 @@ class User extends controller {
                 "user_id": user,
                 "asset": "BDX",
                 "business": "deposit",
-                "business_id":  date.valueOf(),
+                "business_id": date.valueOf(),
                 "change": checkSetting.amount,
                 "detial": {}
             }
             //let matching = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
             //console.log("Matching Response:",matching);
-          
+
         }
-    
+
         return payloads.change
-    
+
     }
 
 

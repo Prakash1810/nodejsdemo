@@ -279,7 +279,7 @@ router.delete('/whitelist', auth, async (req, res) => {
     try {
         let data = req.body.data.attributes;
         data.user = req.user.user;
-        await user.deleteWhitList(data, res);
+        await user.deleteWhiteList(data, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -432,17 +432,16 @@ router.get('/kyc_statistics', auth, async (req,res) =>
     }
 })
 
-// router.get('/active',async (req,res) =>
-// {
-//     try{
-      
-//         await user.active(req,res);
-//     }
-//     catch(err){
-//         return res.status(500).send(controller.errorMsgFormat({
-//             'message': err.message
-//         }, 'users', 500));
-//     }
-// })
+router.get('/active',async (req,res) =>
+{
+    try{
+        await user.active(req,res);
+    }
+    catch(err){
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
 
 module.exports = router;

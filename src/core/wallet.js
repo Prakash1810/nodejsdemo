@@ -146,6 +146,7 @@ class Wallet extends controller{
 
     async coinAddressValidate(address, asset) {
         let getAsset = await assets.findOne({ _id: asset });
+        console.log("Asset:",getAsset);
         let asset_code;
         if (getAsset) {
             if (getAsset.token != null && getAsset.token != undefined) {
@@ -155,7 +156,7 @@ class Wallet extends controller{
             else {
                 asset_code = getAsset.asset_code;
             }
-
+            console.log("Asset:",asset_code);
             // check if bdx
             if (asset_code.toLowerCase() === 'bdx') return true;
 
@@ -196,12 +197,12 @@ class Wallet extends controller{
                 }, 'user', 400));
             }
             req.body.data['id']=req.user.user;
-            let checkOtp = await user.validateOtpForEmail(req,res,"withdraw address");
-            if(checkOtp.status == false){
-                return res.status(400).send(this.errorFormat({
-                    'message':checkOtp.err
-                }, 'user', 400));
-            }
+            // let checkOtp = await user.validateOtpForEmail(req,res,"withdraw address");
+            // if(checkOtp.status == false){
+            //     return res.status(400).send(this.errorFormat({
+            //         'message':checkOtp.err
+            //     }, 'user', 400));
+            // }
         }
         // check addres is valid or not
         let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
@@ -674,7 +675,7 @@ class Wallet extends controller{
                             final_amount: requestData.amount,
                             status: 0,
                             is_deleted: false,
-                            created_date: timeNow
+                            date: timeNow
                         };
                         let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount,res);
                         return res.status(200).json(this.successFormat({
@@ -713,7 +714,7 @@ class Wallet extends controller{
         let amount = Number(responseAmount);
         let asset = await assets.findById(data.asset);
         let fee = asset.withdrawal_fee;
-        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'created_date', 'is_deleted']);
+        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted']);
         let bal = amount - transaction.amount;
         if((bal-fee)>=0)
         {

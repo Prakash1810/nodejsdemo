@@ -105,10 +105,8 @@ class Registration extends Controller {
                                 }})
                                 await this.sendActivationEmail(user,'withoutResend');
                                 return res.status(202).send(this.successFormat({
-                                    'message': {
+                                        "message":`We have sent a confirmation email to your registered email address. ${data.email}. Please follow the instructions in the email to continue.`,
                                         "warning":`Your are about to exceed the maximum try - only ${config.get('accountActiveRegister.hmt') - isChecked.count + 1}  attempt${(config.get('accountActiveRegister.hmt') - isChecked.count) + 1 > 1 ? 's':''} left for user register`,
-                                        "message":`We have sent a confirmation email to your registered email address. ${data.email}. Please follow the instructions in the email to continue.`
-                                    }
                                 },user._id));
                             }
                         }
@@ -193,6 +191,7 @@ class Registration extends Controller {
             "subject": "Confirm Your Registration",
             "email_for": "registration"
         };
+        console.log("hash:",encryptedHash);
         //check how to many time click a resend button
         await apiServices.sendEmailNotification(serviceData);
         if(type == 'withoutResend')
