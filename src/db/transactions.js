@@ -9,7 +9,7 @@ const transactionSchema = mongoose.Schema({
     tx_hash: { type: String, default: null },
     fee: { type: Number, default: 0 },
     final_amount: { type: Number, default: 0},
-    status: { type: Number, default: 0}, // 1 => Pending / 2 => Success / 3 => Failure / 4 => Waiting for an approval 
+    status: { type: String, default: 0}, // 1 => Pending / 2 => Success / 3 => Failure / 4 => Waiting for an approval 
     date: { 
         type: Date,
         default: Date.now,

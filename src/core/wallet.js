@@ -507,7 +507,7 @@ class Wallet extends controller{
                                 var totalPages = Math.ceil(totalCount / size);
                                 if (typeParam === 'withdraw') {
                                     for (var i = 0; i < data.length; i++) {
-                                        if (data[i].status != 1 && data[i].status != 2) {
+                                        if (data[i].status != "1" && data[i].status != "2") {
                                             data.splice(i, 1);
                                             i--;
                                         }
@@ -673,7 +673,7 @@ class Wallet extends controller{
                             amount: requestData.amount,
                             ip: requestData.ip,
                             final_amount: requestData.amount,
-                            status: 0,
+                            status: "0",
                             is_deleted: false,
                             date: timeNow
                         };
@@ -842,7 +842,7 @@ class Wallet extends controller{
                             is_deleted: false
                         }, {
                             $set: {
-                                status: 1,
+                                status: "1",
                                 updated_date:moment().format('YYYY-MM-DD HH:mm:ss')
                             }
                         });
