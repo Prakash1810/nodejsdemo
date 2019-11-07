@@ -128,7 +128,7 @@ class Registration extends Controller {
                         .exec()
                         .then(result => {
                             if (result.length) {
-                                return res.status(400).send(this.errorFormat({ 'email': 'This email address already exits.' }));
+                                return res.status(400).send(this.errorFormat({ 'message': 'This email address already exits.' }));
                             }
 
                             return this.insertUser(req, res);
