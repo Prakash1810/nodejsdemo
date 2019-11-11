@@ -238,10 +238,11 @@ class User extends controller {
                                         create_date: timeNow
                                     })
                             }
-                            else {
+                            else{
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': 'Account has been locked, please try again after 2 hours!'
+                                    'message': 'Invalid credentials'
                                 }));
+
                             }
                             if (isChecked.count > config.get('accountActive.limit')) {
                                 return res.status(400).send(this.errorMsgFormat({
