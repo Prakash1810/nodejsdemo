@@ -138,10 +138,10 @@ router.post('/order/put-limit', auth, async (req, res) => {
          let check = await markets.findOne({market_name:data.market,is_active:true,disable_trade:false});
          let checkUser = await users.findOne({_id:req.user.user,trade:false});
          if(checkUser){
-            return res.status(400).send(controller.errorMsgFormat({message:'user does not allow to trade'}));
+            return res.status(400).send(controller.errorMsgFormat({message:'Trade is disabled for this account'}));
          }
          if(!check){
-             return res.status(400).send(controller.errorMsgFormat({message:'pair are not available'}));
+             return res.status(400).send(controller.errorMsgFormat({message:`The  market-${data.market} is inactive`}));
          }
          if(data.q)
          {
