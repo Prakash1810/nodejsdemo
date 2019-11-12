@@ -355,6 +355,7 @@ class User extends controller {
         users.deleteOne({
             email: email
         })
+        
             .then(result => {
                 if (result.deletedCount) {
                     return res.status(200).send(this.successFormat({
