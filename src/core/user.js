@@ -357,7 +357,6 @@ class User extends controller {
         })
         
             .then(result => {
-                console.log("result",result);
                 if (result.deletedCount) {
                     return res.status(200).send(this.successFormat({
                         'message': 'account deleted successfully!'

@@ -64,7 +64,6 @@ router.post('/resend/otp/', async (req, res) => {
 
 
 router.delete('/', (req, res) => {
-    console.log(req.body.data)
     user.removeUser(req.body.data.attributes.email, res);
 });
 
