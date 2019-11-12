@@ -399,7 +399,6 @@ class User extends controller {
             const rand = Math.random() * (999999 - 100000) + 100000;
             const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
             const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
-            console.log(otp)
             const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false, type_for: typeFor }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
             if (!isChecked) {
                 let data =
