@@ -190,18 +190,28 @@ class Password extends Controller {
         return Joi.validate(req, schema, { abortEarly: false })
     }
 
-    resetPassword(req, res, type = 'reset') {
+    async resetPassword(req, res, type = 'reset') {
 
         if (type == 'hash') {
             checkHash = req.body.checkHash;
             return;
         }
+        const checkPassword = await Users.findById(req.body.data.id);
+        const comparePassword = await bcrypt.compare(req.body.data.attributes.password,checkPassword.password);
+        if(comparePassword){
+           return res.status(400).send(this.successFormat({
+               'message': 'The given password match with existing password.'
+           }, checkPassword._id, 'users', 400));
+            
+        }
+         
         bcrypt.genSalt(10, (err, salt) => {
             if (err) return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
 
             bcrypt.hash(req.body.data.attributes.password, salt, (err, hash) => {
                 if (err) return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
-
+                
+               
                 // find and update the reccord
                 Users.findByIdAndUpdate(req.body.data.id, { password: hash }, async (err, user) => {
                     if (user == null) {
