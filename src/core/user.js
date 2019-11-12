@@ -649,7 +649,6 @@ class User extends controller {
             let data = req.body.data.attributes;
             let id = req.body.data.id
             const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
-            console.log(isChecked);
             if (isChecked) {
                 let date = new Date(isChecked.create_date_time);
                 let getSeconds = date.getSeconds() + config.get('otpForEmail.timeExpiry');

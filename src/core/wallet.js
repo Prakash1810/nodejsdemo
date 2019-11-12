@@ -641,6 +641,7 @@ class Wallet extends controller{
                     'message': ' This symbol does not proccess of withdraw'
                 }, 'withdraw', 400));
             }
+
             let validateWithdraw = await this.withdrawValidate(req, res);
             if (validateWithdraw.status) {
 
