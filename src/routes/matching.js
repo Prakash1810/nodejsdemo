@@ -5,6 +5,7 @@ const matching = require('../services/api');
 const Controller = require('../core/controller');
 const controller = new Controller;
 const getFee = require("../db/matching-engine-config");
+const markets = require('../db/market-list');
 const auth = require('../middlewares/authentication');
 const orderCancel = require('../db/order-cancel');
 const _ = require('lodash');
@@ -89,6 +90,15 @@ router.post('/order/put-market', auth, async (req, res) => {
         let side ;
         let data =  req.body.data.attributes;
          req.body.data.attributes.user_id = Number(req.user.user_id);
+         let check = await markets.findOne({market_name:data.market,is_active:true,disable_trade:false});
+         let checkUser = await users.findOne({_id:req.user.user,trade:false});
+         if(checkUser){
+            return res.status(400).send(controller.errorMsgFormat({message:'user does not allow to trade'}));
+         }
+         if(!check){
+             return res.status(400).send(controller.errorMsgFormat({message:'pair are not available'}));
+         }
+         
             if(data.q)
             {
                 side = data.side == 2 ? "BUY" : "SELL";
@@ -125,6 +135,14 @@ router.post('/order/put-limit', auth, async (req, res) => {
         let side;
         let data = req.body.data.attributes;
          req.body.data.attributes.user_id = Number(req.user.user_id);
+         let check = await markets.findOne({market_name:data.market,is_active:true,disable_trade:false});
+         let checkUser = await users.findOne({_id:req.user.user,trade:false});
+         if(checkUser){
+            return res.status(400).send(controller.errorMsgFormat({message:'user does not allow to trade'}));
+         }
+         if(!check){
+             return res.status(400).send(controller.errorMsgFormat({message:'pair are not available'}));
+         }
          if(data.q)
          {
              side = data.side == 2 ? "BUY" : "SELL";
