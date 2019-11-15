@@ -562,13 +562,6 @@ class Wallet extends controller{
                     status: false,
                     type: 'suspend'
                 };
-            } else if (getAsset.minimum_withdraw > amount || getAsset.maximum_withdraw < amount) {
-                return {
-                    status: false,
-                    type: 'minimum_maximum',
-                    minimum_withdraw: getAsset.minimum_withdraw,
-                    maximum_withdraw: getAsset.maximum_withdraw,
-                };
             } else {
                 let payloads = {}, asset = [];
                 payloads.user_id = req.user.user_id;
@@ -599,12 +592,19 @@ class Wallet extends controller{
     async postWithdraw(req, res) {
         let withdraw = null;
         let requestData = req.body.data.attributes;
+         let checkAsset = await assets.findOne({_id:requestData.asset});
+        if(checkAsset.minimum_withdrawal >= requestData.amount){
+            return res.status(400).send(this.errorFormat({
+                'message': `The minimum withdrawal amount should be ${checkAsset.minimum_withdrawal} ${checkAsset.asset_code}`,
+            },  400));
+        }
         let checkUser= await users.findOne({_id:req.user.user});
         if(!checkUser.withdraw){
             return res.status(400).send(this.errorFormat({
                 'message': 'Your withdrawal has been disabled for 24 hours from the time your change password'
             }, 'user', 400));
         }
+        
         else if(checkUser.google_auth)
         {
             if (!requestData.g2f_code) {
@@ -692,13 +692,11 @@ class Wallet extends controller{
                 }
             } else {
                 let msg = 'Invalid request';
-                if (validateWithdraw.type === 'balance') {
+                if (validateWithdraw.type === 'balance'){ 
                     msg = 'Your balance is too low Please check.'
                 } else if (validateWithdraw.type === 'suspend') {
                     msg = 'This coin has suspended. Please contact support@beldex.io'
-                } else if (validateWithdraw.type === 'minimum_maximum') {
-                    msg = `Please request withdraw ${validateWithdraw.minimum_withdraw} to ${validateWithdraw.maximum_withdraw}`
-                }
+                } 
 
                 return res.status(400).json(this.errorMsgFormat({
                     "message": msg
