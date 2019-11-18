@@ -1,10 +1,11 @@
 {
 	"encryption": {
-		"key": "+cjqs&#t67Ch+mPS"
+		"key": "+cjqs&#t67Ch+mPS",
+		"realKey": "!$BeLDex#.N^MALAYSAJb0*7wv3nhe.$"
 	},
 	"secrete": {
-		"issuer": "test",
-		"domain": "www.test.com",
+		"issuer": "beldex",
+		"domain": "www.belbex.io",
 		"key": "--$_VM?LLx3XK95ZJ",
 		"expiry": 300000,
 		"refreshTokenExpiry":420000,

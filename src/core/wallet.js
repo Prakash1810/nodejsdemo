@@ -829,8 +829,7 @@ class Wallet extends controller{
                 let duration = moment.duration(moment().diff(notify.created_date));
                 if (getSeconds > duration.asSeconds()) {
                     // update the details to matching engine and transactions
-                    let response = await this.updateWithdrawRequest(notify, req, res);
-                    if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
+                    
                         // change the withdraw notificaiton status
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
@@ -848,11 +847,7 @@ class Wallet extends controller{
                         return res.status(200).json(this.successFormat({
                             "message": "Your withdraw confirmation request has been initiated.  Please click here to check the status of withdraw."
                         }, 'withdraw'));
-                    } else {
-                        return res.status(400).json(this.errorMsgFormat({
-                            "message": response.data.attributes.message
-                        }, 'withdraw'));
-                    }
+                    
                 }
                 else {
                     await beldexNotification.findOneAndUpdate({ _id: code.code, user: code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })

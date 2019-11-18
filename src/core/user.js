@@ -26,6 +26,8 @@ const referralHistory = require('../db/referral-history');
 const rewardHistory = require('../db/reward-history');
 const kycDetails = require('../db/kyc-details');
 const transaction = require('../db/transactions');
+const branca = require("branca")(config.get('encryption.realKey'));
+
 const fs = require('fs');
 const _ = require('lodash');
 const kyc = require('./kyc');
@@ -167,12 +169,16 @@ class User extends controller {
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.expiry'),
         };
-
-        return await jwt.sign({
+        
+        
+        let tokenAccess = JSON.stringify({
             user: user._id,
             login_id: id,
-            user_id: user.user_id,
-        }, config.get('secrete.key'), jwtOptions);
+            user_id: user.user_id
+          });
+    
+        let token = branca.encode(tokenAccess);
+        return await jwt.sign({token}, config.get('secrete.key'), jwtOptions);
     };
 
     async createRefreshToken(user, id) {
@@ -183,11 +189,13 @@ class User extends controller {
             expiresIn: config.get('secrete.refreshTokenExpiry'),
 
         };
-        return await jwt.sign({
+        const tokenRefresh = JSON.stringify({
             user: user._id,
             login_id: id,
             user_id: user.user_id,
-        }, config.get('secrete.refreshKey'), options);
+        });
+        let tokenUser = branca.encode(tokenRefresh);
+        return await jwt.sign({tokenUser}, config.get('secrete.refreshKey'), options);
 
     }
 
@@ -377,10 +385,11 @@ class User extends controller {
     getTokenToUserId(req, res, data = 'json') {
         let token = req.headers.authorization;
         try {
-            let decoded = jwt.verify(token, config.get('secrete.key'));
+            let verifyToken = jwt.verify(token, config.get('secrete.key'));
+            const  decoded= JSON.parse(branca.decode(verifyToken.token));
             if (data === 'json') {
                 return res.status(200).json({
-                    "code": 0,
+                    "code": 200,
                     "message": null,
                     "data": {
                         "user_id": decoded.user_id

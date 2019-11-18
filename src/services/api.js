@@ -127,7 +127,8 @@ class Api extends Controller {
                 expiresIn: config.get('secrete.expiry')
             };
             const token = req.headers.authorization;
-            const data = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
+            const dataUser = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
+            let data =  JSON.parse(branca.decode(dataUser.token));
             const isChecked = await accesToken.findOne({
                 user: data.user, access_token: token, is_deleted: true
             })
