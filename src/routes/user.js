@@ -21,9 +21,7 @@ router.get('/activation/:hash', (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
-        let {
-            error
-        } = await user.validate(req.body.data.attributes);
+        let { error } = await user.validate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -48,13 +46,13 @@ router.post('/validate/otp', (req, res) => {
 });
 router.post('/resend/otp/', async (req, res) => {
     try {
-        let {error} = await user.resendOtpValidation(req.body.data.attributes);
+        let { error } = await user.resendOtpValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
-            user.resendOtpForEmail(req, res,req.body.data.attributes.type);
+            user.resendOtpForEmail(req, res, req.body.data.attributes.type);
         }
-    
+
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -69,9 +67,7 @@ router.delete('/', (req, res) => {
 
 router.post('/forget-password', (req, res) => {
     try {
-        let {
-            error
-        } = password.validate(req.body.data.attributes);
+        let { error } = password.validate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -97,9 +93,7 @@ router.get('/reset-password/:hash', (req, res) => {
 
 router.patch('/reset-password', (req, res) => {
     try {
-        let {
-            error
-        } = password.resetPasswordValidate(req.body.data.attributes);
+        let { error } = password.resetPasswordValidate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -114,9 +108,7 @@ router.patch('/reset-password', (req, res) => {
 
 router.patch('/change-password', auth, (req, res) => {
     try {
-        let {
-            error
-        } = password.changePasswordValidate(req.body.data.attributes);
+        let { error } = password.changePasswordValidate(req.body.data.attributes);
 
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
@@ -180,13 +172,11 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
 
 router.patch('/settings', auth, (req, res) => {
     try {
-        let {
-            error
-        } = user.settingsValidate(req.body.data.attributes);
+        let { error } = user.settingsValidate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
-            user.patchSettings(req, res,'withG2f');
+            user.patchSettings(req, res, 'withG2f');
         }
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -256,14 +246,14 @@ router.post('/g2f-verify', (req, res) => {
 
 router.post('/token', refresh_auth, async (req, res) => {
     try {
-        
+
         await user.refreshToken(req.user, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
 
 router.post('/logout', auth, async (req, res) => {
@@ -274,7 +264,7 @@ router.post('/logout', auth, async (req, res) => {
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
 router.delete('/whitelist', auth, async (req, res) => {
     try {
@@ -286,7 +276,7 @@ router.delete('/whitelist', auth, async (req, res) => {
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 router.post('/market', async (req, res) => {
     try {
         await user.addMarkets(req, res);
@@ -295,7 +285,7 @@ router.post('/market', async (req, res) => {
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
 router.get('/market/list', async (req, res) => {
     try {
@@ -305,13 +295,11 @@ router.get('/market/list', async (req, res) => {
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
 router.post('/favourite', auth, async (req, res) => {
     try {
-        let {
-            error
-        } = user.favouriteValidation(req.body.data.attributes);
+        let { error } = user.favouriteValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         }
@@ -322,127 +310,118 @@ router.post('/favourite', auth, async (req, res) => {
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
 router.patch('/favourite', auth, async (req, res) => {
     try {
-        await user.updateFavourite(req,res);
+        await user.updateFavourite(req, res);
     }
     catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
 
-router.post('/generate/otp',auth, async (req,res) =>
-{
-    try{
-        if(req.body.data.attributes.type)
-        {
-            await user.generatorOtpforEmail(req.user.user,req.body.data.attributes.type,res);
-        }else{
+router.post('/generate/otp', auth, async (req, res) => {
+    try {
+        if (req.body.data.attributes.type) {
+            await user.generatorOtpforEmail(req.user.user, req.body.data.attributes.type, res);
+        } else {
             return res.status(400).send(controller.errorMsgFormat({
                 'message': "Type is required"
             }, 'users', 400));
         }
-        
+
     }
-    catch(err){
+    catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
-router.get('/withdraw/active', auth, async (req,res) =>
-{
-    try{
-        await user.withdrawActive(req.user.user,res);
+router.get('/withdraw/active', auth, async (req, res) => {
+    try {
+        await user.withdrawActive(req.user.user, res);
     }
-    catch(err){
+    catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
-router.get('/kyc-session', auth, async (req,res) =>
-{
-    try{
-        await user.kycSession(req,res);
+router.get('/kyc-session', auth, async (req, res) => {
+    try {
+        await user.kycSession(req, res);
     }
-    catch(err){
+    catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
-router.post('/kyc-update', async (req,res) =>
-{
-    try{
-        await user.kycUpdate(req,res);
+router.post('/kyc-update', async (req, res) => {
+    try {
+        await user.kycUpdate(req, res);
     }
-    catch(err){
+    catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
-router.get('/referrer-history/:code', async (req,res) =>
-{
-    try{
-        await user.referrerHistory(req,res);
+router.get('/referrer-history/:code', async (req, res) => {
+    try {
+        await user.referrerHistory(req, res);
     }
-    catch(err){
+    catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
-router.post('/kyc-details', auth,async (req,res) =>
-{
-    try{
+router.post('/kyc-details', auth, async (req, res) => {
+    try {
         let { error } = user.kycDetailsValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         }
-        await user.kycDetails(req,res);
+        await user.kycDetails(req, res);
     }
-    catch(err){
+    catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
     }
-})
+});
 
-router.get('/kyc_statistics', auth, async (req,res) =>
-{
-    try{
-      
-        await user.kycStatistics(req,res);
-    }
-    catch(err){
-        return res.status(500).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'users', 500));
-    }
-})
+router.get('/kyc_statistics', auth, async (req, res) => {
+    try {
 
-router.get('/active',async (req,res) =>
-{
-    try{
-        await user.active(req,res);
+        await user.kycStatistics(req, res);
     }
-    catch(err){
+    catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
     }
-})
+});
+
+router.get('/active', async (req, res) => {
+    try {
+        await user.active(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
 
 module.exports = router;

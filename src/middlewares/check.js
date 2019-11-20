@@ -14,7 +14,10 @@ module.exports = async (req, res, next) => {
         if(checkedDevice)
         {
             throw new Error("Device Not Found");
+          
         }
+        next();
+        
     }
     catch(err)
     {

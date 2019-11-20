@@ -45,7 +45,7 @@ class User extends controller {
             if (checkhash) {
                 if (checkhash.is_active) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Verification link -already used'
+                        'message': 'The verification link has already been used.'
                     }));
                 }
                 else {
@@ -54,7 +54,7 @@ class User extends controller {
             }
             else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Verification link is expired'
+                    'message': 'The verification link has expired. Please register again.'
                 }));
             }
         }
@@ -70,13 +70,13 @@ class User extends controller {
                             return this.insertUser(result, res)
                         } else {
                             return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Token expired-already used'
+                                'message': 'The verification link has already been used.'
                             }));
                         }
                     });
             } else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Token is expired.'
+                    'message': 'The verification link has expired. Please register again.'
                 }));
             }
         }
@@ -84,13 +84,13 @@ class User extends controller {
             if (userTemp.removeUserTemp(userHash.id)) {
                 await accountActive.deleteOne({ email: userHash.email, type_for: 'register' })
                 return res.status(400).send(this.errorFormat({
-                    'message': 'Token is expired'
+                    'message': 'The verification link has expired. Please register again.'
                 }));
 
             }
             else {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'User not found'
+                    'message': 'The verification link has already used may be expired'
                 }));
             }
         }
@@ -153,7 +153,7 @@ class User extends controller {
                 }));
             } else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid token. may be token as expired!'
+                    'message': 'User not found'
                 }));
             }
         }
@@ -274,7 +274,7 @@ class User extends controller {
                                 if (getSeconds > duration.asSeconds()) {
 
                                     return res.status(400).send(this.errorMsgFormat({
-                                        'message': 'Account has been locked, please try again after 2 hours!'
+                                        'message': 'Your account has been locked due to multiple registration attempts. Please try again after 2 hours.'
                                     }));
                                 }
                                 else {
@@ -311,9 +311,9 @@ class User extends controller {
             email: Joi.string().required().regex(emailReg).options({
                 language: {
                     string: {
-                        required: '{{label}} field is required',
+                        required: 'Please enter your {{label}} address.',
                         regex: {
-                            base: 'Invalid {{label}} address'
+                            base: 'Please enter a valid {{label}} address.'
                         }
                     }
                 }
@@ -321,7 +321,7 @@ class User extends controller {
             password: Joi.string().required().options({
                 language: {
                     string: {
-                        required: '{{label}} field is required',
+                        required: 'Please enter a {{label}}.',
                     }
                 }
             }).label('password'),
@@ -371,13 +371,13 @@ class User extends controller {
                     }));
                 } else {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Invalid email address'
+                        'message': 'Email address not found.'
                     }));
                 }
             })
             .catch(err => {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid credentials'
+                    'message': 'email not found'
                 }));
             });
     }
@@ -1765,7 +1765,7 @@ class User extends controller {
                     type: type,
                     reward: payloads.change,
                     reward_asset: payloads.asset,
-                    is_referral: type == 'referrer_reward' ? true : false,
+                    is_referral: type == 'referral reward-kyc' ? true : false,
                     created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                 }).save()
 
@@ -1797,7 +1797,7 @@ class User extends controller {
         let schema = Joi.object().keys({
             first_name: Joi.string().required(),
             middle_name: Joi.string().optional(),
-            surname: Joi.string().optional(),
+            surname: Joi.string().required(),
             date_of_birth: Joi.string().required(),
             address: Joi.string().required().max(100),
             g2f_code: Joi.string(),

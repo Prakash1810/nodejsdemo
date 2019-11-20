@@ -802,7 +802,6 @@ class Wallet extends controller{
 
     patchWithdrawConfirmationValidation(req) {
         let schema = Joi.object().keys({
-            accept: Joi.boolean().required(),
             ip: Joi.string().required()
         });
 
@@ -817,7 +816,7 @@ class Wallet extends controller{
     async patchWithdrawConfirmation(req, res) {
         let requestData = req.body.data.attributes;
         let code = JSON.parse(helpers.decrypt(req.query.code));
-        if (code.code !== undefined && code.code !== null && requestData.accept !== undefined && requestData.accept !== null) {
+        if (code.code !== undefined && code.code !== null) {
             let notify = await beldexNotification.findOne({
                 _id: code.code,
                 user: code.user
@@ -829,8 +828,7 @@ class Wallet extends controller{
                 let duration = moment.duration(moment().diff(notify.created_date));
                 if (getSeconds > duration.asSeconds()) {
                     // update the details to matching engine and transactions
-                    
-                        // change the withdraw notificaiton status
+                    // change the withdraw notificaiton status
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
@@ -870,31 +868,7 @@ class Wallet extends controller{
         }
     }
 
-    async updateWithdrawRequest(withdraw, req, res) {
-        let code = JSON.parse(helpers.decrypt(req.query.code));
-        let requestData = req.body.data.attributes;
-        // update the transaction status
-        let transaction = await transactions.findOne({
-            _id: withdraw.notify_data.transactions,
-            user: code.user,
-            is_deleted: false
-        }).populate('asset');
-        if (transaction) {
-            let asset = transaction.asset;
-            let payloads = {
-                "user_id": code.user_id,
-                "asset": asset.asset_code,
-                "business": (requestData.accept) ? "withdraw" : "deposit",
-                "business_id": Math.floor(Math.random() * Math.floor(10000000)),
-                "change": (requestData.accept) ? `-${transaction.amount+transaction.fee}` : `${transaction.final_amount}`,
-                "detial": {}
-            }
-            let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-            return response;
-        } else {
-            return false;
-        }
-    }
+   
 
     async deleteWithdraw(req, res) {
         let ID = req.params.id;
