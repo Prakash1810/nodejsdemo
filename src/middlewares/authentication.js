@@ -16,9 +16,7 @@ module.exports = async (req, res, next) => {
     try {
         const token = req.headers.authorization;
         const dataUser = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
-        console.log(dataUser)
         const  data= JSON.parse(branca.decode(dataUser.token));
-        console.log(data)
         const isChecked = await accesToken.findOne({
             user: data.user, access_token: token, is_deleted: true
         })
