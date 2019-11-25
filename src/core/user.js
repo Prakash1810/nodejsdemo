@@ -149,11 +149,11 @@ class User extends controller {
                 await apiServices.sendEmailNotification(serviceData, res);
                 await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
                 return res.status(200).send(this.successFormat({
-                    'message': `Congratulation!, Your account has been activated.`
+                    'message': `Congratulations! Your account has been successfully activated.`
                 }));
             } else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'User not found'
+                    'message': 'User connot be found'
                 }));
             }
         }
@@ -161,24 +161,36 @@ class User extends controller {
             return res.status(500).send(this.errorMsgFormat(err))
         }
     }
+
+    async infoToken(deviceInfo) {
+        let tokenOption = {
+            issuer: config.get('secrete.issuer'),
+            subject: 'Authentication',
+            audience: config.get('secrete.domain'),
+            expiresIn: config.get('secrete.infoToken')
+        };
+        // let token = {jwtOptions,tokenUser};
+        return await jwt.sign( deviceInfo , config.get('secrete.infokey'),tokenOption);
+    };
+
     async createToken(user, id) {
 
         let jwtOptions = {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
-            expiresIn: config.get('secrete.expiry'),
+            expiresIn: config.get('secrete.expiry')
         };
-        
-        
+
+
         let tokenAccess = JSON.stringify({
             user: user._id,
             login_id: id,
             user_id: user.user_id
-          });
-    
+        });
+
         let token = branca.encode(tokenAccess);
-        return await jwt.sign({token}, config.get('secrete.key'), jwtOptions);
+        return await jwt.sign({ token }, config.get('secrete.key'), jwtOptions);
     };
 
     async createRefreshToken(user, id) {
@@ -186,7 +198,7 @@ class User extends controller {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
-            expiresIn: config.get('secrete.refreshTokenExpiry'),
+            expiresIn: config.get('secrete.refreshTokenExpiry')
 
         };
         const tokenRefresh = JSON.stringify({
@@ -195,21 +207,23 @@ class User extends controller {
             user_id: user.user_id,
         });
         let tokenUser = branca.encode(tokenRefresh);
-        return await jwt.sign({tokenUser}, config.get('secrete.refreshKey'), options);
+        return await jwt.sign({ tokenUser }, config.get('secrete.refreshKey'), options);
 
     }
 
-    async storeToken(user, loginHistory) {
+    async storeToken(user, loginHistory, infoToken) {
+        let info = await this.infoToken(infoToken);
         let accessToken = await this.createToken(user, loginHistory);
         let refreshToken = await this.createRefreshToken(user, loginHistory);
         let data = {
             user: user._id,
+            info_token: info,
             access_token: accessToken,
             refresh_token: refreshToken,
             created_date: Date.now()
         }
         await new token(data).save();
-        return { accessToken: accessToken, refreshToken: refreshToken }
+        return { accessToken: accessToken, refreshToken: refreshToken, infoToken: info }
     }
 
     async login(req, res) {
@@ -224,12 +238,12 @@ class User extends controller {
             .then(async (result) => {
                 if (!result) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'User not found, Please register your email'
+                        'message': 'User cannot be found, Please register your email'
                     }));
                 }
                 else if (!result.is_active) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'This account has disable, Please contact our beldex support team',
+                        'message': 'Your account has been disabled. Please contact support.',
                     }, 'users', 400));
                 }
                 else if (result.is_active) {
@@ -246,15 +260,15 @@ class User extends controller {
                                         create_date: timeNow
                                     })
                             }
-                            else{
+                            else {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': 'Invalid credentials'
+                                    'message': 'The password you entered is incorrect.'
                                 }));
 
                             }
                             if (isChecked.count > config.get('accountActive.limit')) {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': `Invalid credentials, Your are about to exceed the maximum try - only ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's' : ''} left`
+                                    'message': `The email address and password you entered do not match. You have ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's' : ''} left`
                                 }));
                             }
                         }
@@ -263,7 +277,7 @@ class User extends controller {
                         }
 
                         return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Invalid credentials'
+                            'message': 'The password you entered is incorrect.'
                         }));
                     } else {
                         if (isChecked) {
@@ -299,7 +313,7 @@ class User extends controller {
                     }
                 } else {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Your account has been disabled.'
+                        'message': 'Your account has been disabled. Please contact support.'
                     }));
                 }
             });
@@ -363,7 +377,7 @@ class User extends controller {
         users.deleteOne({
             email: email
         })
-        
+
             .then(result => {
                 if (result.deletedCount) {
                     return res.status(200).send(this.successFormat({
@@ -377,7 +391,7 @@ class User extends controller {
             })
             .catch(err => {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'email not found'
+                    'message': 'Email address not found.'
                 }));
             });
     }
@@ -386,7 +400,7 @@ class User extends controller {
         let token = req.headers.authorization;
         try {
             let verifyToken = jwt.verify(token, config.get('secrete.key'));
-            const  decoded= JSON.parse(branca.decode(verifyToken.token));
+            const decoded = JSON.parse(branca.decode(verifyToken.token));
             if (data === 'json') {
                 return res.status(200).json({
                     "code": 200,
@@ -400,7 +414,7 @@ class User extends controller {
             }
         } catch (err) {
             return res.status(401).send(this.errorMsgFormat({
-                message: "Invalid Authentication"
+                message: "Authentication failed. Your request could not be authenticated."
             }, 'user', 401));
         }
     }
@@ -435,7 +449,7 @@ class User extends controller {
             }
 
             return res.status(200).send(this.successFormat({
-                'message': "The OTP has been sent your registered email ID. Please check"
+                'message': "An OTP has been sent to your registered email address."
             }, user))
 
         }
@@ -474,9 +488,12 @@ class User extends controller {
             login_date_time: timeNow
         }
         let loginHistory = await this.insertLoginHistory(data);
-        let tokens = await this.storeToken(result, loginHistory._id);
+        let take = req.body.data.attributes;
+        take['info']=req.body.data.id;
+        let tokens = await this.storeToken(result, loginHistory._id, take);
         await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') })
         return res.status(200).send(this.successFormat({
+            "info": tokens.infoToken,
             "token": tokens.accessToken,
             "refreshToken": tokens.refreshToken,
             "google_auth": result.google_auth,
@@ -668,6 +685,7 @@ class User extends controller {
                         let checkUser = await users.findOne({ _id: id });
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                         delete data.otp;
+                        delete data.g2f_code;
                         await this.returnToken(req, res, checkUser, 1);
                     }
                     else {
@@ -679,10 +697,10 @@ class User extends controller {
                 else {
                     await otpHistory.findOneAndUpdate({ user_id: id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                     if (typeFor !== 'login') {
-                        return { status: false, err: 'OTP is expired.' }
+                        return { status: false, err: 'OTP has expired.' }
                     }
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'OTP is expired.'
+                        'message': 'OTP has expired.'
                     }));
 
                 }
@@ -691,10 +709,10 @@ class User extends controller {
             }
             else {
                 if (typeFor !== 'login') {
-                    return { status: false, err: 'Invalid OTP' }
+                    return { status: false, err: 'OTP entered is Invalid' }
                 }
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid OTP'
+                    'message': 'OTP entered is Invalid'
                 }));
             }
         }
@@ -746,7 +764,7 @@ class User extends controller {
             else {
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': ` OTP resent request exceeded, please login again `
+                    'message': ` OTP resend request exceeded, please login again `
                 }, 'users', 400));
             }
         }
@@ -979,7 +997,7 @@ class User extends controller {
                         .then((result) => {
                             if (!result) {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': 'Invalid token. may be token as expired!'
+                                    'message': 'The device cannot be found.Please login to continue'
                                 }));
                             } else {
                                 this.updateWhiteListIP(deviceHash, req, res);
@@ -993,7 +1011,7 @@ class User extends controller {
                 }
             } else {
                 return res.status(404).send(this.errorMsgFormat({
-                    'message': 'Invalid token '
+                    'message': 'Invalid request. Please login to continue.'
                 }));
             }
         }
@@ -1016,13 +1034,13 @@ class User extends controller {
         }, async (err, device) => {
             if (err) {
                 return res.status(404).send(this.errorMsgFormat({
-                    'message': 'Invalid device.'
+                    'message': 'Invalid request.Please login to continue.'
                 }));
             } else {
                 await mangHash.findOneAndUpdate({ email: hash.data.email, hash: req.params.hash, type_for: 'new_authorize_device', }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await deviceWhitelist.findOneAndUpdate({ user: hash.data.user_id, verified: false }, { verified: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                 return res.status(202).send(this.successFormat({
-                    'message': 'Your IP address whitelisted Now you can able to login..'
+                    'message': 'Your device has been authorized. Please login to continue.'
                 }, device.user, 'users', 202));
             }
         });
@@ -1067,7 +1085,7 @@ class User extends controller {
                     let isChecked = await this.postVerifyG2F(req, res, 'setting');
                     if (isChecked.status == false) {
                         return res.status(400).send(this.errorFormat({
-                            'message': 'Incorrect code'
+                            'message': 'The google authentication code you entered is incorrect.'
                         }, 'user', 400));
                     }
                 }
@@ -1075,12 +1093,12 @@ class User extends controller {
                     if (requestData.hasOwnProperty('anti_spoofing') || requestData.hasOwnProperty('white_list_address') || requestData.hasOwnProperty('anti_spoofing_code')) {
                         if (!requestData.type) {
                             return res.status(400).send(this.errorFormat({
-                                'message': 'Incorrect data'
+                                'message': 'Invalid request.'
                             }, 'user', 400));
                         }
                         if (requestData.otp == null || undefined) {
                             return res.status(400).send(this.errorFormat({
-                                'message': 'Otp must be provide'
+                                'message': 'Otp must be provided'
                             }, 'user', 400));
                         }
                         req.body.data['id'] = req.user.user;
@@ -1107,7 +1125,7 @@ class User extends controller {
                         return { status: true }
                     }
                     return res.status(202).send(this.successFormat({
-                        'message': 'Your request is updated successfully.'
+                        'message': 'The changes you made were saved successfully.'
                     }, null, 'users', 202));
                 }
                 else {
@@ -1115,12 +1133,12 @@ class User extends controller {
                         return { status: false }
                     }
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Invalid request.'
+                        'message': 'Invalid request. The changes you made were not saved.'
                     }, 'users', 400));
                 }
             } else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid request.'
+                    'message': 'ID must be provided.'
                 }, 'users', 400));
             }
         } catch (error) {
@@ -1132,40 +1150,50 @@ class User extends controller {
     }
 
     async disableAccount(req, res) {
-        let requestedData = req.body.data.attributes;
-        let userHash = JSON.parse(helpers.decrypt(requestedData.code));
-        if (userHash.is_active !== undefined) {
-            let checkActive = await users.findOne({ _id: req.body.data.id });
-            if (!checkActive) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'User not found',
-                }, 'users', 400));
-
-            }
-            if (checkActive.is_active == false) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'This account has already disable, Please contact our beldex support team',
-                }, 'users', 400));
-            }
-            else {
-                let checked = await this.patchSettings(req, res, 'disable');
-                if (checked.status) {
-                    return res.status(202).send(this.successFormat({
-                        'message': 'Your request is updated successfully.'
-                    }, null, 'users', 202));
-                }
-                else {
+        try {
+            let requestedData = req.body.data.attributes;
+            let userHash = JSON.parse(helpers.decrypt(requestedData.code));
+            if (userHash.is_active !== undefined) {
+                let checkActive = await users.findOne({ _id: req.body.data.id });
+                if (!checkActive) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Invalid request..'
+                        'message': 'User cannot be found',
+                    }, 'users', 400));
+
+                }
+                if (checkActive.is_active == false) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Your account has been disabled. Please contact support.',
                     }, 'users', 400));
                 }
+                else {
+                    let checked = await this.patchSettings(req, res, 'disable');
+                    if (checked.status) {
+                        return res.status(202).send(this.successFormat({
+                            'message': 'You have disabled your account. If you need assistance, please contact our support team.'
+                        }, null, 'users', 202));
+                    }
+                    else {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Invalid request. The changes you made were not saved.'
+                        }, 'users', 400));
+                    }
+                }
+
+            } else {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Invalid request..'
+                }, 'users', 400));
             }
 
-        } else {
-            return res.status(400).send(this.errorMsgFormat({
-                'message': 'Invalid request..'
-            }, 'users', 400));
         }
+        catch (error) {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': error.message
+            }, 'users', 400));
+
+        }
+
     }
 
     async patch2FAuth(req, res) {
@@ -1174,13 +1202,13 @@ class User extends controller {
             let result = await users.findById(req.body.data.id).exec();
             if (!result) {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid user'
+                    'message': 'User cannot be found.'
                 }));
             } else if (requestedData.password !== undefined) {
                 let passwordCompare = bcrypt.compareSync(requestedData.password, result.password);
                 if (passwordCompare == false) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Incorrect password'
+                        'message': 'The password you entered is incorrect.'
                     }));
                 }
             }
@@ -1188,12 +1216,12 @@ class User extends controller {
             let checked = await this.updateG2F(req, res);
             if (checked.status) {
                 return res.status(202).send(this.successFormat({
-                    'message': 'Your request is updated successfully.'
+                    'message': 'You have successfully enabled google two factor authentication.'
                 }, null, 'users', 202));
             }
             else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid request..'
+                    'message': 'Invalid request. The changes you made were not saved.'
                 }, 'users', 400));
             }
         } else {
@@ -1215,7 +1243,7 @@ class User extends controller {
         } else {
 
             return res.status(400).send(this.errorMsgFormat({
-                'message': 'Incorrect code'
+                'message': 'The google authentication code you entered is invalid. Please enter a valid code.'
             }));
         }
     }
@@ -1277,7 +1305,7 @@ class User extends controller {
                 let isChecked = await apiServices.authentication(req);
                 if (!isChecked.status) {
                     return res.status(401).json(this.errorMsgFormat({
-                        message: "Invalid authentication"
+                        message: "Authentication failed. Your request could not be authenticated."
                     }), 'user', 401);
 
                 }
@@ -1291,7 +1319,7 @@ class User extends controller {
                     let result = await users.findById(req.body.data.id).exec();
                     if (!result) {
                         return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Invalid data'
+                            'message': 'Invalid request. Please provide your key to continue.'
                         }));
                     }
                     if (type == 'setting') {
@@ -1311,7 +1339,7 @@ class User extends controller {
                 }
             } else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid request'
+                    'message': 'Google authentication code must be provided.'
                 }, '2factor', 400));
             }
         } catch (err) {
@@ -1343,7 +1371,7 @@ class User extends controller {
                 return res.status(200).send(this.successFormat(result, tokens.id))
             } else {
                 return res.status(404).send(this.errorMsgFormat({
-                    'message': 'User not found'
+                    'message': 'User cannot be found'
                 }, 'users', 404))
             }
         } catch (err) {
@@ -1353,7 +1381,7 @@ class User extends controller {
         }
     }
 
-    async logout(user, accessToken, res) {
+    async logout(user, tokens, res) {
         try {
             const logout = await loginHistory.findOneAndUpdate({
                 user: user.user,
@@ -1365,15 +1393,18 @@ class User extends controller {
             });
             if (logout) {
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: accessToken, is_deleted: false
+                    user: user.user, access_token:tokens.info, is_deleted: false
+                }, { is_deleted: true })
+                await token.findOneAndUpdate({
+                    user: user.user, access_token:tokens.authorization, is_deleted: false
                 }, { is_deleted: true })
                 return res.status(200).send(this.successFormat({
-                    'message': 'Logout Success',
+                    'message': 'You have successfully logged out.',
                 }))
             }
             else {
                 return res.status(404).send(this.errorMsgFormat({
-                    'message': 'User not found'
+                    'message': 'User cannot be found'
                 }, 'users', 404))
             }
 
@@ -1406,11 +1437,11 @@ class User extends controller {
 
             if (deleteWhiteLists.nModified != 0) {
                 return res.status(200).send(this.successFormat({
-                    'message': 'Delete WhiteList Success',
+                    'message': 'The device has been successfully deleted.',
                 }));
             } else {
                 return res.status(404).send(this.errorMsgFormat({
-                    'message': 'User not found'
+                    'message': 'Device cannot be found.'
                 }, 'users', 404));
             }
 
@@ -1447,7 +1478,7 @@ class User extends controller {
         //         'message': "Data not found "
         //     }, 'users', 400));
         // }
-        let i=0;
+        let i = 0;
         let asset = await assets.find({});
         if (asset.length != 0) {
             while (i < asset.length) {
@@ -1475,11 +1506,11 @@ class User extends controller {
                 i++
             }
             return res.status(200).send(this.successFormat({
-                        'message': 'Add Market',
-                    }));
+                'message': 'The markets has been added.',
+            }));
         } else {
             return res.status(404).send(this.errorMsgFormat({
-                'message': "No Data Found in Asset"
+                'message': "Assets cannot be found."
             }, 'users', 404));
         }
     }
@@ -1488,7 +1519,7 @@ class User extends controller {
         let isChecked = await addMarket.find({});
         if (isChecked.length == 0) {
             return res.status(404).send(this.errorMsgFormat({
-                'message': "No Data Found"
+                'message': "Markets cannot be found."
             }, 'users', 404));
         }
         else {
@@ -1510,7 +1541,7 @@ class User extends controller {
         let isChecked = await addMarket.findOne({ market_name: data.market.toUpperCase() });
         if (!isChecked) {
             return res.status(404).send(this.errorMsgFormat({
-                'message': "market not Found"
+                'message': "Market cannot be Found."
             }, 'users', 404));
         }
 
@@ -1520,7 +1551,7 @@ class User extends controller {
             id.push(isChecked._id);
             await favourite.findOneAndUpdate({ _id: isCheckUser._id }, { market: id })
             return res.status(200).send(this.successFormat({
-                'message': 'Add market to your favourite list',
+                'message': 'The market has been added to your favourites.',
             }));
         }
         await new favourite(
@@ -1529,7 +1560,7 @@ class User extends controller {
                 market: isChecked._id
             }).save();
         return res.status(200).send(this.successFormat({
-            'message': 'Add market to your favourite list',
+            'message': 'The market has been added to your favourites.',
         }));
 
     }
@@ -1538,13 +1569,13 @@ class User extends controller {
         let ismarket = await addMarket.findOne({ market_name: data.toUpperCase() });
         if (!ismarket) {
             return res.status(404).send(this.errorMsgFormat({
-                'message': "Not found to market list "
+                'message': "Market cannot be Found."
             }, 'users', 404));
         }
         let isfavourite = await favourite.findOne({ user: req.user.user });
         if (!isfavourite) {
             return res.status(404).send(this.errorMsgFormat({
-                'message': "Not found to your favourite list"
+                'message': "The market could not be found in your favourites."
             }, 'users', 404));
         }
         let fav = isfavourite.market;
@@ -1554,7 +1585,7 @@ class User extends controller {
         }
         await favourite.findOneAndUpdate({ user: req.user.user }, { market: fav });
         return res.status(200).send(this.successFormat({
-            'message': 'Remove market to your favourite list',
+            'message': 'The market has been deleted from your favourites.',
         }));
 
     }
@@ -1563,7 +1594,7 @@ class User extends controller {
         let checkUser = await users.findOne({ _id: user })
         if (!checkUser) {
             return res.status(400).send(this.errorFormat({
-                'message': 'User not found'
+                'message': 'User cannot be found.'
             }));
         }
         if (!checkUser.withdraw) {
@@ -1572,19 +1603,19 @@ class User extends controller {
             let duration = moment.duration(moment().diff(checkUser.password_reset_time));
             if (getSeconds > duration.asSeconds()) {
                 return res.status(400).send(this.errorFormat({
-                    'message': `Your withdrawal has been disabled for 24 hours from the time your change password`
+                    'message': `Your password was recently changed. You cannot make a withdrawal for 24 hours.`
                 }));
             }
             else {
                 checkUser.withdraw = true;
                 checkUser.save();
                 return res.status(200).send(this.successFormat({
-                    'message': 'You can be proceed withdraw'
+                    'message': 'You can be proceed withdraw.'
                 }, null, 'user', 200));
             }
         }
         return res.status(400).send(this.errorFormat({
-            'message': 'You cannot be proceed withdraw'
+            'message': 'Withdrawals are disabled for your account. Please contact our support for assistance.'
         }));
 
     }
@@ -1603,10 +1634,10 @@ class User extends controller {
         }
         else {
             if (type == 'details') {
-                return { status: false, error: `Something wrong` };
+                return { status: false, error: `Invalid request.` };
             }
             return res.status(400).send(this.errorFormat({
-                'message': `Something wrong`
+                'message': `Invalid request.`
             }));
         }
     }
@@ -1620,7 +1651,7 @@ class User extends controller {
             let checkUser = await users.findOne({ _id: checkSessionId.user });
             if (!checkUser) {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'User not found'
+                    'message': 'User cannot be found.'
                 }, 'user', 400));
             }
             if (checkUser.kyc_statistics == null) {
@@ -1635,7 +1666,7 @@ class User extends controller {
             let checkUser = await users.findOne({ _id: checkSessionId.user });
             if (!checkUser) {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'User not found'
+                    'message': 'User cannot be found.'
                 }, 'user', 400));
             }
             // let date = new Date();
@@ -1816,13 +1847,13 @@ class User extends controller {
         let checkUser = await users.findOne({ _id: data.user })
         if (!checkUser) {
             return res.status(400).send(this.errorFormat({
-                'message': 'User not found'
+                'message': 'User cannot be found.'
             }, 'user', 400));
         }
 
         if (data.otp == null || undefined) {
             return res.status(400).send(this.errorFormat({
-                'message': 'Otp must be provide'
+                'message': 'Please enter the OTP.'
             }, 'user', 400));
         }
         let checkOtp = await this.validateOtpForEmail(req, res, "kyc details");
@@ -1871,7 +1902,7 @@ class User extends controller {
         }
         else {
             return res.status(400).send(this.errorFormat({
-                'message': 'User not found'
+                'message': 'User cannot be found'
             }, 'user', 400));
         }
     }
@@ -1891,28 +1922,28 @@ class User extends controller {
         //     value: {
         //         "reward": "50",
         //         "reward_asset": "BDX",
-          //  }
-            // "kyc verification":{
-            //     "reward":"50",
-            //     "reward_asset":"BDX",
-            //     "active":true
-            // },
-            // "deposit verification":{
-            //     "reward":"50",
-            //     "reward_asset":"BDX",
-            //     "active":true
-            // },
-            // "referral reward-kyc":{
-            //     "reward":"50",
-            //     "reward_asset":"BDX",
-            //     "active":true
-            // },
-            // "referral reward-deposit":{
-            //     "reward":"50",
-            //     "reward_asset":"BDX",
-            //     "active":true
-            // }
-       // }
+        //  }
+        // "kyc verification":{
+        //     "reward":"50",
+        //     "reward_asset":"BDX",
+        //     "active":true
+        // },
+        // "deposit verification":{
+        //     "reward":"50",
+        //     "reward_asset":"BDX",
+        //     "active":true
+        // },
+        // "referral reward-kyc":{
+        //     "reward":"50",
+        //     "reward_asset":"BDX",
+        //     "active":true
+        // },
+        // "referral reward-deposit":{
+        //     "reward":"50",
+        //     "reward_asset":"BDX",
+        //     "active":true
+        // }
+        // }
 
         //await new configs(data).save();
         // data.type

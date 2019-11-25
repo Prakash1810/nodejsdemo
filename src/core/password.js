@@ -17,9 +17,9 @@ class Password extends Controller {
             email: Joi.string().required().regex(emailReg).options({
                 language: {
                     string: {
-                        required: '{{label}} is required',
+                        required: 'Please enter your {{label}} address.',
                         regex: {
-                            base: 'Invalid {{label}} address.'
+                            base: 'Please enter a valid {{label}} address.'
                         }
                     }
                 }
@@ -50,7 +50,7 @@ class Password extends Controller {
         }).exec()
             .then(async (user) => {
                 if (!user) {
-                    return res.status(400).json(this.errorMsgFormat({ 'message': 'User not found, please login.' }));
+                    return res.status(400).json(this.errorMsgFormat({ 'message': 'User cannot be found. Please contact support.' }));
                 } else {
                     let encryptedHash = this.encryptHash(user.email, user._id);
 
@@ -65,7 +65,7 @@ class Password extends Controller {
                     await mangHash.update({ email: user.email, is_active: false, type_for: "reset" }, { $set: { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') } })
                     await new mangHash({ email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
                     return res.status(200).json(this.successFormat({
-                        'message': 'We have sent a email to your email address.',
+                        'message': 'A password reset link has been sent to your registered email address. Please check your email to reset your password.',
                         'hash': encryptedHash
                     }, user._id));
                 }
@@ -80,7 +80,7 @@ class Password extends Controller {
                 if (ischecked.count > config.get('site.hmtLink')) {
                     await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': ` Verification link resent request exceeded, please login again `
+                        'message': `You have exceeded the maximum email resend request. Please click the 'Forgot Password' option to continue. `
                     }, 'users', 400));
                 }
             }
@@ -98,13 +98,13 @@ class Password extends Controller {
 
             await apiServices.sendEmailNotification(serviceData,res);
             return res.status(200).json(this.successFormat({
-                'message': 'We have sent a email to your email address.',
+                'message': 'A password reset link has been resent to your registered email address. Please check your email to reset your password.',
                 'hash': encryptedHash
             }, user._id));
 
         }
         else {
-            return res.status(400).send(this.errorMsgFormat({ 'message': 'User not found, please register again' }, 'user', 400));
+            return res.status(400).send(this.errorMsgFormat({ 'message': 'User cannot be found. Please contact support.' }, 'user', 400));
         }
 
 
@@ -118,7 +118,7 @@ class Password extends Controller {
         if (checkHash) {
             if (checkHash.is_active) {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Verification link -already used'
+                    'message': 'The password reset link has already been used. Please login to continue.'
                 }));
             }
             else {
@@ -130,7 +130,7 @@ class Password extends Controller {
 
         else {
             return res.status(400).send(this.errorMsgFormat({
-                'message': 'Verification link is expired'
+                'message': 'The password reset link has expired. Please login to continue.'
             }));
         }
         if (userHash.email) {
@@ -141,22 +141,22 @@ class Password extends Controller {
                     .then(async (result) => {
                         if (!result) {
                             return res.status(400).send(this.errorMsgFormat({
-                                'message': "User not found"
+                                'message': "User cannot be found."
                             }));
                         } else {
                             return res.status(200).send(this.successFormat({
-                                'message': 'Token is Valid'
+                                'message': 'The password reset link has been validated.'
                             }, result._id));
                         }
                     });
             } else {
                 return res.status(404).send(this.errorMsgFormat({
-                    'message': 'Token is expired.'
+                    'message': 'The password reset link has expired. Please login to continue.'
                 }));
             }
         } else {
             return res.status(404).send(this.errorMsgFormat({
-                'message': 'Email id not found'
+                'message': 'User cannot be found.'
             }));
         }
     }
@@ -176,9 +176,9 @@ class Password extends Controller {
             password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
                 language: {
                     string: {
-                        required: '{{label}} field is required',
+                        required: 'Please enter a {{label}}.',
                         regex: {
-                            base: '{{label}} must be at least 8 characters with uppercase letters and numbers.'
+                            base: '{{label}} must be a minimum of 8 characters. Please use a combination of alpha numeric, upper case and lower case characters.'
                         }
                     }
                 }
@@ -200,7 +200,7 @@ class Password extends Controller {
         const comparePassword = await bcrypt.compare(req.body.data.attributes.password,checkPassword.password);
         if(comparePassword){
            return res.status(400).send(this.successFormat({
-               'message': 'The given password match with existing password.'
+               'message': 'Please enter a password that you have not used before.'
            }, checkPassword._id, 'users', 400));
             
         }
@@ -229,7 +229,7 @@ class Password extends Controller {
                             await apiServices.sendEmailNotification(serviceData,res);
                             await Users.findOneAndUpdate({_id:req.body.data.id},{withdraw:false, password_reset_time:moment().format('YYYY-MM-DD HH:mm:ss')})
                             return res.status(202).send(this.successFormat({
-                                'message': 'Your password updated successfully.'
+                                'message': 'Your password has been changed successfully.'
                             }, user._id, 'users', 202));
                         }
                         if (checkHash != null) {
@@ -245,7 +245,7 @@ class Password extends Controller {
                         await apiServices.sendEmailNotification(serviceData,res);
                         
                         return res.status(202).send(this.successFormat({
-                            'message': 'Your password updated successfully.'
+                            'message': 'Your password has been reset successfully.'
                         }, user._id, 'users', 202));
                     }
                 });
@@ -261,10 +261,10 @@ class Password extends Controller {
             password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
                 language: {
                     string: {
-                        required: '{{label}} field is required',
+                        required: 'Please enter a {{label}}.',
                         regex: {
-                            base: '{{label}} must be at least 8 characters with uppercase letters and numbers.'
-                        }
+                            base: ' {{label}} must be a minimum of 8 characters. Please use a combination of alpha numeric, upper case and lower case characters.'
+                        }          
                     }
                 }
             }).label('password'),
@@ -282,20 +282,20 @@ class Password extends Controller {
                 let check = null;
                 if (!result) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Invalid data'
+                        'message': 'User cannot be found.'
                     }));
                 }
                 
                 if (result.google_auth) {
                     if (!requestData.g2f_code) {
                         return res.status(400).send(this.errorFormat({
-                            'message': 'G2f must be provide'
+                            'message': 'Google authentication code must be provided.'
                         }, 'user', 400));
                     }
                     let check = await user.postVerifyG2F(req, res, 'boolean');
                     if (check.status == false) {
                         return res.status(400).send(this.errorFormat({
-                            'message': 'Incorrect code'
+                            'message': 'The google authentication code you entered is incorrect.'
                         }, '2factor', 400));
                     }
 
@@ -303,7 +303,7 @@ class Password extends Controller {
                 else {
                     if (requestData.otp == null || undefined) {
                         return res.status(400).send(this.errorFormat({
-                            'message': 'Otp must be provide'
+                            'message': 'OTP must be provided.'
                         }, 'user', 400));
                     }
                     let checkOtp = await user.validateOtpForEmail(req, res, "change password");
@@ -317,7 +317,7 @@ class Password extends Controller {
 
                 if (passwordCompare == false) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Entered current password is incorrect. Please check.'
+                        'message': 'The new password must be different from the old password.'
                     }));
                 } else {
                     req.body.data.attributes.email = result.email;

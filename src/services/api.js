@@ -16,21 +16,21 @@ const fs = require('fs');
 const moment = require('moment');
 const _ = require('lodash');
 const Redis = require('ioredis');
+const branca = require("branca")(config.get('encryption.realKey'));
 class Api extends Controller {
 
-    async sendEmailNotification(data,res) {
+    async sendEmailNotification(data, res) {
         if (data.email_for !== 'registration' && data.email_for !== 'welcome') {
-            
-            if(!data.user_id){
-                return res.status(400).send(controller.errorFormat({"message":"User id is not define"}, 'users', 400));
+
+            if (!data.user_id) {
+                return res.status(400).send(controller.errorFormat({ "message": "User could not be found." }, 'users', 400));
             }
-            if(data.email_for == 'wallet-withdraw')
-            {
+            if (data.email_for == 'wallet-withdraw') {
                 data.code = helpers.encrypt(JSON.stringify(
                     {
-                        user:data.user_id,
-                        user_id:data.userId,
-                        code:data.verification_code
+                        user: data.user_id,
+                        user_id: data.userId,
+                        code: data.verification_code
                     }))
             }
         }
@@ -120,6 +120,7 @@ class Api extends Controller {
     }
     async authentication(req) {
         try {
+
             let verifyOptions = {
                 issuer: config.get('secrete.issuer'),
                 subject: 'Authentication',
@@ -128,22 +129,18 @@ class Api extends Controller {
             };
             const token = req.headers.authorization;
             const dataUser = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
-            let data =  JSON.parse(branca.decode(dataUser.token));
+            const  data= JSON.parse(branca.decode(dataUser.token));
             const isChecked = await accesToken.findOne({
                 user: data.user, access_token: token, is_deleted: true
             })
             if (isChecked) {
                 throw error;
-            } else {
-                let isActive = await users.findOne({ _id: data.user, is_active: false })
-                if (isActive) {
-                    throw error;
-                }
-                else {
-                    return { status: true, result: data }
-                }
-
             }
+            else {
+                return { status: true, result: data }
+            }
+
+
         }
         catch (err) {
             return { status: false, result: "Invaild Authentication" };
@@ -157,13 +154,13 @@ class Api extends Controller {
             let isChecked = await this.authentication(req);
             if (!isChecked.status) {
                 return res.status(401).json(controller.errorMsgFormat({
-                    message: "Invalid authentication"
+                    message: "Authentication failed. Your request could not be authenticated."
                 }), 'user', 401);
             }
             let getMarket = await market.find({});
             if (getMarket.length == 0) {
                 return res.status(404).send(controller.errorMsgFormat({
-                    'message': "No Data Found"
+                    'message': "Market could not be found."
                 }, 'users', 404));
             }
             _.map(getMarket, async function (market) {
@@ -281,7 +278,7 @@ class Api extends Controller {
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;
-        console.log("Result:",result);
+        console.log("Result:", result);
         if (result.status) {
             let value = result.result.result;
             if (type === 'json') {
@@ -328,18 +325,18 @@ class Api extends Controller {
         //     //return { status:false, error:'Something went wrong' };
         // });
 
-        var redis = new Redis.Cluster( [
-              {
+        var redis = new Redis.Cluster([
+            {
                 port: process.env.REDIS_PORT,
                 host: process.env.REDIS_HOST
-              }
-            ]);
-          redis.set(response.orderId, response);
-          let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
-          fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
-                    if (err)
-                        console.log("Error:", err);
-                });
+            }
+        ]);
+        redis.set(response.orderId, response);
+        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
+        fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
+            if (err)
+                console.log("Error:", err);
+        });
 
 
     }

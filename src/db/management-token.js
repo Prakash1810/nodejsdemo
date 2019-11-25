@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const tokenSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
+    info_token : { type: String},
     access_token: { type: String },
     refresh_token: { type: String },
     is_deleted: { type: Boolean, default: false },

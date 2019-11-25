@@ -156,9 +156,9 @@ class Registration extends Controller {
             referrer_code: data.referrer_code ? data.referrer_code : null
         }, async (err, user) => {
             if (err) {
+                
                 return res.status(500).json(this.errorFormat({ 'message': err.message }));
             } else {
-                
                 // send activation email
                 let isChecked = await this.sendActivationEmail(user);
                

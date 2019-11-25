@@ -6,9 +6,11 @@
 	"secrete": {
 		"issuer": "beldex",
 		"domain": "www.belbex.io",
-		"key": "--$_VM?LLx3XK95ZJ",
+		"key": " --$_VM?LLx3XK95ZJ",
 		"expiry": 300000,
-		"refreshTokenExpiry":420000,
+		"refreshTokenExpiry": 420000,
+		"infoToken": 604800000000000,
+		"infokey": "Skp9PyY*C6Cute_@Mwnu-w",
 		"refreshKey" : "Nkqw^h%MDeR5m7DGQ"
 	},
 	"site": {

@@ -7,6 +7,7 @@ const refresh_auth = require('../middlewares/auth')
 const registration = require('../core/registration');
 const slide = require('../core/geetest-captcha');
 const router = express.Router();
+const info = require('../middlewares/info');
 const controller = new Controller;
 
 router.get('/activation/:hash', (req, res) => {
@@ -106,7 +107,7 @@ router.patch('/reset-password', (req, res) => {
     }
 });
 
-router.patch('/change-password', auth, (req, res) => {
+router.patch('/change-password',info, auth, (req, res) => {
     try {
         let { error } = password.changePasswordValidate(req.body.data.attributes);
 
@@ -140,7 +141,7 @@ router.get('/get-user-id', (req, res) => {
     }
 });
 
-router.get('/login-history', auth, (req, res) => {
+router.get('/login-history',info, auth, (req, res) => {
     try {
         user.getLoginHistory(req, res);
     } catch (err) {
@@ -150,7 +151,7 @@ router.get('/login-history', auth, (req, res) => {
     }
 });
 
-router.get('/device-history', auth, (req, res) => {
+router.get('/device-history',info, auth, (req, res) => {
     try {
         user.getDeviceHistory(req, res);
     } catch (err) {
@@ -160,7 +161,7 @@ router.get('/device-history', auth, (req, res) => {
     }
 });
 
-router.patch('/whitelist-ip/:hash', (req, res) => {
+router.patch('/whitelist-ip/:hash',info, (req, res) => {
     try {
         return user.patchWhiteListIP(req, res);
     } catch (err) {
@@ -170,7 +171,7 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
     }
 });
 
-router.patch('/settings', auth, (req, res) => {
+router.patch('/settings',info, auth, (req, res) => {
     try {
         let { error } = user.settingsValidate(req.body.data.attributes);
         if (error) {
@@ -224,7 +225,7 @@ router.get("/gt/register-slide", function (req, res) {
     }
 });
 
-router.patch('/g2f-settings', auth, (req, res) => {
+router.patch('/g2f-settings',info, auth, (req, res) => {
     try {
         user.patch2FAuth(req, res);
     } catch (err) {
@@ -244,7 +245,7 @@ router.post('/g2f-verify', (req, res) => {
     }
 });
 
-router.post('/token', refresh_auth, async (req, res) => {
+router.post('/token',info, refresh_auth, async (req, res) => {
     try {
 
         await user.refreshToken(req.user, res);
@@ -256,9 +257,9 @@ router.post('/token', refresh_auth, async (req, res) => {
 });
 
 
-router.post('/logout', auth, async (req, res) => {
+router.post('/logout',info, auth, async (req, res) => {
     try {
-        await user.logout(req.user, req.headers.authorization, res);
+        await user.logout(req.user, req.headers, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -297,7 +298,7 @@ router.get('/market/list', async (req, res) => {
     }
 });
 
-router.post('/favourite', auth, async (req, res) => {
+router.post('/favourite',info, auth, async (req, res) => {
     try {
         let { error } = user.favouriteValidation(req.body.data.attributes);
         if (error) {
@@ -312,7 +313,7 @@ router.post('/favourite', auth, async (req, res) => {
     }
 });
 
-router.patch('/favourite', auth, async (req, res) => {
+router.patch('/favourite',info, auth, async (req, res) => {
     try {
         await user.updateFavourite(req, res);
     }
@@ -324,7 +325,7 @@ router.patch('/favourite', auth, async (req, res) => {
 });
 
 
-router.post('/generate/otp', auth, async (req, res) => {
+router.post('/generate/otp',info, auth, async (req, res) => {
     try {
         if (req.body.data.attributes.type) {
             await user.generatorOtpforEmail(req.user.user, req.body.data.attributes.type, res);
@@ -342,7 +343,7 @@ router.post('/generate/otp', auth, async (req, res) => {
     }
 });
 
-router.get('/withdraw/active', auth, async (req, res) => {
+router.get('/withdraw/active',info, auth, async (req, res) => {
     try {
         await user.withdrawActive(req.user.user, res);
     }
@@ -353,7 +354,7 @@ router.get('/withdraw/active', auth, async (req, res) => {
     }
 });
 
-router.get('/kyc-session', auth, async (req, res) => {
+router.get('/kyc-session',info, auth, async (req, res) => {
     try {
         await user.kycSession(req, res);
     }
@@ -375,7 +376,7 @@ router.post('/kyc-update', async (req, res) => {
     }
 });
 
-router.get('/referrer-history/:code', async (req, res) => {
+router.get('/referrer-history/:code',info,auth, async (req, res) => {
     try {
         await user.referrerHistory(req, res);
     }
@@ -386,7 +387,7 @@ router.get('/referrer-history/:code', async (req, res) => {
     }
 });
 
-router.post('/kyc-details', auth, async (req, res) => {
+router.post('/kyc-details',info, auth, async (req, res) => {
     try {
         let { error } = user.kycDetailsValidation(req.body.data.attributes);
         if (error) {
@@ -401,7 +402,7 @@ router.post('/kyc-details', auth, async (req, res) => {
     }
 });
 
-router.get('/kyc_statistics', auth, async (req, res) => {
+router.get('/kyc_statistics',info, auth, async (req, res) => {
     try {
 
         await user.kycStatistics(req, res);

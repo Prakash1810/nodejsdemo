@@ -28,7 +28,7 @@ class Wallet extends controller{
 
         if (pageNo < 0 || pageNo === 0) {
             return res.status(400).json(this.errorMsgFormat({
-                "message": "invalid page number, should start with 1"
+                "message": "Invalid page number. The page number should start with 1."
             }))
         }
 
@@ -89,7 +89,7 @@ class Wallet extends controller{
         let isChecked = await assets.findOne({ _id: asset });
         if(!isChecked.deposit){
             return res.status(400).send(this.errorFormat({
-                'message': ' This symbol does not proccess of depoist'
+                'message': 'Deposits have been disabled for this asset.'
             }, 'asset-balance', 400));
         }
 
@@ -109,7 +109,7 @@ class Wallet extends controller{
                 }
                 await apiServices.axiosAPI(data);
                 return res.status(200).json(this.successFormat({
-                    "message": `Create Address for ${data.coin} coin`
+                    "message": `Address has been created for ${data.coin}.`
                 }, asset, 'address'));
 
             } else {
@@ -179,13 +179,13 @@ class Wallet extends controller{
         {
             if (!requestData.g2f_code) {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'G2f must be provide'
+                    'message': 'Google authentication code must be provided.'
                 }, 'user', 400));
             }
                 let check = await user.postVerifyG2F(req, res, 'boolean');
                 if (check.status == false) {
                     return res.status(400).send(this.errorFormat({
-                        'message': 'Incorrect code'
+                        'message': 'The google authentication code you entered is incorrect.'
                     }, '2factor', 400));
                 }
             
@@ -193,7 +193,7 @@ class Wallet extends controller{
        else{
             if(requestData.otp == null || undefined){
                 return res.status(400).send(this.errorFormat({
-                    'message': 'Otp must be provide'
+                    'message': 'OTP must be provided.'
                 }, 'user', 400));
             }
             req.body.data['id']=req.user.user;
@@ -208,7 +208,7 @@ class Wallet extends controller{
         let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
         if (isValid !== true) {
             return res.status(400).send(this.errorMsgFormat({
-                'message': 'Invalid address.'
+                'message': 'Invalid asset address.'
             }, 'withdrawAddress'));
         }
 
@@ -239,7 +239,7 @@ class Wallet extends controller{
                     }, 'withdrawAddress', 500));
                 } else {
                     return res.status(200).json(this.successFormat({
-                        'message': 'Address added successfully.',
+                        'message': 'Address for the chosen asset has been added successfully.',
                     }, address._id));
                 }
             });
@@ -260,7 +260,7 @@ class Wallet extends controller{
             })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
-                        'message': 'Your request is updated successfully.'
+                        'message': 'The changes you made were saved successfully.'
                     }, result._id, 'withdrawAddress', 202));
                 })
                 .catch(err => {
@@ -289,7 +289,7 @@ class Wallet extends controller{
             })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
-                        'message': 'Your requested record deletedd successfully.'
+                        'message': 'Your request was successfully completed.'
                     }, result._id, 'withdrawAddress', 202));
                 })
                 .catch(err => {
@@ -316,7 +316,7 @@ class Wallet extends controller{
 
         if (pageNo < 0 || pageNo === 0) {
             return res.status(400).json(this.errorMsgFormat({
-                "message": "invalid page number, should start with 1"
+                "message": "Invalid page number. The page number should start with 1."
             }))
         }
 
@@ -415,7 +415,7 @@ class Wallet extends controller{
             }
             else {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'Incorrect asset code'
+                    'message': 'Asset could not be found.'
                 }, 'asset-balance', 400));
             }
         } else {
@@ -470,7 +470,7 @@ class Wallet extends controller{
 
             if (pageNo < 0 || pageNo === 0) {
                 return res.status(400).json(this.errorMsgFormat({
-                    "message": "invalid page number, should start with 1"
+                    "message": "Invalid page number. The page number should start with 1."
                 }))
             }
 
@@ -595,13 +595,13 @@ class Wallet extends controller{
          let checkAsset = await assets.findOne({_id:requestData.asset});
         if(checkAsset.minimum_withdrawal >= requestData.amount){
             return res.status(400).send(this.errorFormat({
-                'message': `The minimum withdrawal amount should be ${checkAsset.minimum_withdrawal} ${checkAsset.asset_code}`,
+                'message': `The minimum withdrawal amount for the chosen asset is ${checkAsset.minimum_withdrawal} ${checkAsset.asset_code}.`,
             },  400));
         }
         let checkUser= await users.findOne({_id:req.user.user});
         if(!checkUser.withdraw){
             return res.status(400).send(this.errorFormat({
-                'message': 'Your withdrawal has been disabled for 24 hours from the time your change password'
+                'message': 'Your password was recently changed. You cannot make a withdrawal for 24 hours.'
             }, 'user', 400));
         }
         
@@ -609,13 +609,13 @@ class Wallet extends controller{
         {
             if (!requestData.g2f_code) {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'G2f must be provide'
+                    'message': 'Google authentication code must be provided.'
                 }, 'user', 400));
             }
                 let check = await user.postVerifyG2F(req, res, 'boolean');
                 if (check.status == false) {
                     return res.status(400).send(this.errorFormat({
-                        'message': 'Incorrect code'
+                        'message': 'The google authentication code you entered is incorrect.'
                     }, '2factor', 400));
                 }
             
@@ -623,7 +623,7 @@ class Wallet extends controller{
        else{
             if(requestData.otp == null || undefined){
                 return res.status(400).send(this.errorFormat({
-                    'message': 'Otp must be provide'
+                    'message': 'OTP must be provided.'
                 }, 'user', 400));
             }
             req.body.data['id']=req.user.user;
@@ -638,7 +638,7 @@ class Wallet extends controller{
             let checkWithdraw = await assets.findOne({_id:requestData.asset});
             if(!checkWithdraw.withdraw){
                 return res.status(400).send(this.errorFormat({
-                    'message': ' This symbol does not proccess of withdraw'
+                    'message': 'Withdrawals have been disabled for this asset.'
                 }, 'withdraw', 400));
             }
 
@@ -655,7 +655,7 @@ class Wallet extends controller{
                     let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
                     if (isValid !== true) {
                         return res.status(400).send(this.errorMsgFormat({
-                            'address': 'Invalid address.'
+                            'address': 'Invalid asset address.'
                         }, 'withdrawAddress'));
                     }
                     withdraw = {
@@ -680,22 +680,22 @@ class Wallet extends controller{
                         };
                         let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount,res);
                         return res.status(200).json(this.successFormat({
-                            'message': 'Your withdrawal request posted successfully. Waiting for your confirmation. Please check your email'
+                            'message': 'Your request for withdrawal has been received. A confirmation email has been sent to your registered email address. Please confirm your request.'
                         }, returnId, 'withdraw', 200));
                     } catch (err) {
                         return res.status(500).send(err.message);
                     }
                 } else {
                     return res.status(400).json(this.errorMsgFormat({
-                        "message": "invalid address id"
+                        "message": "Asset address must be provided."
                     }, 'withdraw'));
                 }
             } else {
                 let msg = 'Invalid request';
                 if (validateWithdraw.type === 'balance'){ 
-                    msg = 'Your balance is too low Please check.'
+                    msg = 'Your balance for the selected asset is too low to make a withdrawal.'
                 } else if (validateWithdraw.type === 'suspend') {
-                    msg = 'This coin has suspended. Please contact support@beldex.io'
+                    msg = 'The selected asset has been disabled temporarily. Please contact support for more information.'
                 } 
 
                 return res.status(400).json(this.errorMsgFormat({
@@ -704,7 +704,7 @@ class Wallet extends controller{
             }
         } else {
             return res.status(400).json(this.errorMsgFormat({
-                "message": "Invalid request"
+                "message": 'Please choose an asset.'
             }, 'withdraw'));
         }
     }
@@ -786,16 +786,16 @@ class Wallet extends controller{
                 // send an confirmation notification
                 this.sendWithdrawNotification(data.notify_data.email_data,res);
                 return res.status(200).json(this.successFormat({
-                    "message": "Mail resended successfully"
+                    "message": "The confirmation email has been resent to your registered email address."
                 }, 'withdraw'));
             } else {
                 return res.status(404).json(this.errorMsgFormat({
-                    "message": "Request already process add Marketed / invalid request"
+                    "message": "Request already process add Marketed / Invalid request."
                 }, 'withdraw'));
             }
         } else {
             return res.status(400).json(this.errorMsgFormat({
-                "message": "invalid request"
+                "message": "Invalid request."
             }, 'withdraw'));
         }
     }
@@ -843,20 +843,20 @@ class Wallet extends controller{
                             }
                         });
                         return res.status(200).json(this.successFormat({
-                            "message": "Your withdraw confirmation request has been initiated.  Please click here to check the status of withdraw."
+                            "message": "Your withdrawal request has been confirmed."
                         }, 'withdraw'));
                     
                 }
                 else {
                     await beldexNotification.findOneAndUpdate({ _id: code.code, user: code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Your withdraw confirmation link has been expired. Please click here to submit the new request.'
+                        'message': 'Your withdrawal request has been confirmed.'
                     }));
                 }
             }
             else {
                 return res.status(400).json(this.errorMsgFormat({
-                    "message": "Your withdraw request is already processed. Please click here to check the status of withdraw."
+                    "message": "This link has expired."
                 }, 'withdraw'));
             }
 
@@ -884,7 +884,7 @@ class Wallet extends controller{
             })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
-                        'message': 'Your requested record deleted successfully.'
+                        'message': 'Your request was successfully completed.'
                     }, result._id, 'withdraw', 202));
                 })
                 .catch(err => {
@@ -906,11 +906,11 @@ class Wallet extends controller{
                 return { status: true }
             }
             else {
-                return { status: false, err: 'Asset is Delist' }
+                return { status: false, err: 'The asset is no longer listed.' }
             }
         }
         else {
-            return { status: false, err: 'Asset is not found' }
+            return { status: false, err: 'Asset could not be found.' }
         }
 
     }
