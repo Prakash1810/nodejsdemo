@@ -143,7 +143,7 @@ class Api extends Controller {
 
         }
         catch (err) {
-            return { status: false, result: "Invaild Authentication" };
+            return { status: false, result: "Authentication failed. Your request could not be authenticated." };
         }
 
     }

@@ -90,7 +90,7 @@ class User extends controller {
             }
             else {
                 return res.status(400).send(this.errorFormat({
-                    'message': 'The verification link has already used may be expired'
+                    'message': 'The verification link has already used may be expired.'
                 }));
             }
         }
@@ -153,7 +153,7 @@ class User extends controller {
                 }));
             } else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'User connot be found'
+                    'message': 'User cannot be found.'
                 }));
             }
         }
@@ -238,7 +238,7 @@ class User extends controller {
             .then(async (result) => {
                 if (!result) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'User cannot be found, Please register your email'
+                        'message': 'User cannot be found, Please register your email.'
                     }));
                 }
                 else if (!result.is_active) {
@@ -544,7 +544,7 @@ class User extends controller {
             if (isAuth) {
                 await this.addWhitelist(data, userID, true);
                 res.status(200).send(this.successFormat({
-                    'message': "You are successfully logged in.",
+                    'message': "Your google authentication was successful.",
                     "google_auth": isAuth.google_auth,
                     "sms_auth": isAuth.sms_auth,
 
@@ -556,7 +556,7 @@ class User extends controller {
                 if (isChecked.status) {
                     await this.addWhitelist(data, userID, true);
                     res.status(200).send(this.successFormat({
-                        'message': "Send a OTP on your email",
+                        'message': "An OTP has been sent to your registered email address.",
                         "region": data.region,
                         "city": data.city,
                         "ip": data.ip
@@ -624,7 +624,7 @@ class User extends controller {
                 }
 
                 return res.status(401).send(this.errorMsgFormat({
-                    'message': 'unauthorized',
+                    'message': 'Your are logging in from a new device. Please authorize this device to continue.',
                     'hash': urlHash
                 }, 'users', 401));
             }
@@ -641,7 +641,7 @@ class User extends controller {
                 })
                 if (isAuth) {
                     res.status(200).send(this.successFormat({
-                        'message': "You are successfully logged in.",
+                        'message': "Your google authentication was successful.",
                         "google_auth": isAuth.google_auth,
                         "sms_auth": isAuth.sms_auth,
 
@@ -652,7 +652,7 @@ class User extends controller {
                     const isChecked = await this.generatorOtpforEmail(userID, "login", res);
                     if (isChecked.status) {
                         res.status(200).send(this.successFormat({
-                            'message': "The OTP has been sent your registered email ID. Please check",
+                            'message': "An OTP has been sent to your registered email address.",
                             "region": data.region,
                             "city": data.city,
                             "ip": data.ip
@@ -709,10 +709,10 @@ class User extends controller {
             }
             else {
                 if (typeFor !== 'login') {
-                    return { status: false, err: 'OTP entered is Invalid' }
+                    return { status: false, err: 'OTP entered is invalid' }
                 }
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'OTP entered is Invalid'
+                    'message': 'OTP entered is invalid'
                 }));
             }
         }
@@ -758,13 +758,13 @@ class User extends controller {
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false, type_for: typeFor }, { count: inCount, otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
 
                 return res.status(200).send(this.successFormat({
-                    'message': "Send a OTP on your email"
+                    'message': "An OTP has been sent to your registered email address."
                 }, data.user_id))
             }
             else {
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': ` OTP resend request exceeded, please login again `
+                    'message': `OTP resend request limit has exceeded. Please login again to continue.`
                 }, 'users', 400));
             }
         }
@@ -772,7 +772,7 @@ class User extends controller {
             let isChecked = await this.generatorOtpforEmail(data.user_id, typeFor, res)
             if (isChecked.status) {
                 res.status(200).send(this.successFormat({
-                    'message': "Send a OTP on your email"
+                    'message': "An OTP has been sent to your registered email address."
                 }, data.user_id))
             }
             else {
@@ -846,7 +846,7 @@ class User extends controller {
         let query = {}
         if (pageNo < 0 || pageNo === 0) {
             return res.status(400).json(this.errorMsgFormat({
-                "message": "invalid page number, should start with 1"
+                "message": "Invalid page number. The page number should start with 1."
             }))
         }
 
@@ -905,7 +905,7 @@ class User extends controller {
         let query = {}
         if (pageNo < 0 || pageNo === 0) {
             return res.status(400).json(this.errorMsgFormat({
-                "message": "invalid page number, should start with 1"
+                "message": "Invalid page number. The page number should start with 1."
             }))
         }
 
@@ -977,12 +977,12 @@ class User extends controller {
                 let check = await mangHash.findOne({ email: deviceHash.data.email, type_for: "new_authorize_device", hash: req.params.hash });
                 if (!check) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': "The link has been expired, please click the latest authorize link from your email or try to resend again."
+                        'message': "This link has expired. Please login to continue."
                     }));
                 }
                 if (check.is_active) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': "The link has already authroized. Please try to login."
+                        'message': "This link has already been used."
                     }));
                 }
                 let date = new Date(check.created_date);
@@ -997,7 +997,7 @@ class User extends controller {
                         .then((result) => {
                             if (!result) {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': 'The device cannot be found.Please login to continue'
+                                    'message': 'The device cannot be found. Please login to continue.'
                                 }));
                             } else {
                                 this.updateWhiteListIP(deviceHash, req, res);
@@ -1006,7 +1006,7 @@ class User extends controller {
                 }
                 else {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'The link has been expired, please try to resend again.'
+                        'message': 'This link has expired. Please login to continue.'
                     }));
                 }
             } else {
