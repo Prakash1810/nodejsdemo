@@ -1,11 +1,12 @@
 const express = require('express');
 const Controller = require('../core/controller');
 const wallet = require('../core/wallet');
+const info = require('../middlewares/info');
 const auth = require("../middlewares/authentication");
 const router = express.Router();
 const controller = new Controller;
 
-router.get('/assets', (req, res) => {
+router.get('/assets',info,auth, (req, res) => {
     try {
         return wallet.getAssets(req, res);
     } catch (err) {
@@ -15,7 +16,7 @@ router.get('/assets', (req, res) => {
     }
 });
 
-router.post('/asset-address', auth, (req, res) => {
+router.post('/asset-address',info, auth, (req, res) => {
     try {
         return wallet.getAssetAddress(req, res);
     } catch (err) {
@@ -25,7 +26,7 @@ router.post('/asset-address', auth, (req, res) => {
     }
 });
 
-router.post('/withdraw-address', auth, (req, res) => {
+router.post('/withdraw-address',info, auth, (req, res) => {
     try {
         let { error } = wallet.postWithdrawAddressValidation(req.body.data.attributes);
         if (error) {
@@ -42,7 +43,7 @@ router.post('/withdraw-address', auth, (req, res) => {
     }
 });
 
-router.patch('/withdraw-address', auth, (req, res) => {
+router.patch('/withdraw-address',info, auth, (req, res) => {
     try {
         return wallet.patchWithdrawAddress(req, res);
     } catch (err) {
@@ -52,7 +53,7 @@ router.patch('/withdraw-address', auth, (req, res) => {
     }
 });
 
-router.delete('/withdraw-address/:id', auth, (req, res) => {
+router.delete('/withdraw-address/:id',info, auth, (req, res) => {
     try {
         return wallet.deleteWithdrawAddress(req, res);
     } catch (err) {
@@ -62,7 +63,7 @@ router.delete('/withdraw-address/:id', auth, (req, res) => {
     }
 });
 
-router.get('/withdraw-address', auth, (req, res) => {
+router.get('/withdraw-address',info, auth, (req, res) => {
     try {
         return wallet.getWithdrawAddress(req, res);
     } catch (err) {
@@ -72,7 +73,7 @@ router.get('/withdraw-address', auth, (req, res) => {
     }
 });
 
-router.get('/withdraw-address/:asset', auth, (req, res) => {
+router.get('/withdraw-address/:asset',info, auth, (req, res) => {
     try {
         return wallet.getAssetWithdrawAddress(req, res);
     } catch (err) {
@@ -82,7 +83,7 @@ router.get('/withdraw-address/:asset', auth, (req, res) => {
     }
 });
 
-router.get('/balance', auth, (req, res) => {
+router.get('/balance',info, auth, (req, res) => {
     try {
         return wallet.getAssetsBalance(req, res);
     } catch (err) {
@@ -92,7 +93,7 @@ router.get('/balance', auth, (req, res) => {
     }
 });
 
-router.get('/transactions/:type', auth, (req, res) => {
+router.get('/transactions/:type',info, auth, (req, res) => {
     try {
         return wallet.getTransactionsHistory(req, res);
     } catch (err) {
@@ -102,10 +103,11 @@ router.get('/transactions/:type', auth, (req, res) => {
     }
 });
 
-router.post('/withdraw', auth, (req, res) => {
+router.post('/withdraw',info,auth, (req, res) => {
     try {
         let { error } = wallet.postWithdrawValidation(req.body.data.attributes);
         if (error) {
+           
             return res.status(400).send(controller.errorMsgFormat({
                 "message": error
             }, 'withdraw', 400));
@@ -136,7 +138,7 @@ router.patch('/withdraw', (req, res) => {
     }
 });
 
-router.post('/resend-withdraw', auth, (req, res) => {
+router.post('/resend-withdraw',info, auth, (req, res) => {
     try {
         return wallet.resendWithdrawNotification(req, res);
     } catch (err) {
@@ -146,7 +148,7 @@ router.post('/resend-withdraw', auth, (req, res) => {
     }
 });
 
-router.delete('/withdraw/:id', auth, (req, res) => {
+router.delete('/withdraw/:id',info, auth, (req, res) => {
     try {
         return wallet.deleteWithdraw(req, res);
     } catch (err) {

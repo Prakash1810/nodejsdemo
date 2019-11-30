@@ -29,6 +29,7 @@ const assetsSchema = new mongoose.Schema({
     is_deleted: Boolean,
     withdrawal_fee: Number,
     minimum_withdrawal: Number,
+    minimum_deposit: Number,
     delist: { type: Boolean, default: false },
     deposit: { type: Boolean, default: true },
     withdraw: { type: Boolean, default: true },

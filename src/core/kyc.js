@@ -67,7 +67,6 @@ class kyc{
             .withMethod('POST')
             .withQueryParam('sdkId', CLIENT_SDK_ID)
             .build();
-        
         //get Yoti response
 
         const response = await request.execute();

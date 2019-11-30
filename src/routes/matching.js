@@ -3,6 +3,7 @@ const router = express.Router();
 const users = require('../db/users');
 const matching = require('../services/api');
 const Controller = require('../core/controller');
+const info = require('../middlewares/info');
 const controller = new Controller;
 const getFee = require("../db/matching-engine-config");
 const markets = require('../db/market-list');
@@ -38,7 +39,7 @@ router.get('/asset/summary', async (req, res) => {
 
 //BALANCE
 
-router.post('/balance/history', auth, async (req, res) => {
+router.post('/balance/history',info, auth, async (req, res) => {
     try {
         
          req.body.data.attributes.user_id = Number(req.user.user_id);
@@ -50,7 +51,7 @@ router.post('/balance/history', auth, async (req, res) => {
     }
 })
 
-router.post('/balance/query', auth, async (req, res) => {
+router.post('/balance/query',info, auth, async (req, res) => {
     try {
       
        
@@ -85,7 +86,7 @@ router.post('/balance/query', auth, async (req, res) => {
 
 //ORDER
 
-router.post('/order/put-market', auth, async (req, res) => {
+router.post('/order/put-market',info, auth, async (req, res) => {
     try {
         let side ;
         let data =  req.body.data.attributes;
@@ -130,7 +131,7 @@ router.post('/order/put-market', auth, async (req, res) => {
     }
 })
 
-router.post('/order/put-limit', auth, async (req, res) => {
+router.post('/order/put-limit',info, auth, async (req, res) => {
     try {
         let side;
         let data = req.body.data.attributes;
@@ -171,9 +172,17 @@ router.post('/order/put-limit', auth, async (req, res) => {
     }
 })
 
-router.post('/order/cancel', auth, async (req, res) => {
+router.post('/order/cancel',info, auth, async (req, res) => {
     try {
          req.body.data.attributes.user_id = Number(req.user.user_id);
+         let check = await markets.findOne({market_name:data.market,is_active:true,disable_trade:false});
+         let checkUser = await users.findOne({_id:req.user.user,trade:false});
+         if(checkUser){
+            return res.status(400).send(controller.errorMsgFormat({message:'Trade is disabled for this account'}));
+         }
+         if(!check){
+             return res.status(400).send(controller.errorMsgFormat({message:`The  market-${data.market} is inactive`}));
+         }
         await matching.matchingEngineRequest('post', 'order/cancel', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -182,7 +191,7 @@ router.post('/order/cancel', auth, async (req, res) => {
     }
 })
 
-router.get('/order/cancel', auth, async (req, res) => {
+router.get('/order/cancel',info, auth, async (req, res) => {
     try {
             let user  = Number(req.user.user_id);
             let data = await orderCancel.find({user:user});
@@ -195,27 +204,27 @@ router.get('/order/cancel', auth, async (req, res) => {
     }
 })
 
-router.post('/order/book', async (req, res) => {
-    try {
-        await matching.matchingEngineRequest('post', 'order/book', req.body, res);
-    } catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'order-matching', 500));
-    }
-})
+// router.post('/order/book', async (req, res) => {
+//     try {
+//         await matching.matchingEngineRequest('post', 'order/book', req.body, res);
+//     } catch (err) {
+//         return res.status(500).send(controller.errorMsgFormat({
+//             'message': err.message
+//         }, 'order-matching', 500));
+//     }
+// })
 
-router.post('/order/depth', async (req, res) => {
-    try {
-        await matching.matchingEngineRequest('post', 'order/depth', req.body, res);
-    } catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'order-matching', 500));
-    }
-})
+// router.post('/order/depth', async (req, res) => {
+//     try {
+//         await matching.matchingEngineRequest('post', 'order/depth', req.body, res);
+//     } catch (err) {
+//         return res.status(500).send(controller.errorMsgFormat({
+//             'message': err.message
+//         }, 'order-matching', 500));
+//     }
+// })
 
-router.post('/order/pending', auth, async (req, res) => {
+router.post('/order/pending',info, auth, async (req, res) => {
     try {
          req.body.data.attributes.user_id = Number(req.user.user_id);
         await matching.matchingEngineRequest('post', 'order/pending', req.body, res);
@@ -226,7 +235,7 @@ router.post('/order/pending', auth, async (req, res) => {
     }
 })
 
-router.post('/order/pending-detials',auth, async (req, res) => {
+router.post('/order/pending-detials',info,auth, async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'order/pending-detials', req.body, res);
     } catch (err) {
@@ -246,7 +255,7 @@ router.post('/order/deals', async (req, res) => {
     }
 })
 
-router.post('/order/finished', auth, async (req, res) => {
+router.post('/order/finished',info, auth, async (req, res) => {
     try {
          req.body.data.attributes.user_id = Number(req.user.user_id);
         await matching.matchingEngineRequest('post', 'order/finished', req.body, res);
@@ -257,7 +266,7 @@ router.post('/order/finished', auth, async (req, res) => {
     }
 })
 
-router.post('/order/finished-detials', async (req, res) => {
+router.post('/order/finished-detials',info,auth, async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'order/finished-detials', req.body, res);
 
@@ -272,7 +281,6 @@ router.post('/order/finished-detials', async (req, res) => {
 
 router.get('/market/list', async (req, res) => {
     try {
-        
         await matching.matchingEngineRequestForMarketList('market/list', req, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -339,7 +347,7 @@ router.post('/market/deals', async (req, res) => {
     }
 })
 
-router.post('/market/user-deals', auth, async (req, res) => {
+router.post('/market/user-deals',info, auth, async (req, res) => {
     try {
          req.body.data.attributes.user_id = Number(req.user.user_id);
         await matching.matchingEngineRequest('post', 'market/user-deals', req.body, res);

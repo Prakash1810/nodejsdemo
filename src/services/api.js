@@ -16,21 +16,22 @@ const fs = require('fs');
 const moment = require('moment');
 const _ = require('lodash');
 const Redis = require('ioredis');
+const device = require('../db/device-management');
+const branca = require("branca")(config.get('encryption.realKey'));
 class Api extends Controller {
 
-    async sendEmailNotification(data,res) {
+    async sendEmailNotification(data, res) {
         if (data.email_for !== 'registration' && data.email_for !== 'welcome') {
-            
-            if(!data.user_id){
-                return res.status(400).send(controller.errorFormat({"message":"User id is not define"}, 'users', 400));
+
+            if (!data.user_id) {
+                return res.status(400).send(controller.errorFormat({ "message": "User could not be found." }, 'users', 400));
             }
-            if(data.email_for == 'wallet-withdraw')
-            {
+            if (data.email_for == 'wallet-withdraw') {
                 data.code = helpers.encrypt(JSON.stringify(
                     {
-                        user:data.user_id,
-                        user_id:data.userId,
-                        code:data.verification_code
+                        user: data.user_id,
+                        user_id: data.userId,
+                        code: data.verification_code
                     }))
             }
         }
@@ -118,8 +119,61 @@ class Api extends Controller {
             }, 'order-matching', result.errorCode));
         }
     }
+
+    async authenticationInfo(req) {
+        try {
+            let jwtOptions = {
+                issuer: config.get('secrete.issuer'),
+                subject: 'Authentication',
+                audience: config.get('secrete.domain'),
+                expiresIn: config.get('secrete.infoToken')
+            };
+
+            let token = req.headers.info;
+            const deviceInfo = await jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
+            const checkToken = await accesToken.findOne({ is_deleted: true, info_token: token });
+            if (checkToken) {
+
+                throw error
+            } else {
+                let checkDevice = await device.findOne({
+                    browser: deviceInfo.browser,
+                    user: deviceInfo.info,
+                    browser_version: deviceInfo.browser_version,
+                    is_deleted: true,
+                    region: deviceInfo.region,
+                    city: deviceInfo.city,
+                    os: deviceInfo.os
+                });
+
+                let checkActive = await users.findOne({ _id: deviceInfo.info, is_active: false });
+
+                if (checkDevice) {
+                    res.status(401).json(controller.errorMsgFormat({
+                        message: 'The device are browser that you are currently logged in has been removed from the device whitelist.'
+                    }, 'user', 401));
+                } else if (checkActive) {
+                    console.log("4:")
+                    await accesstoken.findOneAndUpdate({ info_token: token }, { is_deleted: true });
+                    res.status(401).json(controller.errorMsgFormat({
+                        message: 'Your account has been disabled. Please contact support.'
+                    }, 'user', 401));
+
+                }
+                else {
+                    return { status: true }
+                }
+            }
+
+        }
+
+        catch (error) {
+            return { status: false, result: "Authentication failed. Your request could not be authenticated." };
+        }
+    }
     async authentication(req) {
         try {
+
             let verifyOptions = {
                 issuer: config.get('secrete.issuer'),
                 subject: 'Authentication',
@@ -127,42 +181,46 @@ class Api extends Controller {
                 expiresIn: config.get('secrete.expiry')
             };
             const token = req.headers.authorization;
-            const data = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
+            const dataUser = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
+            const data = JSON.parse(branca.decode(dataUser.token));
             const isChecked = await accesToken.findOne({
                 user: data.user, access_token: token, is_deleted: true
             })
             if (isChecked) {
                 throw error;
-            } else {
-                let isActive = await users.findOne({ _id: data.user, is_active: false })
-                if (isActive) {
-                    throw error;
-                }
-                else {
-                    return { status: true, result: data }
-                }
-
             }
+            else {
+                return { status: true, result: data }
+            }
+
+
         }
         catch (err) {
-            return { status: false, result: "Invaild Authentication" };
+            return { status: false, result: "Authentication failed. Your request could not be authenticated." };
         }
 
     }
     async matchingEngineRequestForMarketList(path, req, res, type = 'withoutAdd') {
 
-        if (req.headers.authorization) {
+        if (req.headers.authorization && req.headers.info) {
             let markets = [];
+            let isInfo = await this.authenticationInfo(req);
+            console.log("isINfo:", isInfo)
+            if (!isInfo.status) {
+                return res.status(401).json(controller.errorMsgFormat({
+                    message: "12Authentication failed. Your request could not be authenticated."
+                }), 'user', 401);
+            }
             let isChecked = await this.authentication(req);
             if (!isChecked.status) {
                 return res.status(401).json(controller.errorMsgFormat({
-                    message: "Invalid authentication"
+                    message: "Authentication failed. Your request could not be authenticated."
                 }), 'user', 401);
             }
             let getMarket = await market.find({});
             if (getMarket.length == 0) {
                 return res.status(404).send(controller.errorMsgFormat({
-                    'message': "No Data Found"
+                    'message': "Market could not be found."
                 }, 'users', 404));
             }
             _.map(getMarket, async function (market) {
@@ -280,7 +338,7 @@ class Api extends Controller {
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;
-        console.log("Result:",result);
+        console.log("Result:", result);
         if (result.status) {
             let value = result.result.result;
             if (type === 'json') {
@@ -327,18 +385,18 @@ class Api extends Controller {
         //     //return { status:false, error:'Something went wrong' };
         // });
 
-        var redis = new Redis.Cluster( [
-              {
+        var redis = new Redis.Cluster([
+            {
                 port: process.env.REDIS_PORT,
                 host: process.env.REDIS_HOST
-              }
-            ]);
-          redis.set(response.orderId, response);
-          let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
-          fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
-                    if (err)
-                        console.log("Error:", err);
-                });
+            }
+        ]);
+        redis.set(response.orderId, response);
+        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
+        fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
+            if (err)
+                console.log("Error:", err);
+        });
 
 
     }

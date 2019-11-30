@@ -4,6 +4,7 @@ const Controller = require('../core/controller');
 const controller = new Controller;
 const accesToken = require('../db/management-token');
 const users = require('../db/users');
+const branca = require("branca")(config.get('encryption.realKey'));
 let verifyOptions = {
     issuer: config.get('secrete.issuer'),
     subject: 'Authentication',
@@ -14,7 +15,8 @@ let verifyOptions = {
 module.exports = async (req, res, next) => {
     try {
         const token = req.headers.authorization;
-        const data = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
+        const dataUser = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
+        const  data= JSON.parse(branca.decode(dataUser.token));
         const isChecked = await accesToken.findOne({
             user: data.user, access_token: token, is_deleted: true
         })
@@ -35,7 +37,7 @@ module.exports = async (req, res, next) => {
     }
     catch (error) {
         return res.status(401).json(controller.errorMsgFormat({
-            message: "Invalid authentication"
+            message: "Authentication failed. Your request could not be authenticated."
         },'user',401));
     }
 };
