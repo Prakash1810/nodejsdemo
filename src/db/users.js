@@ -43,7 +43,9 @@ const usersSchema = mongoose.Schema({
     vip: { type: Boolean, default: false },
     trade: { type: Boolean, default: true },
     reason_for_withdraw: { type: String, default: null },
-    deposit_status:{type:Boolean,default:false}
+    deposit_status:{type:Boolean,default:false},
+    dailyWithdrawAmount:{type:Number},
+    monthWithdrawAmount:{type:Number}
 });
 
 // autoIncrement.initialize(mongooseConnect.connect());

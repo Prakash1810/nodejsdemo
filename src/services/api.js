@@ -16,6 +16,7 @@ const fs = require('fs');
 const moment = require('moment');
 const _ = require('lodash');
 const Redis = require('ioredis');
+const device = require('../db/device-management');
 const branca = require("branca")(config.get('encryption.realKey'));
 class Api extends Controller {
 
@@ -118,6 +119,58 @@ class Api extends Controller {
             }, 'order-matching', result.errorCode));
         }
     }
+
+    async authenticationInfo(req) {
+        try {
+            let jwtOptions = {
+                issuer: config.get('secrete.issuer'),
+                subject: 'Authentication',
+                audience: config.get('secrete.domain'),
+                expiresIn: config.get('secrete.infoToken')
+            };
+
+            let token = req.headers.info;
+            const deviceInfo = await jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
+            const checkToken = await accesToken.findOne({ is_deleted: true, info_token: token });
+            if (checkToken) {
+
+                throw error
+            } else {
+                let checkDevice = await device.findOne({
+                    browser: deviceInfo.browser,
+                    user: deviceInfo.info,
+                    browser_version: deviceInfo.browser_version,
+                    is_deleted: true,
+                    region: deviceInfo.region,
+                    city: deviceInfo.city,
+                    os: deviceInfo.os
+                });
+
+                let checkActive = await users.findOne({ _id: deviceInfo.info, is_active: false });
+
+                if (checkDevice) {
+                    res.status(401).json(controller.errorMsgFormat({
+                        message: 'The device are browser that you are currently logged in has been removed from the device whitelist.'
+                    }, 'user', 401));
+                } else if (checkActive) {
+                    console.log("4:")
+                    await accesstoken.findOneAndUpdate({ info_token: token }, { is_deleted: true });
+                    res.status(401).json(controller.errorMsgFormat({
+                        message: 'Your account has been disabled. Please contact support.'
+                    }, 'user', 401));
+
+                }
+                else {
+                    return { status: true }
+                }
+            }
+
+        }
+
+        catch (error) {
+            return { status: false, result: "Authentication failed. Your request could not be authenticated." };
+        }
+    }
     async authentication(req) {
         try {
 
@@ -129,7 +182,7 @@ class Api extends Controller {
             };
             const token = req.headers.authorization;
             const dataUser = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
-            const  data= JSON.parse(branca.decode(dataUser.token));
+            const data = JSON.parse(branca.decode(dataUser.token));
             const isChecked = await accesToken.findOne({
                 user: data.user, access_token: token, is_deleted: true
             })
@@ -149,8 +202,15 @@ class Api extends Controller {
     }
     async matchingEngineRequestForMarketList(path, req, res, type = 'withoutAdd') {
 
-        if (req.headers.authorization) {
+        if (req.headers.authorization && req.headers.info) {
             let markets = [];
+            let isInfo = await this.authenticationInfo(req);
+            console.log("isINfo:", isInfo)
+            if (!isInfo.status) {
+                return res.status(401).json(controller.errorMsgFormat({
+                    message: "12Authentication failed. Your request could not be authenticated."
+                }), 'user', 401);
+            }
             let isChecked = await this.authentication(req);
             if (!isChecked.status) {
                 return res.status(401).json(controller.errorMsgFormat({

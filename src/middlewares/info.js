@@ -19,7 +19,7 @@ let jwtOptions = {
 module.exports = async (req, res, next) => {
     try {
         let token = req.headers.info;
-        const deviceInfo = jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
+        const deviceInfo =await jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
         const checkToken = await accesstoken.findOne({ is_deleted: true, info_token: token });
         if (checkToken) {
             throw error

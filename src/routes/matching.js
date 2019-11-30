@@ -12,7 +12,7 @@ const orderCancel = require('../db/order-cancel');
 const _ = require('lodash');
 //ASSET
 
-router.get('/asset/list',info, async (req, res) => {
+router.get('/asset/list', async (req, res) => {
     try {
         await matching.matchingEngineGetRequest('asset/list', res);
     } catch (err) {
@@ -22,7 +22,7 @@ router.get('/asset/list',info, async (req, res) => {
     }
 })
 
-router.get('/asset/summary',info, async (req, res) => {
+router.get('/asset/summary', async (req, res) => {
     try {
         if (!req.query) {
             await matching.matchingEngineGetRequest('asset/summary', res);
@@ -204,25 +204,25 @@ router.get('/order/cancel',info, auth, async (req, res) => {
     }
 })
 
-router.post('/order/book',info, async (req, res) => {
-    try {
-        await matching.matchingEngineRequest('post', 'order/book', req.body, res);
-    } catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'order-matching', 500));
-    }
-})
+// router.post('/order/book', async (req, res) => {
+//     try {
+//         await matching.matchingEngineRequest('post', 'order/book', req.body, res);
+//     } catch (err) {
+//         return res.status(500).send(controller.errorMsgFormat({
+//             'message': err.message
+//         }, 'order-matching', 500));
+//     }
+// })
 
-router.post('/order/depth',info, async (req, res) => {
-    try {
-        await matching.matchingEngineRequest('post', 'order/depth', req.body, res);
-    } catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'order-matching', 500));
-    }
-})
+// router.post('/order/depth', async (req, res) => {
+//     try {
+//         await matching.matchingEngineRequest('post', 'order/depth', req.body, res);
+//     } catch (err) {
+//         return res.status(500).send(controller.errorMsgFormat({
+//             'message': err.message
+//         }, 'order-matching', 500));
+//     }
+// })
 
 router.post('/order/pending',info, auth, async (req, res) => {
     try {
@@ -245,7 +245,7 @@ router.post('/order/pending-detials',info,auth, async (req, res) => {
     }
 })
 
-router.post('/order/deals',info, async (req, res) => {
+router.post('/order/deals', async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'order/deals', req.body, res);
     } catch (err) {
@@ -266,7 +266,7 @@ router.post('/order/finished',info, auth, async (req, res) => {
     }
 })
 
-router.post('/order/finished-detials',info, async (req, res) => {
+router.post('/order/finished-detials',info,auth, async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'order/finished-detials', req.body, res);
 
@@ -279,7 +279,7 @@ router.post('/order/finished-detials',info, async (req, res) => {
 
 //MARKET
 
-router.get('/market/list',info, async (req, res) => {
+router.get('/market/list', async (req, res) => {
     try {
         await matching.matchingEngineRequestForMarketList('market/list', req, res);
     } catch (err) {
@@ -289,7 +289,7 @@ router.get('/market/list',info, async (req, res) => {
     }
 })
 
-router.get('/market/summary',info, async (req, res) => {
+router.get('/market/summary', async (req, res) => {
     try {
         if (!req.query) {
             await matching.matchingEngineGetRequest('market/summary', res);
@@ -304,7 +304,7 @@ router.get('/market/summary',info, async (req, res) => {
     }
 })
 
-router.post('/market/status',info, async (req, res) => {
+router.post('/market/status', async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'market/status', req.body, res);
     } catch (err) {
@@ -316,7 +316,7 @@ router.post('/market/status',info, async (req, res) => {
 })
 
 
-router.post('/market/status-today',info, async (req, res) => {
+router.post('/market/status-today', async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'market/status-today', req.body, res);
     } catch (err) {
@@ -326,7 +326,7 @@ router.post('/market/status-today',info, async (req, res) => {
     }
 })
 
-router.post('/market/last',info, async (req, res) => {
+router.post('/market/last', async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'market/last', req.body, res);
     } catch (err) {
@@ -336,7 +336,7 @@ router.post('/market/last',info, async (req, res) => {
     }
 })
 
-router.post('/market/deals',info, async (req, res) => {
+router.post('/market/deals', async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'market/deals', req.body, res);
 
@@ -359,7 +359,7 @@ router.post('/market/user-deals',info, auth, async (req, res) => {
     }
 })
 
-router.post('/market/kline',info, async (req, res) => {
+router.post('/market/kline', async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'market/kline', req.body, res);
     } catch (err) {

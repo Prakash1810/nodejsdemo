@@ -161,7 +161,7 @@ router.get('/device-history',info, auth, (req, res) => {
     }
 });
 
-router.patch('/whitelist-ip/:hash',info, (req, res) => {
+router.patch('/whitelist-ip/:hash', (req, res) => {
     try {
         return user.patchWhiteListIP(req, res);
     } catch (err) {
@@ -267,7 +267,7 @@ router.post('/logout',info, auth, async (req, res) => {
     }
 });
 
-router.delete('/whitelist', auth, async (req, res) => {
+router.delete('/whitelist',info, auth, async (req, res) => {
     try {
         let data = req.body.data.attributes;
         data.user = req.user.user;
@@ -414,15 +414,15 @@ router.get('/kyc_statistics',info, auth, async (req, res) => {
     }
 });
 
-router.get('/active', async (req, res) => {
-    try {
-        await user.active(req, res);
-    }
-    catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'users', 500));
-    }
-});
+// router.get('/active', async (req, res) => {
+//     try {
+//         await user.active(req, res);
+//     }
+//     catch (err) {
+//         return res.status(500).send(controller.errorMsgFormat({
+//             'message': err.message
+//         }, 'users', 500));
+//     }
+// });
 
 module.exports = router;

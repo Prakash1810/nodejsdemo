@@ -6,7 +6,7 @@ const auth = require("../middlewares/authentication");
 const router = express.Router();
 const controller = new Controller;
 
-router.get('/assets',info, (req, res) => {
+router.get('/assets',info,auth, (req, res) => {
     try {
         return wallet.getAssets(req, res);
     } catch (err) {
@@ -103,10 +103,11 @@ router.get('/transactions/:type',info, auth, (req, res) => {
     }
 });
 
-router.post('/withdraw',info, auth, (req, res) => {
+router.post('/withdraw',info,auth, (req, res) => {
     try {
         let { error } = wallet.postWithdrawValidation(req.body.data.attributes);
         if (error) {
+           
             return res.status(400).send(controller.errorMsgFormat({
                 "message": error
             }, 'withdraw', 400));
@@ -120,7 +121,7 @@ router.post('/withdraw',info, auth, (req, res) => {
     }
 });
 
-router.patch('/withdraw',info, (req, res) => {
+router.patch('/withdraw', (req, res) => {
     try {
         let { error } = wallet.patchWithdrawConfirmationValidation(req.body.data.attributes);
         if (error) {

@@ -147,7 +147,7 @@ class User extends controller {
                     link: `${process.env.LINKURL}${code}`
                 }
                 await apiServices.sendEmailNotification(serviceData, res);
-                await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
+                 await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulations! Your account has been successfully activated.`
                 }));
@@ -624,7 +624,7 @@ class User extends controller {
                 }
 
                 return res.status(401).send(this.errorMsgFormat({
-                    'message': 'Your are logging in from a new device. Please authorize this device to continue.',
+                    'message': 'Your are logging in from a new device. We have sent a verification link to your registered email. Please check your email and authorize this device to continue.',
                     'hash': urlHash
                 }, 'users', 401));
             }
