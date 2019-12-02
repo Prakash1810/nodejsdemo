@@ -49,6 +49,9 @@
 	"withdrawActive":{
 		"timeExpiry":86400
 	},
-	"topic" : "order-"
+	"liquidity":{
+		"topic" : "trade-"
+	}
+	
 
 }

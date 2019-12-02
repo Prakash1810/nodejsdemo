@@ -18,6 +18,8 @@ const _ = require('lodash');
 const Redis = require('ioredis');
 const device = require('../db/device-management');
 const branca = require("branca")(config.get('encryption.realKey'));
+const { AuthenticatedClient } = require("../helpers/AuthenticatedClient");
+const Utils = require('../helpers/utils');
 class Api extends Controller {
 
     async sendEmailNotification(data, res) {
@@ -79,19 +81,27 @@ class Api extends Controller {
         });
     }
 
-    async binance(input, user_id) {
-        const client = Binance({
-            apiKey: process.env.APIKEY,
-            apiSecret: process.env.SECRETKEY
-        })
-        let response = await client.order(input);
-        response.user_id = user_id;
-        if (input.type == 'MARKET') {
-            this.addResponseInKAFKA(response, input.symbol);
-        } else {
-            this.addResponseInREDIS(response);
-        }
+    async OkexHttp(input, user_id) {
+        const timestamp = await utils.getTime();
+        const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
 
+        let body = input;
+        let response = await authClient.spot().postOrder(body);
+        if(response.result){
+            response.user_id = user_id; 
+            if(resp)
+            if (input.type == 'MARKET') {
+                await this.addResponseInKAFKA(response, input.instrument_id);
+            } else {
+                await this.addResponseInREDIS(response);
+            }
+    
+        }
+        else{
+            return res.status(500).send(controller.errorMsgFormat({
+                'message':'Something went wrong, Please try again'
+            }, 'order-matching', 500));
+        }
     }
     async matchingEngineGetRequest(path, res) {
         let axiosResponse = await axios['get'](
@@ -133,7 +143,6 @@ class Api extends Controller {
             const deviceInfo = await jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
             const checkToken = await accesToken.findOne({ is_deleted: true, info_token: token });
             if (checkToken) {
-
                 throw error
             } else {
                 let checkDevice = await device.findOne({
@@ -153,7 +162,6 @@ class Api extends Controller {
                         message: 'The device are browser that you are currently logged in has been removed from the device whitelist.'
                     }, 'user', 401));
                 } else if (checkActive) {
-                    console.log("4:")
                     await accesstoken.findOneAndUpdate({ info_token: token }, { is_deleted: true });
                     res.status(401).json(controller.errorMsgFormat({
                         message: 'Your account has been disabled. Please contact support.'
@@ -205,14 +213,8 @@ class Api extends Controller {
         if (req.headers.authorization && req.headers.info) {
             let markets = [];
             let isInfo = await this.authenticationInfo(req);
-            console.log("isINfo:", isInfo)
-            if (!isInfo.status) {
-                return res.status(401).json(controller.errorMsgFormat({
-                    message: "12Authentication failed. Your request could not be authenticated."
-                }), 'user', 401);
-            }
             let isChecked = await this.authentication(req);
-            if (!isChecked.status) {
+            if (!isInfo.status || !isChecked.status) {
                 return res.status(401).json(controller.errorMsgFormat({
                     message: "Authentication failed. Your request could not be authenticated."
                 }), 'user', 401);
@@ -334,11 +336,11 @@ class Api extends Controller {
     }
 
     async matchingEngineRequest(method, path, data, res, type = 'json') {
-        console.log("data1:", data);
+
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
         const result = axiosResponse.data;
-        console.log("Result:", result);
+
         if (result.status) {
             let value = result.result.result;
             if (type === 'json') {
@@ -367,7 +369,7 @@ class Api extends Controller {
 
         // client.on('connect', function () {
         //     console.log("...........Redis Connected..............")
-        //     client.set(response.orderId, response, redis.print);
+        //     client.set(response.order_id, response, redis.print);
         //     // return { status:true, result:'Add data Redis' };
         //     let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
         //     fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
@@ -391,8 +393,8 @@ class Api extends Controller {
                 host: process.env.REDIS_HOST
             }
         ]);
-        redis.set(response.orderId, response);
-        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
+        redis.rpush([response.order_id, response]);
+        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.order_id} : ${response.user_id} : ${JSON.stringify(response)}`
         fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
             if (err)
                 console.log("Error:", err);
@@ -412,12 +414,12 @@ class Api extends Controller {
 
         producer.on('ready', async function () {
             let response = await producer.send([{
-                topic: `${config.get('topic')}${market}`,
+                topic: `${config.get('liquidity.topic')}${market}`,
                 messages: JSON.stringify(jsonData),
             }]);
             if (response) {
 
-                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.orderId} : ${jsonData.user_id} : ${JSON.stringify(jsonData)}`
+                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.order_id} : ${jsonData.user_id} : ${JSON.stringify(jsonData)}`
                 fs.appendFile('kafaSuccess.txt', `\n${fileConent} `, function (err) {
                     if (err)
                         console.log("Error:", err);
@@ -425,7 +427,7 @@ class Api extends Controller {
                 //return { status :true }
             }
             else {
-                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${JSON.stringify(jsonData)}`
+                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.order_id} :${jsonData.user_id} : ${JSON.stringify(jsonData)}`
                 fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
                     if (err)
                         console.log("Error:", err);
@@ -435,7 +437,7 @@ class Api extends Controller {
         });
 
         producer.on('error', function (err) {
-            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.orderId} :${jsonData.user_id} : ${err}`
+            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.order_id} :${jsonData.user_id} : ${err}`
             fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
                 if (err)
                     console.log("Error:", err);

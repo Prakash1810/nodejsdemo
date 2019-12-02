@@ -106,12 +106,15 @@ router.post('/order/put-market',info, auth, async (req, res) => {
 
                 let input = 
                 {
-                    symbol:data.market,
-                    side:side,
-                    type:"MARKET",
-                    quantity:data.amount,
+                    'type': 'market', 
+                    'side': side, 
+                    'instrument_id': data.market, 
+                    'size': Number(data.amount),
+                    'client_oid': `beldex-${req.body.data.attributes.user_id}`, 
+                    "notional":"",
+                    'order_type': '0'
                 }
-                await matching.binance(input,req.body.data.attributes.user_id);
+                await matching.OkexHttp(input);
             }
             else{
                  //delete q from request;
@@ -150,20 +153,21 @@ router.post('/order/put-limit',info, auth, async (req, res) => {
 
              let input = 
              {
-                 symbol:data.market,
-                 side:side,
-                 type:"LIMIT",
-                 quantity:data.amount,
-                 price:data.pride
+                    'type': 'limit', 
+                    'side': side, 
+                    'instrument_id': data.market, 
+                    'size': Number(data.amount),
+                    'client_oid': `beldex-${req.body.data.attributes.user_id}`, 
+                    'price': data.pride, 
+                    'order_type': '0'
              }
-             await matching.binance(input,req.body.data.attributes.user_id);
+             await matching.OkexHttp(input,req.body.data.attributes.user_id);
          }
 
          //delete q from request;
          delete data.q;
          let fee = await users.findOne({_id:req.user.user});
-         req.body.data.attributes.takerFeeRate = fee.taker_fee;
-         req.body.data.attributes.makerFeeRate = fee.maker_fee;
+         ;
      await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
