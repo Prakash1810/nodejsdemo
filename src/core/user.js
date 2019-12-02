@@ -1301,9 +1301,10 @@ class User extends controller {
     async postVerifyG2F(req, res, type = 'json') {
         try {
             var method = "withoutAuth";
-            if (req.headers.authorization && type != 'boolean') {
+            if (req.headers.authorization && req.headers.info && type != 'boolean') {
                 let isChecked = await apiServices.authentication(req);
-                if (!isChecked.status) {
+                let isCheckedInfo = await apiServices.authenticationInfo(req);
+                if (!isChecked.status || !isCheckedInfo ) {
                     return res.status(401).json(this.errorMsgFormat({
                         message: "Authentication failed. Your request could not be authenticated."
                     }), 'user', 401);
