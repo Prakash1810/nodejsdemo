@@ -39,10 +39,10 @@ router.get('/asset/summary', async (req, res) => {
 
 //BALANCE
 
-router.post('/balance/history',info, auth, async (req, res) => {
+router.post('/balance/history', info, auth, async (req, res) => {
     try {
-        
-         req.body.data.attributes.user_id = Number(req.user.user_id);
+
+        req.body.data.attributes.user_id = Number(req.user.user_id);
         await matching.matchingEngineRequest('post', 'balance/history', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -51,18 +51,18 @@ router.post('/balance/history',info, auth, async (req, res) => {
     }
 })
 
-router.post('/balance/query',info, auth, async (req, res) => {
+router.post('/balance/query', info, auth, async (req, res) => {
     try {
-      
-       
-        if(!req.body.data){
-            req.body.data={
-                attributes:{
+
+
+        if (!req.body.data) {
+            req.body.data = {
+                attributes: {
                     user_id: Number(req.user.user_id)
                 }
             }
         }
-        else{
+        else {
             req.body.data.attributes.user_id = Number(req.user.user_id);
         }
         await matching.matchingEngineRequest('post', 'balance/query', req.body, res);
@@ -86,89 +86,43 @@ router.post('/balance/query',info, auth, async (req, res) => {
 
 //ORDER
 
-router.post('/order/put-market',info, auth, async (req, res) => {
-    try {
-        let side ;
-        let data =  req.body.data.attributes;
-         req.body.data.attributes.user_id = Number(req.user.user_id);
-         let check = await markets.findOne({market_name:data.market,is_active:true,disable_trade:false});
-         let checkUser = await users.findOne({_id:req.user.user,trade:false});
-         if(checkUser){
-            return res.status(400).send(controller.errorMsgFormat({message:'Trade is disabled for this account'}));
-         }
-         if(!check){
-             return res.status(400).send(controller.errorMsgFormat({message:`The  market-${data.market} is inactive`}));
-         }
-         
-            if(data.q)
-            {
-                side = data.side == 2 ? "BUY" : "SELL";
-
-                let input = 
-                {
-                    'type': 'market', 
-                    'side': side, 
-                    'instrument_id': data.market, 
-                    'size': Number(data.amount),
-                    'client_oid': `beldex-${req.body.data.attributes.user_id}`, 
-                    "notional":"",
-                    'order_type': '0'
-                }
-                await matching.OkexHttp(input);
-            }
-            else{
-                 //delete q from request;
-                delete data.q;
-                let fee = await users.findOne({_id:req.user.user});
-                req.body.data.attributes.takerFeeRate = fee.taker_fee
-               
-               await matching.matchingEngineRequest('post', 'order/put-market', req.body, res)
-            }
-           
-       ;
-
-    } catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'order-matching', 500));
-    }
-})
-
-router.post('/order/put-limit',info, auth, async (req, res) => {
+router.post('/order/put-market', info, auth, async (req, res) => {
     try {
         let side;
         let data = req.body.data.attributes;
-         req.body.data.attributes.user_id = Number(req.user.user_id);
-         let check = await markets.findOne({market_name:data.market,is_active:true,disable_trade:false});
-         let checkUser = await users.findOne({_id:req.user.user,trade:false});
-         if(checkUser){
-            return res.status(400).send(controller.errorMsgFormat({message:'Trade is disabled for this account'}));
-         }
-         if(!check){
-             return res.status(400).send(controller.errorMsgFormat({message:`The  market-${data.market} is inactive`}));
-         }
-         if(data.q)
-         {
-             side = data.side == 2 ? "BUY" : "SELL";
+        req.body.data.attributes.user_id = Number(req.user.user_id);
+        let check = await markets.findOne({ market_name: data.market, is_active: true, disable_trade: false });
+        let checkUser = await users.findOne({ _id: req.user.user, trade: false });
+        if (checkUser) {
+            return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
+        }
+        if (!check) {
+            return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
+        }
+        req.body.data.attributes.takerFeeRate = checkUser.taker_fee
+        if (data.q) {
+            side = data.side == 2 ? "BUY" : "SELL";
 
-             let input = 
-             {
-                    'type': 'limit', 
-                    'side': side, 
-                    'instrument_id': data.market, 
-                    'size': Number(data.amount),
-                    'client_oid': `beldex-${req.body.data.attributes.user_id}`, 
-                    'price': data.pride, 
-                    'order_type': '0'
-             }
-             await matching.OkexHttp(input,req.body.data.attributes.user_id);
-         }
+            let input =
+            {
+                'type': 'market',
+                'side': side,
+                'instrument_id': data.market,
+                'size': Number(data.amount),
+                'client_oid': `beldex-${req.body.data.attributes.user_id}`,
+                "notional": "",
+                'order_type': '0'
+            }
+            await matching.OkexHttp(input, req.body.data.attributes.user_id, checkUser.taker_fee);
+        }
+        else {
+            //delete q from request;
+            delete data.q;
+            await matching.matchingEngineRequest('post', 'order/put-market', req.body, res)
+        }
 
-         //delete q from request;
-         delete data.q;
-         let fee = await users.findOne({_id:req.user.user});
-         ;
-     await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
+        ;
+
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -176,17 +130,58 @@ router.post('/order/put-limit',info, auth, async (req, res) => {
     }
 })
 
-router.post('/order/cancel',info, auth, async (req, res) => {
+router.post('/order/put-limit', info, auth, async (req, res) => {
     try {
-         req.body.data.attributes.user_id = Number(req.user.user_id);
-         let check = await markets.findOne({market_name:data.market,is_active:true,disable_trade:false});
-         let checkUser = await users.findOne({_id:req.user.user,trade:false});
-         if(checkUser){
-            return res.status(400).send(controller.errorMsgFormat({message:'Trade is disabled for this account'}));
-         }
-         if(!check){
-             return res.status(400).send(controller.errorMsgFormat({message:`The  market-${data.market} is inactive`}));
-         }
+        let side;
+        let data = req.body.data.attributes;
+        req.body.data.attributes.user_id = Number(req.user.user_id);
+        let check = await markets.findOne({ market_name: data.market, is_active: true, disable_trade: false });
+        let checkUser = await users.findOne({ _id: req.user.user, trade: false });
+        if (checkUser) {
+            return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
+        }
+        if (!check) {
+            return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
+        }
+        req.body.data.attributes.takerFeeRate = checkUser.taker_fee
+        req.body.data.attributes.makerFeeRate = checkUser.maker_fee
+        if (data.q) {
+            side = data.side == 2 ? "BUY" : "SELL";
+
+            let input =
+            {
+                'type': 'limit',
+                'side': side,
+                'instrument_id': data.market,
+                'size': Number(data.amount),
+                'client_oid': `beldex-${req.body.data.attributes.user_id}`,
+                'price': data.pride,
+                'order_type': '0'
+            }
+            await matching.OkexHttp(input, req.body.data.attributes.user_id, checkUser.taker_fee,checkUser.maker_fee);
+        }
+
+        //delete q from request;
+        delete data.q;
+        await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'order-matching', 500));
+    }
+})
+
+router.post('/order/cancel', info, auth, async (req, res) => {
+    try {
+        req.body.data.attributes.user_id = Number(req.user.user_id);
+        let check = await markets.findOne({ market_name: data.market, is_active: true, disable_trade: false });
+        let checkUser = await users.findOne({ _id: req.user.user, trade: false });
+        if (checkUser) {
+            return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
+        }
+        if (!check) {
+            return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
+        }
         await matching.matchingEngineRequest('post', 'order/cancel', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -195,12 +190,12 @@ router.post('/order/cancel',info, auth, async (req, res) => {
     }
 })
 
-router.get('/order/cancel',info, auth, async (req, res) => {
+router.get('/order/cancel', info, auth, async (req, res) => {
     try {
-            let user  = Number(req.user.user_id);
-            let data = await orderCancel.find({user:user});
-            let result = _.orderBy(data,['ctime'],['asc']);
-            return res.status(200).send(controller.successFormat(result,user));
+        let user = Number(req.user.user_id);
+        let data = await orderCancel.find({ user: user });
+        let result = _.orderBy(data, ['ctime'], ['asc']);
+        return res.status(200).send(controller.successFormat(result, user));
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -228,9 +223,9 @@ router.get('/order/cancel',info, auth, async (req, res) => {
 //     }
 // })
 
-router.post('/order/pending',info, auth, async (req, res) => {
+router.post('/order/pending', info, auth, async (req, res) => {
     try {
-         req.body.data.attributes.user_id = Number(req.user.user_id);
+        req.body.data.attributes.user_id = Number(req.user.user_id);
         await matching.matchingEngineRequest('post', 'order/pending', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -239,7 +234,7 @@ router.post('/order/pending',info, auth, async (req, res) => {
     }
 })
 
-router.post('/order/pending-detials',info,auth, async (req, res) => {
+router.post('/order/pending-detials', info, auth, async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'order/pending-detials', req.body, res);
     } catch (err) {
@@ -259,9 +254,9 @@ router.post('/order/deals', async (req, res) => {
     }
 })
 
-router.post('/order/finished',info, auth, async (req, res) => {
+router.post('/order/finished', info, auth, async (req, res) => {
     try {
-         req.body.data.attributes.user_id = Number(req.user.user_id);
+        req.body.data.attributes.user_id = Number(req.user.user_id);
         await matching.matchingEngineRequest('post', 'order/finished', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -270,7 +265,7 @@ router.post('/order/finished',info, auth, async (req, res) => {
     }
 })
 
-router.post('/order/finished-detials',info,auth, async (req, res) => {
+router.post('/order/finished-detials', info, auth, async (req, res) => {
     try {
         await matching.matchingEngineRequest('post', 'order/finished-detials', req.body, res);
 
@@ -351,9 +346,9 @@ router.post('/market/deals', async (req, res) => {
     }
 })
 
-router.post('/market/user-deals',info, auth, async (req, res) => {
+router.post('/market/user-deals', info, auth, async (req, res) => {
     try {
-         req.body.data.attributes.user_id = Number(req.user.user_id);
+        req.body.data.attributes.user_id = Number(req.user.user_id);
         await matching.matchingEngineRequest('post', 'market/user-deals', req.body, res);
 
     } catch (err) {

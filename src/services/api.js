@@ -81,7 +81,7 @@ class Api extends Controller {
         });
     }
 
-    async OkexHttp(input, user_id) {
+    async OkexHttp(input, user_id,takerFee,makerFee) {
         const timestamp = await utils.getTime();
         const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
 
@@ -91,8 +91,11 @@ class Api extends Controller {
             response.user_id = user_id; 
             if(resp)
             if (input.type == 'MARKET') {
+                response['takerFee']=takerFee
                 await this.addResponseInKAFKA(response, input.instrument_id);
             } else {
+                response['takerFee']=takerFee
+                response['makerFee']=makerFee
                 await this.addResponseInREDIS(response);
             }
     
