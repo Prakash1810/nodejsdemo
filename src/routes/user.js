@@ -415,12 +415,10 @@ router.get('/kyc_statistics',info, auth, async (req, res) => {
 });
 router.post('/apikey', info,auth, async(req,res)=>{
     try{
-        console.log("helo")
         let { error } = user.apiKeyValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         }
-         console.log("welcome")
         await user.checkApikey(req,res);
     }
 

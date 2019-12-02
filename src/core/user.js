@@ -2007,7 +2007,6 @@ class User extends controller {
 
     async checkApikey(req, res) {
         let checkUserValidate = await users.findOne({ _id: req.user.user });
-        console.log("helo user:")
         req.body.data.attributes.google_secrete_key = checkUserValidate.google_secrete_key;
         let requestData = req.body.data.attributes;
         if (checkUserValidate.google_auth) {
@@ -2024,43 +2023,41 @@ class User extends controller {
             }
 
         }
-        // else {
+        else {
         req.body.data['id'] = req.user.user;
-        //     if (requestData.otp == null || undefined) {
-        //         return res.status(400).send(this.errorFormat({
-        //             'message': 'OTP must be provided.'
-        //         }, 'user', 400));
-        //     }
+            if (requestData.otp == null || undefined) {
+                return res.status(400).send(this.errorFormat({
+                    'message': 'OTP must be provided.'
+                }, 'user', 400));
+            }
 
-        //     let checkOtp = await this.validateOtpForEmail(req, res, "secure information");
-        //     if (checkOtp.status == false) {
-        //         return res.status(400).send(this.errorFormat({
-        //             'message': checkOtp.err
-        //         }, 'user', 400));
-        //     }
-        // }
+            let checkOtp = await this.validateOtpForEmail(req, res, "secure information");
+            if (checkOtp.status == false) {
+                return res.status(400).send(this.errorFormat({
+                    'message': checkOtp.err
+                }, 'user', 400));
+            }
+        }
 
         switch (requestData.type) {
             case 'remove':
-                console.log("remove")
                 let checkApiKey = await apikey.findOne({ user: req.body.data.id });
                 let validateUuidSplit = checkApiKey.apikey.split('-');
-                console.log("!");
                 const apiSecretRemove = await helpers.createSecret(`${validateUuidSplit[0]}-${validateUuidSplit[validateUuidSplit.length - 1]}`, requestData.passphrase);
                 if (checkApiKey.secretkey === apiSecretRemove) {
                     await apikey.findOneAndUpdate({ user: req.body.data.id }, { is_deleted: true ,modified_date:moment().format('YYYY-MM-DD HH:mm:ss')});
-                    res.status(200).send(this.successFormat({ message: 'successfully change your request.' }, 'user', 200));
+                    res.status(200).send(this.successFormat({ message: 'Your deletion request was successful.' }, 'user', 200));
 
                 }
                 else {
-                    res.status(401).send(this.errorMsgFormat({ message: 'your passpharse is invalid.' }, 'user', 401));
+                    res.status(401).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
                 }
                 break;
 
             case 'create':
                 let checkUser = await apikey.findOne({ user: req.body.data.id });
                 if (checkUser) {
-                    res.status(401).send(this.errorMsgFormat({ message: 'ser is already exits.' }, 'user', 401));
+                    res.status(401).send(this.errorMsgFormat({ message: 'User already created API key.' }, 'user', 401));
                 }
                 const apiKey = await helpers.generateUuid();
                 let uuidSplit = apiKey.split('-');
@@ -2071,13 +2068,13 @@ class User extends controller {
                     secretkey: apiSecret,
                     type: requestData.type
                 }).save();
-                res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret }, 'user', 200));
+                res.status(200).send(this.successFormat({'apikey': apiKey, 'secretkey': apiSecret,message:'Your API key was created successfully.',}, 'user', 200));
                 break;
 
             case 'view':
                 let validateApiKey = await apikey.findOne({ user: req.body.data.id });
                 if (!validateApiKey) {
-                    res.status(401).send(this.errorMsgFormat({ message: 'user apikey not found.' }, 'user', 401));
+                    res.status(401).send(this.errorMsgFormat({ message: 'User cannot be found.' }, 'user', 401));
                 }
                 let creatUuidSplit = validateApiKey.apikey.split('-');
                 const apiSecretValidate = await helpers.createSecret(`${creatUuidSplit[0]}-${creatUuidSplit[creatUuidSplit.length - 1]}`, requestData.passphrase);
@@ -2085,7 +2082,7 @@ class User extends controller {
                     res.status(200).send(this.successFormat({ 'apikey': validateApiKey.apikey, 'secretkey': apiSecretValidate }, 'user', 200));
 
                 } else {
-                    res.status(401).send(this.errorMsgFormat({ message: 'your passpharse is invalid.' }, 'user', 401));
+                    res.status(401).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
 
                 }
                 break;
