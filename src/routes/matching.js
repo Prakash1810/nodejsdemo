@@ -108,9 +108,9 @@ router.post('/order/put-market', info, auth, async (req, res) => {
                 'type': 'market',
                 'side': side,
                 'instrument_id': data.market,
-                'size': Number(data.amount),
+                'size': side == 1?Number(data.amount):0,
                 'client_oid': `beldex-${req.body.data.attributes.user_id}`,
-                "notional": "",
+                "notional": side ==2?data.amount:'',
                 'order_type': '0'
             }
             await matching.OkexHttp(input, req.body.data.attributes.user_id, checkUser.taker_fee);
