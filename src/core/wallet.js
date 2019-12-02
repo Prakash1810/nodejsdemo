@@ -569,6 +569,7 @@ class Wallet extends controller {
                 payloads.asset = asset
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available
+                let available = 600;
                 if (available !== undefined && amount <= available) {
                     return {
                         status: true,
@@ -594,7 +595,7 @@ class Wallet extends controller {
         let requestData = req.body.data.attributes;
         let checkUser = await users.findOne({ _id: req.user.user });
         let config = await configs.findOne({ key: 'withdraw limit' });
-        if (!checkUser.kyc_verified) {
+        if (checkUser.kyc_verified === false) {
             if (checkUser.dailyWithdrawAmount > config.value.daily) {
                 return res.status(400).send(this.errorFormat({
                     'message': `Since you have not verified your KYC, you can only withdraw crypto equivalent of ${config.value.daily} USDT/day. Please verify your KYC to unlock unlimited withdrawals.`,
@@ -607,148 +608,146 @@ class Wallet extends controller {
             }
         }
 
-        else {
-            let checkAsset = await assets.findOne({ _id: requestData.asset, withdraw: true });
-            if (checkAsset) {
-                if (checkAsset.minimum_withdrawal >= requestData.amount) {
-                    return res.status(400).send(this.errorFormat({
-                        'message': `The minimum withdrawal amount for the chosen asset is ${checkAsset.minimum_withdrawal} ${checkAsset.asset_code}.`,
-                    }, 400));
-                }
+        let checkAsset = await assets.findOne({ _id: requestData.asset, withdraw: true });
+        if (checkAsset) {
+            if (checkAsset.minimum_withdrawal > requestData.amount) {
+                return res.status(400).send(this.errorFormat({
+                    'message': `The minimum withdrawal amount for the chosen asset is ${checkAsset.minimum_withdrawal} ${checkAsset.asset_code}.`,
+                }, 400));
+            }
 
-                if (!checkUser.withdraw) {
+            if (!checkUser.withdraw) {
+                return res.status(400).send(this.errorFormat({
+                    'message': 'Your password was recently changed. You cannot make a withdrawal for 24 hours.'
+                }, 'user', 400));
+            }
+
+            else if (checkUser.google_auth) {
+                if (!requestData.g2f_code) {
                     return res.status(400).send(this.errorFormat({
-                        'message': 'Your password was recently changed. You cannot make a withdrawal for 24 hours.'
+                        'message': 'Google authentication code must be provided.'
                     }, 'user', 400));
                 }
-
-                else if (checkUser.google_auth) {
-                    if (!requestData.g2f_code) {
-                        return res.status(400).send(this.errorFormat({
-                            'message': 'Google authentication code must be provided.'
-                        }, 'user', 400));
-                    }
-                    let check = await user.postVerifyG2F(req, res, 'boolean');
-                    if (check.status == false) {
-                        return res.status(400).send(this.errorFormat({
-                            'message': 'The google authentication code you entered is incorrect.'
-                        }, '2factor', 400));
-                    }
-
+                let check = await user.postVerifyG2F(req, res, 'boolean');
+                if (check.status == false) {
+                    return res.status(400).send(this.errorFormat({
+                        'message': 'The google authentication code you entered is incorrect.'
+                    }, '2factor', 400));
                 }
-                else {
-                    if (requestData.otp == null || undefined) {
-                        return res.status(400).send(this.errorFormat({
-                            'message': 'OTP must be provided.'
-                        }, 'user', 400));
-                    }
-                    req.body.data['id'] = req.user.user;
-                    let checkOtp = await user.validateOtpForEmail(req, res, "withdraw confirmation");
-                    if (checkOtp.status == false) {
-                        return res.status(400).send(this.errorFormat({
-                            'message': checkOtp.err
-                        }, 'user', 400));
-                    }
+
+            }
+            else {
+                if (requestData.otp == null || undefined) {
+                    return res.status(400).send(this.errorFormat({
+                        'message': 'OTP must be provided.'
+                    }, 'user', 400));
                 }
-                if (requestData.asset != undefined) {
-                    let checkWithdraw = await assets.findOne({ _id: requestData.asset });
-                    if (!checkWithdraw.withdraw) {
-                        return res.status(400).send(this.errorFormat({
-                            'message': 'Withdrawals have been disabled for this asset.'
-                        }, 'withdraw', 400));
+                req.body.data['id'] = req.user.user;
+                let checkOtp = await user.validateOtpForEmail(req, res, "withdraw confirmation");
+                if (checkOtp.status == false) {
+                    return res.status(400).send(this.errorFormat({
+                        'message': checkOtp.err
+                    }, 'user', 400));
+                }
+            }
+            if (requestData.asset != undefined) {
+                let checkWithdraw = await assets.findOne({ _id: requestData.asset });
+                if (!checkWithdraw.withdraw) {
+                    return res.status(400).send(this.errorFormat({
+                        'message': 'Withdrawals have been disabled for this asset.'
+                    }, 'withdraw', 400));
+                }
+                let validateWithdraw = await this.withdrawValidate(req, res);
+                if (validateWithdraw.status) {
+                    const pendingValue = await transactions.find({ user: req.user.user, asset: requestData.asset, type: '1', status: '1' });
+                    let value = 0, i = 0;
+                    let finalAmount = 0;
+                    while (i < pendingValue.length) {
+                        value += pendingValue[i].final_amount;
+                        i++;
                     }
-
-                    let validateWithdraw = await this.withdrawValidate(req, res);
-                    if (validateWithdraw.status) {
-                        const pendingValue = await transactions.find({user: req.user.user,asset: requestData.asset, type: '1', status: '1' });
-                        let value = 0, i = 0;
-                        let finalAmount = 0;
-                        while (i < pendingValue.length) {
-                            value += pendingValue[i].final_amount;
-                            i++;
+                    finalAmount = Number(validateWithdraw.matchingApiAmount) - value;
+                    if (finalAmount >= requestData.amount) {
+                        if ((requestData.withdraw_id != null && requestData.withdraw_id != undefined)) {
+                            withdraw = await withdrawAddress.findOne({
+                                '_id': requestData.withdraw_id,
+                                'asset': requestData.asset,
+                            });
                         }
-                        finalAmount = Number(validateWithdraw.matchingApiAmount) - value;
-                        if (finalAmount >= requestData.amount) {
-                            if ((requestData.withdraw_id != null && requestData.withdraw_id != undefined)) {
-                                withdraw = await withdrawAddress.findOne({
-                                    '_id': requestData.withdraw_id,
-                                    'asset': requestData.asset,
-                                });
+                        else if (requestData.address != null && requestData.address != undefined) {
+                            let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
+                            if (isValid !== true) {
+                                return res.status(400).send(this.errorMsgFormat({
+                                    'address': 'Invalid asset address.'
+                                }, 'withdrawAddress'));
                             }
-                            else if (requestData.address != null && requestData.address != undefined) {
-                                let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
-                                if (isValid !== true) {
-                                    return res.status(400).send(this.errorMsgFormat({
-                                        'address': 'Invalid asset address.'
-                                    }, 'withdrawAddress'));
-                                }
-                                withdraw = {
-                                    address: requestData.address
-                                }
+                            withdraw = {
+                                address: requestData.address
                             }
-                            if (withdraw.address !== undefined || withdraw.address != null) {
-                                try {
-                                    let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-                                    let data = {
-                                        user: new mongoose.Types.ObjectId(req.user.user),
-                                        user_id: req.user.user_id,
-                                        asset: new mongoose.Types.ObjectId(requestData.asset),
-                                        address: withdraw.address,
-                                        type: 1,
-                                        amount: requestData.amount,
-                                        ip: requestData.ip,
-                                        final_amount: requestData.amount,
-                                        status: "0",
-                                        is_deleted: false,
-                                        date: timeNow
-                                    };
-                                    let returnId = await this.insertNotification(data, finalAmount, res);
-                                    return res.status(200).json(this.successFormat({
-                                        'message': 'Your request for withdrawal has been received. A confirmation email has been sent to your registered email address. Please confirm your request.'
-                                    }, returnId, 'withdraw', 200));
-                                } catch (err) {
-                                    return res.status(500).send(err.message);
-                                }
-                            } else {
-                                return res.status(400).json(this.errorMsgFormat({
-                                    "message": "Asset address must be provided."
-                                }, 'withdraw'));
-                            }
-
                         }
-                        else{
+                        if (withdraw.address !== undefined || withdraw.address != null) {
+                            try {
+                                let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
+                                let data = {
+                                    user: new mongoose.Types.ObjectId(req.user.user),
+                                    user_id: req.user.user_id,
+                                    asset: new mongoose.Types.ObjectId(requestData.asset),
+                                    address: withdraw.address,
+                                    type: 1,
+                                    amount: requestData.amount,
+                                    ip: requestData.ip,
+                                    final_amount: requestData.amount,
+                                    status: "0",
+                                    is_deleted: false,
+                                    date: timeNow
+                                };
+                                let returnId = await this.insertNotification(data, finalAmount, res);
+                                return res.status(200).json(this.successFormat({
+                                    'message': 'Your request for withdrawal has been received. A confirmation email has been sent to your registered email address. Please confirm your request.'
+                                }, returnId, 'withdraw', 200));
+                            } catch (err) {
+                                return res.status(500).send(err.message);
+                            }
+                        } else {
                             return res.status(400).json(this.errorMsgFormat({
-                                "message": "The withdrawal amount you entered is more than your balance. Please enter a lesser amount."
+                                "message": "Asset address must be provided."
                             }, 'withdraw'));
                         }
 
-
-
-                    } else {
-                        let msg = 'Invalid request';
-                        if (validateWithdraw.type === 'balance') {
-                            msg = 'Your balance for the selected asset is too low to make a withdrawal.'
-                        } else if (validateWithdraw.type === 'suspend') {
-                            msg = 'The selected asset has been disabled temporarily. Please contact support for more information.'
-                        }
-
+                    }
+                    else {
                         return res.status(400).json(this.errorMsgFormat({
-                            "message": msg
+                            "message": "The withdrawal amount you entered is more than your balance. Please enter a lesser amount."
                         }, 'withdraw'));
                     }
+
+
+
                 } else {
+                    let msg = 'Invalid request';
+                    if (validateWithdraw.type === 'balance') {
+                        msg = 'Your balance for the selected asset is too low to make a withdrawal.'
+                    } else if (validateWithdraw.type === 'suspend') {
+                        msg = 'The selected asset has been disabled temporarily. Please contact support for more information.'
+                    }
+
                     return res.status(400).json(this.errorMsgFormat({
-                        "message": 'Please choose an asset.'
+                        "message": msg
                     }, 'withdraw'));
                 }
-
-
             } else {
                 return res.status(400).json(this.errorMsgFormat({
-                    "message": 'Withdrawals have been disabled for this asset.'
+                    "message": 'Please choose an asset.'
                 }, 'withdraw'));
             }
+
+
+        } else {
+            return res.status(400).json(this.errorMsgFormat({
+                "message": 'Withdrawals have been disabled for this asset.'
+            }, 'withdraw'));
         }
+
 
 
 

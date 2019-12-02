@@ -27,12 +27,12 @@ const rewardHistory = require('../db/reward-history');
 const kycDetails = require('../db/kyc-details');
 const transaction = require('../db/transactions');
 const branca = require("branca")(config.get('encryption.realKey'));
-
 const fs = require('fs');
 const _ = require('lodash');
 const kyc = require('./kyc');
 const configs = require('../db/config');
 const audits = require('../db/auditlog-history');
+const apikey = require('../db/api-keys');
 const { RequestBuilder, Payload } = require('yoti');
 
 
@@ -147,7 +147,7 @@ class User extends controller {
                     link: `${process.env.LINKURL}${code}`
                 }
                 await apiServices.sendEmailNotification(serviceData, res);
-                 await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
+                await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulations! Your account has been successfully activated.`
                 }));
@@ -170,7 +170,7 @@ class User extends controller {
             expiresIn: config.get('secrete.infoToken')
         };
         // let token = {jwtOptions,tokenUser};
-        return await jwt.sign( deviceInfo , config.get('secrete.infokey'),tokenOption);
+        return await jwt.sign(deviceInfo, config.get('secrete.infokey'), tokenOption);
     };
 
     async createToken(user, id) {
@@ -489,7 +489,7 @@ class User extends controller {
         }
         let loginHistory = await this.insertLoginHistory(data);
         let take = req.body.data.attributes;
-        take['info']=req.body.data.id;
+        take['info'] = req.body.data.id;
         let tokens = await this.storeToken(result, loginHistory._id, take);
         await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') })
         return res.status(200).send(this.successFormat({
@@ -1394,10 +1394,10 @@ class User extends controller {
             });
             if (logout) {
                 await token.findOneAndUpdate({
-                    user: user.user, access_token:tokens.info, is_deleted: false
+                    user: user.user, access_token: tokens.info, is_deleted: false
                 }, { is_deleted: true })
                 await token.findOneAndUpdate({
-                    user: user.user, access_token:tokens.authorization, is_deleted: false
+                    user: user.user, access_token: tokens.authorization, is_deleted: false
                 }, { is_deleted: true })
                 return res.status(200).send(this.successFormat({
                     'message': 'You have successfully logged out.',
@@ -1993,6 +1993,106 @@ class User extends controller {
         return payloads.change
 
     }
+
+    async apiKeyValidation(req) {
+        let schema = Joi.object().keys({
+            type: Joi.string().required(),
+            passphrase: Joi.string().required(),
+            otp: Joi.string().optional(),
+            g2f_code: Joi.string()
+        });
+        return Joi.validate(req, schema, {
+            abortEarly: false
+        });
+    }
+
+    async checkApikey(req, res) {
+        let checkUserValidate = await users.findOne({ _id: req.user.user });
+        req.body.data.attributes.google_secrete_key = checkUserValidate.google_secrete_key;
+        let requestData = req.body.data.attributes;
+        if (checkUserValidate.google_auth) {
+            if (!requestData.g2f_code) {
+                return res.status(400).send(this.errorFormat({
+                    'message': 'Google authentication code must be provided.'
+                }, 'user', 400));
+            }
+            let check = await this.postVerifyG2F(req, res, 'boolean');
+            if (check.status == false) {
+                return res.status(400).send(this.errorFormat({
+                    'message': 'The google authentication code you entered is incorrect.'
+                }, '2factor', 400));
+            }
+
+        }
+        else {
+        req.body.data['id'] = req.user.user;
+            if (requestData.otp == null || undefined) {
+                return res.status(400).send(this.errorFormat({
+                    'message': 'OTP must be provided.'
+                }, 'user', 400));
+            }
+
+            let checkOtp = await this.validateOtpForEmail(req, res, "secure information");
+            if (checkOtp.status == false) {
+                return res.status(400).send(this.errorFormat({
+                    'message': checkOtp.err
+                }, 'user', 400));
+            }
+        }
+
+        switch (requestData.type) {
+            case 'remove':
+                let checkApiKey = await apikey.findOne({ user: req.body.data.id });
+                let validateUuidSplit = checkApiKey.apikey.split('-');
+                const apiSecretRemove = await helpers.createSecret(`${validateUuidSplit[0]}-${validateUuidSplit[validateUuidSplit.length - 1]}`, requestData.passphrase);
+                if (checkApiKey.secretkey === apiSecretRemove) {
+                    await apikey.findOneAndUpdate({ user: req.body.data.id }, { is_deleted: true ,modified_date:moment().format('YYYY-MM-DD HH:mm:ss')});
+                    res.status(200).send(this.successFormat({ message: 'Your deletion request was successful.' }, 'user', 200));
+
+                }
+                else {
+                    res.status(401).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
+                }
+                break;
+
+            case 'create':
+                let checkUser = await apikey.findOne({ user: req.body.data.id });
+                if (checkUser) {
+                    res.status(401).send(this.errorMsgFormat({ message: 'User already created API key.' }, 'user', 401));
+                }
+                const apiKey = await helpers.generateUuid();
+                let uuidSplit = apiKey.split('-');
+                const apiSecret = await helpers.createSecret(`${uuidSplit[0]}-${uuidSplit[uuidSplit.length - 1]}`, requestData.passphrase);
+                await new apikey({
+                    user: req.user.user,
+                    apikey: apiKey,
+                    secretkey: apiSecret,
+                    type: requestData.type
+                }).save();
+                res.status(200).send(this.successFormat({'apikey': apiKey, 'secretkey': apiSecret,message:'Your API key was created successfully.',}, 'user', 200));
+                break;
+
+            case 'view':
+                let validateApiKey = await apikey.findOne({ user: req.body.data.id });
+                if (!validateApiKey) {
+                    res.status(401).send(this.errorMsgFormat({ message: 'User cannot be found.' }, 'user', 401));
+                }
+                let creatUuidSplit = validateApiKey.apikey.split('-');
+                const apiSecretValidate = await helpers.createSecret(`${creatUuidSplit[0]}-${creatUuidSplit[creatUuidSplit.length - 1]}`, requestData.passphrase);
+                if (validateApiKey.secretkey === apiSecretValidate) {
+                    res.status(200).send(this.successFormat({ 'apikey': validateApiKey.apikey, 'secretkey': apiSecretValidate }, 'user', 200));
+
+                } else {
+                    res.status(401).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
+
+                }
+                break;
+
+        }
+
+
+    }
+
 
 
 }
