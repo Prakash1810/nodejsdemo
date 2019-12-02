@@ -413,6 +413,25 @@ router.get('/kyc_statistics',info, auth, async (req, res) => {
         }, 'users', 500));
     }
 });
+router.post('/apikey', info,auth, async(req,res)=>{
+    try{
+        console.log("helo")
+        let { error } = user.apiKeyValidation(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        }
+         console.log("welcome")
+        await user.checkApikey(req,res);
+    }
+
+    catch(err){
+        return res.status(500).send(controller.errorMsgFormat({
+            'message':err.message
+        },'users',500));
+    }
+    
+
+});
 
 // router.get('/active', async (req, res) => {
 //     try {
