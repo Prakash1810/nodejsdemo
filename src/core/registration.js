@@ -142,7 +142,12 @@ class Registration extends Controller {
     async insertUser(req, res) {
         let data = req.body.data.attributes;
         if (data.referrer_code) {
-            let check = await users.find({ referral_code: data.referrer_code });
+            let check = await users.findOne({ referral_code: data.referrer_code });
+            if(!check.is_active){
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'The referral code you entered is invalid. Please use a different referral code.'
+                }));
+            }
             if (check.length==0) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'The referral code you entered is invalid. Please enter a valid referral code.'
