@@ -10,4 +10,4 @@ const apiKeys = new mongoose.Schema({
                            
 });
 
-module.exports = mongoose.model('apikey',apiKeys);
+module.exports = mongoose.model('api-key',apiKeys);
