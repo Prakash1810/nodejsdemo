@@ -146,8 +146,6 @@ class Registration extends Controller {
         let data = req.body.data.attributes;
         if (data.referrer_code) {
             let check = await users.findOne({ referral_code: data.referrer_code });
-            console.log(check)
-
             if (check) {
                 if (!check.is_active) {
                     return res.status(400).send(this.errorMsgFormat({
