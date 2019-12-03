@@ -149,7 +149,7 @@ class Registration extends Controller {
             if (check) {
                 if (!check.is_active) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'The referral code you entered is invalid. Please use a different referral code.'
+                        'message': 'The referral code you entered is inactive. Please use a different referral code.'
                     }));
                 }
             } else {

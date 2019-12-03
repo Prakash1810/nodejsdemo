@@ -38,7 +38,7 @@ router.post('/login', async (req, res) => {
 router.post('/validate/otp', (req, res) => {
     try {
         user.validateOtpForEmail(req, res);
-
+        
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

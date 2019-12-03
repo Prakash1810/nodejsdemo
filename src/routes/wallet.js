@@ -6,7 +6,7 @@ const auth = require("../middlewares/authentication");
 const router = express.Router();
 const controller = new Controller;
 
-router.get('/assets',info,auth, (req, res) => {
+router.get('/assets',(req, res) => {
     try {
         return wallet.getAssets(req, res);
     } catch (err) {
