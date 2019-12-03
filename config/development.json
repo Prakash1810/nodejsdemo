@@ -11,7 +11,8 @@
 		"refreshTokenExpiry": 420000,
 		"infoToken": 604800000000000,
 		"infokey": "Skp9PyY*C6Cute_@Mwnu-w",
-		"refreshKey" : "Nkqw^h%MDeR5m7DGQ"
+		"refreshKey" : "Nkqw^h%MDeR5m7DGQ",
+		"mobileExpiry": "365d"
 	},
 	"site": {
 		"url": "http://localhost:3000",

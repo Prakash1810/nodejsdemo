@@ -19,7 +19,7 @@ module.exports = async (req, res, next) => {
         const  data= JSON.parse(branca.decode(dataUser.token));
         const isChecked = await accesToken.findOne({
             user: data.user, access_token: token, is_deleted: true
-        })
+        });
         if (isChecked) {
             throw error
         } else {

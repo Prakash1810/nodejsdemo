@@ -169,19 +169,17 @@ class User extends controller {
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.infoToken')
         };
-        // let token = {jwtOptions,tokenUser};
         return await jwt.sign(deviceInfo, config.get('secrete.infokey'), tokenOption);
     };
 
-    async createToken(user, id) {
+    async createToken(device_id, user, id) {
 
         let jwtOptions = {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
-            expiresIn: config.get('secrete.expiry')
+            expiresIn: `${(device_id) ? config.get('secrete.mobileExpiry') : config.get('secrete.expiry')}`
         };
-
 
         let tokenAccess = JSON.stringify({
             user: user._id,
@@ -193,28 +191,34 @@ class User extends controller {
         return await jwt.sign({ token }, config.get('secrete.key'), jwtOptions);
     };
 
-    async createRefreshToken(user, id) {
-        let options = {
-            issuer: config.get('secrete.issuer'),
-            subject: 'Authentication',
-            audience: config.get('secrete.domain'),
-            expiresIn: config.get('secrete.refreshTokenExpiry')
+    async createRefreshToken(check_mobile, user, id) {
+        if (check_mobile) {
+            return null;
+        } else {
+            let options = {
+                issuer: config.get('secrete.issuer'),
+                subject: 'Authentication',
+                audience: config.get('secrete.domain'),
+                expiresIn: config.get('secrete.refreshTokenExpiry')
 
-        };
-        const tokenRefresh = JSON.stringify({
-            user: user._id,
-            login_id: id,
-            user_id: user.user_id,
-        });
-        let tokenUser = branca.encode(tokenRefresh);
-        return await jwt.sign({ tokenUser }, config.get('secrete.refreshKey'), options);
+            };
+            const tokenRefresh = JSON.stringify({
+                user: user._id,
+                login_id: id,
+                user_id: user.user_id,
+            });
+            let tokenUser = branca.encode(tokenRefresh);
+            return await jwt.sign({ tokenUser }, config.get('secrete.refreshKey'), options);
+
+        }
+
 
     }
 
-    async storeToken(user, loginHistory, infoToken) {
+    async storeToken(mobileValidate, user, loginHistory, infoToken) {
         let info = await this.infoToken(infoToken);
-        let accessToken = await this.createToken(user, loginHistory);
-        let refreshToken = await this.createRefreshToken(user, loginHistory);
+        let accessToken = await this.createToken(mobileValidate, user, loginHistory);
+        let refreshToken = await this.createRefreshToken(mobileValidate, user, loginHistory);
         let data = {
             user: user._id,
             info_token: info,
@@ -343,6 +347,7 @@ class User extends controller {
             is_mobile: Joi.boolean().required(),
             ip: Joi.string().required(),
             country: Joi.string().required(),
+            is_app: Joi.boolean().optional(),
             os: Joi.string().allow('').optional(),
             os_byte: Joi.string().allow('').optional(),
             browser: Joi.string().allow('').optional(),
@@ -360,6 +365,7 @@ class User extends controller {
         let schema = Joi.object().keys({
             is_browser: Joi.boolean().required(),
             is_mobile: Joi.boolean().required(),
+            is_app: Joi.boolean().optional(),
             ip: Joi.string().required(),
             country: Joi.string().required(),
             os: Joi.string().allow('').optional(),
@@ -465,7 +471,7 @@ class User extends controller {
 
     }
 
-    async returnToken(req, res, result, type) {
+    async returnToken(mobileDevice, req, res, result, type) {
         let attributes = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let isCheckedDevice = await deviceMangement.find({ user: result._id, region: attributes.region, city: attributes.city, ip: attributes.ip });
@@ -480,7 +486,6 @@ class User extends controller {
             }, res);
         }
         const device = await this.insertDevice(req, res, result._id, true, 'withValidation');
-
         let data = {
             user: result._id,
             device: device._id,
@@ -490,7 +495,7 @@ class User extends controller {
         let loginHistory = await this.insertLoginHistory(data);
         let take = req.body.data.attributes;
         take['info'] = req.body.data.id;
-        let tokens = await this.storeToken(result, loginHistory._id, take);
+        let tokens = await this.storeToken(mobileDevice, result, loginHistory._id, take);
         await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') })
         return res.status(200).send(this.successFormat({
             "info": tokens.infoToken,
@@ -674,7 +679,20 @@ class User extends controller {
     async validateOtpForEmail(req, res, typeFor = "login") {
         try {
             let data = req.body.data.attributes;
-            let id = req.body.data.id
+            let id = req.body.data.id;
+            let deviceId;
+            if (data.is_app && data.is_mobile) {
+                if (req.headers.device) {
+                    deviceId = req.headers.device;
+                } else {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Device_id must be provided.'
+                    }));
+
+                }
+
+            }
+
             const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
             if (isChecked) {
                 let date = new Date(isChecked.create_date_time);
@@ -682,11 +700,11 @@ class User extends controller {
                 let duration = moment.duration(moment().diff(isChecked.create_date_time));
                 if (getSeconds > duration.asSeconds()) {
                     if (typeFor == "login") {
-                        let checkUser = await users.findOne({ _id: id });
+                        let checkUser = await users.findById({ _id: id });
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                         delete data.otp;
                         delete data.g2f_code;
-                        await this.returnToken(req, res, checkUser, 1);
+                        await this.returnToken(deviceId, req, res, checkUser, 1);
                     }
                     else {
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
@@ -815,6 +833,8 @@ class User extends controller {
             user: userID,
             is_browser: attributes.is_browser,
             is_mobile: attributes.is_mobile,
+            is_app: attributes.is_app,
+            mobile_id: req.headers.device,
             os: attributes.os,
             os_byte: attributes.os_byte,
             browser: attributes.browser,
@@ -1304,7 +1324,7 @@ class User extends controller {
             if (req.headers.authorization && req.headers.info && type != 'boolean') {
                 let isChecked = await apiServices.authentication(req);
                 let isCheckedInfo = await apiServices.authenticationInfo(req);
-                if (!isChecked.status || !isCheckedInfo ) {
+                if (!isChecked.status || !isCheckedInfo) {
                     return res.status(401).json(this.errorMsgFormat({
                         message: "Authentication failed. Your request could not be authenticated."
                     }), 'user', 401);
@@ -2025,7 +2045,7 @@ class User extends controller {
 
         }
         else {
-        req.body.data['id'] = req.user.user;
+            req.body.data['id'] = req.user.user;
             if (requestData.otp == null || undefined) {
                 return res.status(400).send(this.errorFormat({
                     'message': 'OTP must be provided.'
@@ -2046,19 +2066,19 @@ class User extends controller {
                 let validateUuidSplit = checkApiKey.apikey.split('-');
                 const apiSecretRemove = await helpers.createSecret(`${validateUuidSplit[0]}-${validateUuidSplit[validateUuidSplit.length - 1]}`, requestData.passphrase);
                 if (checkApiKey.secretkey === apiSecretRemove) {
-                    await apikey.findOneAndUpdate({ user: req.body.data.id }, { is_deleted: true ,modified_date:moment().format('YYYY-MM-DD HH:mm:ss')});
-                    res.status(200).send(this.successFormat({ message: 'Your deletion request was successful.' }, 'user', 200));
+                    await apikey.findOneAndUpdate({ user: req.body.data.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+                    res.status(200).send(this.successFormat({ message: 'API key deleted.' }, 'user', 200));
 
                 }
                 else {
-                    res.status(401).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
+                    res.status(401).send(this.errorMsgFormat({ message: 'The API key entered is incorrect.' }, 'user', 401));
                 }
                 break;
 
             case 'create':
                 let checkUser = await apikey.findOne({ user: req.body.data.id });
                 if (checkUser) {
-                    res.status(401).send(this.errorMsgFormat({ message: 'User already created API key.' }, 'user', 401));
+                    res.status(401).send(this.errorMsgFormat({ message: 'An API key is already available for this account.' }, 'user', 401));
                 }
                 const apiKey = await helpers.generateUuid();
                 let uuidSplit = apiKey.split('-');
@@ -2069,18 +2089,18 @@ class User extends controller {
                     secretkey: apiSecret,
                     type: requestData.type
                 }).save();
-                res.status(200).send(this.successFormat({'apikey': apiKey, 'secretkey': apiSecret,message:'Your API key was created successfully.',}, 'user', 200));
+                res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your API key was created successfully.', }, 'user', 200));
                 break;
 
             case 'view':
                 let validateApiKey = await apikey.findOne({ user: req.body.data.id });
                 if (!validateApiKey) {
-                    res.status(401).send(this.errorMsgFormat({ message: 'User cannot be found.' }, 'user', 401));
+                    res.status(401).send(this.errorMsgFormat({ message: 'API key cannot be found.Please created you API key.' }, 'user', 401));
                 }
                 let creatUuidSplit = validateApiKey.apikey.split('-');
                 const apiSecretValidate = await helpers.createSecret(`${creatUuidSplit[0]}-${creatUuidSplit[creatUuidSplit.length - 1]}`, requestData.passphrase);
                 if (validateApiKey.secretkey === apiSecretValidate) {
-                    res.status(200).send(this.successFormat({ 'apikey': validateApiKey.apikey, 'secretkey': apiSecretValidate }, 'user', 200));
+                    res.status(200).send(this.successFormat({ 'apikey': validateApiKey.apikey, 'secretkey': apiSecretValidate, message: 'Your API key was successfully validated.' }, 'user', 200));
 
                 } else {
                     res.status(401).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
