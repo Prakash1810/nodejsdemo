@@ -172,7 +172,7 @@ class User extends controller {
         return await jwt.sign(deviceInfo, config.get('secrete.infokey'), tokenOption);
     };
 
-    async createToken(device_id, user, id) {
+    async createToken(user, id, device_id) {
 
         let jwtOptions = {
             issuer: config.get('secrete.issuer'),
@@ -191,34 +191,38 @@ class User extends controller {
         return await jwt.sign({ token }, config.get('secrete.key'), jwtOptions);
     };
 
-    async createRefreshToken(check_mobile, user, id) {
-        if (check_mobile) {
-            return null;
-        } else {
-            let options = {
-                issuer: config.get('secrete.issuer'),
-                subject: 'Authentication',
-                audience: config.get('secrete.domain'),
-                expiresIn: config.get('secrete.refreshTokenExpiry')
+    async createRefreshToken(user, id) {
 
-            };
-            const tokenRefresh = JSON.stringify({
-                user: user._id,
-                login_id: id,
-                user_id: user.user_id,
-            });
-            let tokenUser = branca.encode(tokenRefresh);
-            return await jwt.sign({ tokenUser }, config.get('secrete.refreshKey'), options);
+        let options = {
+            issuer: config.get('secrete.issuer'),
+            subject: 'Authentication',
+            audience: config.get('secrete.domain'),
+            expiresIn: config.get('secrete.refreshTokenExpiry')
 
-        }
+        };
+        const tokenRefresh = JSON.stringify({
+            user: user._id,
+            login_id: id,
+            user_id: user.user_id,
+        });
+        let tokenUser = branca.encode(tokenRefresh);
+        return await jwt.sign({ tokenUser }, config.get('secrete.refreshKey'), options);
+
+
 
 
     }
 
-    async storeToken(mobileValidate, user, loginHistory, infoToken) {
-        let info = await this.infoToken(infoToken);
-        let accessToken = await this.createToken(mobileValidate, user, loginHistory);
-        let refreshToken = await this.createRefreshToken(mobileValidate, user, loginHistory);
+    async storeToken(user, loginHistory, infoToken, mobileDevice) {
+
+        let refreshToken = null, info = null;
+        if (infoToken != null) {
+            info = await this.infoToken(infoToken);
+        }
+        let accessToken = await this.createToken(user, loginHistory, mobileDevice);
+        if (mobileDevice == null) {
+            refreshToken = await this.createRefreshToken(user, loginHistory);
+        }
         let data = {
             user: user._id,
             info_token: info,
@@ -471,7 +475,7 @@ class User extends controller {
 
     }
 
-    async returnToken(mobileDevice, req, res, result, type) {
+    async returnToken(req, res, result, type, mobileId) {
         let attributes = req.body.data.attributes;
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let isCheckedDevice = await deviceMangement.find({ user: result._id, region: attributes.region, city: attributes.city, ip: attributes.ip });
@@ -495,7 +499,7 @@ class User extends controller {
         let loginHistory = await this.insertLoginHistory(data);
         let take = req.body.data.attributes;
         take['info'] = req.body.data.id;
-        let tokens = await this.storeToken(mobileDevice, result, loginHistory._id, take);
+        let tokens = await this.storeToken(result, loginHistory._id, take, mobileId);
         await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') })
         return res.status(200).send(this.successFormat({
             "info": tokens.infoToken,
@@ -680,7 +684,7 @@ class User extends controller {
         try {
             let data = req.body.data.attributes;
             let id = req.body.data.id;
-            let deviceId;
+            let deviceId = null;
             if (data.is_app && data.is_mobile) {
                 if (req.headers.device) {
                     deviceId = req.headers.device;
@@ -704,7 +708,7 @@ class User extends controller {
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                         delete data.otp;
                         delete data.g2f_code;
-                        await this.returnToken(deviceId, req, res, checkUser, 1);
+                        await this.returnToken(req, res, checkUser, 1, deviceId);
                     }
                     else {
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
@@ -1373,14 +1377,14 @@ class User extends controller {
 
     async refreshToken(data, res) {
         try {
-
             const user = await users.findOne({
                 _id: data.user
             })
 
             if (user) {
                 await token.findOneAndUpdate({ user: user._id, is_deleted: false }, { is_deleted: true, modified_date: Date.now() });
-                let tokens = await this.storeToken(user, data.login_id);
+
+                let tokens = await this.storeToken(user, data.login_id, null, null);
                 let result = {
                     "token": tokens.accessToken,
                     "refreshToken": tokens.refreshToken,
