@@ -270,7 +270,7 @@ class User extends controller {
                             }
                             else {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': 'The password you entered is incorrect.'
+                                    'message': 'Your account has been locked due to multiple login attempts. Please try again after 2 hours.'
                                 }));
 
                             }
@@ -296,7 +296,7 @@ class User extends controller {
                                 if (getSeconds > duration.asSeconds()) {
 
                                     return res.status(400).send(this.errorMsgFormat({
-                                        'message': 'Your account has been locked due to multiple registration attempts. Please try again after 2 hours.'
+                                        'message': 'Your account has been locked due to multiple login attempts. Please try again after 2 hours.'
                                     }));
                                 }
                                 else {
@@ -565,7 +565,7 @@ class User extends controller {
                     await this.addWhitelist(data, userID, true);
                     res.status(200).send(this.successFormat({
                         'message': "An OTP has been sent to your registered email address.",
-                        'opt':true,
+                        'opt': true,
                         "region": data.region,
                         "city": data.city,
                         "ip": data.ip
@@ -1801,14 +1801,14 @@ class User extends controller {
 
     async rewardHistory(req, res) {
         let data = await rewardHistory.find({ user: req.user.user })
-        .select('is_referral type reward reward_asset created_date ')
-        .exec();
+            .select('is_referral type reward reward_asset created_date ')
+            .exec();
         if (!data.length) {
             return res.status(200).json(this.successFormat({
                 "data": [],
             }, null, 200, 0));
         } else {
-            return res.status(200).json(this.successFormat(data, null,'user', 200 ));
+            return res.status(200).json(this.successFormat(data, null, 'user', 200));
         }
     }
 
@@ -2035,8 +2035,7 @@ class User extends controller {
         let schema = Joi.object().keys({
             type: Joi.string().required(),
             passphrase: Joi.string().required(),
-            otp: Joi.string().optional(),
-            g2f_code: Joi.string()
+            g2f_code: Joi.string().required
         });
         return Joi.validate(req, schema, {
             abortEarly: false
@@ -2045,37 +2044,22 @@ class User extends controller {
 
     async checkApikey(req, res) {
         let checkUserValidate = await users.findOne({ _id: req.user.user });
+        req.body.data['id'] = req.user.user;
         req.body.data.attributes.google_secrete_key = checkUserValidate.google_secrete_key;
         let requestData = req.body.data.attributes;
-        if (checkUserValidate.google_auth) {
-            if (!requestData.g2f_code) {
-                return res.status(400).send(this.errorFormat({
-                    'message': 'Google authentication code must be provided.'
-                }, 'user', 400));
-            }
-            let check = await this.postVerifyG2F(req, res, 'boolean');
-            if (check.status == false) {
-                return res.status(400).send(this.errorFormat({
-                    'message': 'The google authentication code you entered is incorrect.'
-                }, '2factor', 400));
-            }
-
+        if (!requestData.g2f_code) {
+            return res.status(400).send(this.errorFormat({
+                'message': 'Google authentication code must be provided.'
+            }, 'user', 400));
         }
-        else {
-            req.body.data['id'] = req.user.user;
-            if (requestData.otp == null || undefined) {
-                return res.status(400).send(this.errorFormat({
-                    'message': 'OTP must be provided.'
-                }, 'user', 400));
-            }
-
-            let checkOtp = await this.validateOtpForEmail(req, res, "secure information");
-            if (checkOtp.status == false) {
-                return res.status(400).send(this.errorFormat({
-                    'message': checkOtp.err
-                }, 'user', 400));
-            }
+        let check = await this.postVerifyG2F(req, res, 'boolean');
+        if (check.status == false) {
+            return res.status(400).send(this.errorFormat({
+                'message': 'The google authentication code you entered is incorrect.'
+            }, '2factor', 400));
         }
+
+
 
         switch (requestData.type) {
             case 'remove':
@@ -2088,14 +2072,14 @@ class User extends controller {
 
                 }
                 else {
-                    res.status(401).send(this.errorMsgFormat({ message: 'The API key entered is incorrect.' }, 'user', 401));
+                    res.status(400).send(this.errorMsgFormat({ message: 'The API key entered is incorrect.' }, 'user', 401));
                 }
                 break;
 
             case 'create':
                 let checkUser = await apikey.findOne({ user: req.body.data.id });
                 if (checkUser) {
-                    res.status(401).send(this.errorMsgFormat({ message: 'An API key is already available for this account.' }, 'user', 401));
+                    res.status(400).send(this.errorMsgFormat({ message: 'An API key is already available for this account.' }, 'user', 401));
                 }
                 const apiKey = await helpers.generateUuid();
                 let uuidSplit = apiKey.split('-');
@@ -2112,7 +2096,7 @@ class User extends controller {
             case 'view':
                 let validateApiKey = await apikey.findOne({ user: req.body.data.id });
                 if (!validateApiKey) {
-                    res.status(401).send(this.errorMsgFormat({ message: 'API key cannot be found.Please created you API key.' }, 'user', 401));
+                    res.status(400).send(this.errorMsgFormat({ message: 'API key cannot be found.Please create you API key.' }, 'user', 401));
                 }
                 let creatUuidSplit = validateApiKey.apikey.split('-');
                 const apiSecretValidate = await helpers.createSecret(`${creatUuidSplit[0]}-${creatUuidSplit[creatUuidSplit.length - 1]}`, requestData.passphrase);
@@ -2120,7 +2104,7 @@ class User extends controller {
                     res.status(200).send(this.successFormat({ 'apikey': validateApiKey.apikey, 'secretkey': apiSecretValidate, message: 'Your API key was successfully validated.' }, 'user', 200));
 
                 } else {
-                    res.status(401).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
+                    res.status(400).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
 
                 }
                 break;
