@@ -269,9 +269,20 @@ class User extends controller {
                                     })
                             }
                             else {
-                                return res.status(400).send(this.errorMsgFormat({
-                                    'message': 'Your account has been locked due to multiple login attempts. Please try again after 2 hours.'
-                                }));
+                                let date = new Date(isChecked.create_date);
+                                let getSeconds = date.getSeconds() + config.get('accountActive.timeExpiry');
+                                let duration = moment.duration(moment().diff(isChecked.create_date));
+                                if (getSeconds > duration.asSeconds()) {
+
+                                    return res.status(400).send(this.errorMsgFormat({
+                                        'message': 'Your account has been locked due to multiple login attempts. Please try again after 2 hours.'
+                                    }));
+                                } else {
+                                    return res.status(400).send(this.errorMsgFormat({
+                                        'message': 'The password you entered is incorrect.'
+                                    }));
+
+                                }
 
                             }
                             if (isChecked.count > config.get('accountActive.limit')) {
@@ -347,6 +358,24 @@ class User extends controller {
                     }
                 }
             }).label('password'),
+            is_browser: Joi.boolean().required(),
+            is_mobile: Joi.boolean().required(),
+            ip: Joi.string().required(),
+            country: Joi.string().required(),
+            os: Joi.string().allow('').optional(),
+            os_byte: Joi.string().allow('').optional(),
+            browser: Joi.string().allow('').optional(),
+            browser_version: Joi.string().allow('').optional(),
+            city: Joi.string().allow('').optional(),
+            region: Joi.string().allow('').optional(),
+        });
+
+        return Joi.validate(req, schema, {
+            abortEarly: false
+        });
+    }
+    validateOtp(req) {
+        let schema = Joi.object().keys({
             is_browser: Joi.boolean().required(),
             is_mobile: Joi.boolean().required(),
             ip: Joi.string().required(),
@@ -2068,18 +2097,18 @@ class User extends controller {
                 const apiSecretRemove = await helpers.createSecret(`${validateUuidSplit[0]}-${validateUuidSplit[validateUuidSplit.length - 1]}`, requestData.passphrase);
                 if (checkApiKey.secretkey === apiSecretRemove) {
                     await apikey.findOneAndUpdate({ user: req.body.data.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
-                    res.status(200).send(this.successFormat({ message: 'API key deleted.' }, 'user', 200));
+                    return res.status(200).send(this.successFormat({ message: 'API key deleted.' }, 'user', 200));
 
                 }
                 else {
-                    res.status(400).send(this.errorMsgFormat({ message: 'The API key entered is incorrect.' }, 'user', 401));
+                    return res.status(400).send(this.errorMsgFormat({ message: 'The API key entered is incorrect.' }, 'user', 401));
                 }
-                break;
+               
 
             case 'create':
                 let checkUser = await apikey.findOne({ user: req.body.data.id });
                 if (checkUser) {
-                    res.status(400).send(this.errorMsgFormat({ message: 'An API key is already available for this account.' }, 'user', 401));
+                    return res.status(400).send(this.errorMsgFormat({ message: 'An API key is already available for this account.' }, 'user', 401));
                 }
                 const apiKey = await helpers.generateUuid();
                 let uuidSplit = apiKey.split('-');
@@ -2090,8 +2119,8 @@ class User extends controller {
                     secretkey: apiSecret,
                     type: requestData.type
                 }).save();
-                res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your API key was created successfully.', }, 'user', 200));
-                break;
+                return res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your API key was created successfully.', }, 'user', 200));
+               
 
             case 'view':
                 let validateApiKey = await apikey.findOne({ user: req.body.data.id });
@@ -2101,13 +2130,13 @@ class User extends controller {
                 let creatUuidSplit = validateApiKey.apikey.split('-');
                 const apiSecretValidate = await helpers.createSecret(`${creatUuidSplit[0]}-${creatUuidSplit[creatUuidSplit.length - 1]}`, requestData.passphrase);
                 if (validateApiKey.secretkey === apiSecretValidate) {
-                    res.status(200).send(this.successFormat({ 'apikey': validateApiKey.apikey, 'secretkey': apiSecretValidate, message: 'Your API key was successfully validated.' }, 'user', 200));
+                    return res.status(200).send(this.successFormat({ 'apikey': validateApiKey.apikey, 'secretkey': apiSecretValidate, message: 'Your API key was successfully validated.' }, 'user', 200));
 
                 } else {
-                    res.status(400).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
+                    return res.status(400).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
 
                 }
-                break;
+                
 
         }
 
