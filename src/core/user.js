@@ -351,7 +351,6 @@ class User extends controller {
             is_mobile: Joi.boolean().required(),
             ip: Joi.string().required(),
             country: Joi.string().required(),
-            is_app: Joi.boolean().optional(),
             os: Joi.string().allow('').optional(),
             os_byte: Joi.string().allow('').optional(),
             browser: Joi.string().allow('').optional(),
@@ -566,6 +565,7 @@ class User extends controller {
                     await this.addWhitelist(data, userID, true);
                     res.status(200).send(this.successFormat({
                         'message': "An OTP has been sent to your registered email address.",
+                        'opt':true,
                         "region": data.region,
                         "city": data.city,
                         "ip": data.ip
@@ -1799,6 +1799,19 @@ class User extends controller {
         }, null, 'user', 200));
     }
 
+    async rewardHistory(req, res) {
+        let data = await rewardHistory.find({ user: req.user.user })
+        .select('is_referral type reward reward_asset created_date ')
+        .exec();
+        if (!data.length) {
+            return res.status(200).json(this.successFormat({
+                "data": [],
+            }, null, 200, 0));
+        } else {
+            return res.status(200).json(this.successFormat(data, null,'user', 200 ));
+        }
+    }
+
     async updateBalance(user, userId, res, type) {
         try {
             let payloads;
@@ -1852,7 +1865,7 @@ class User extends controller {
     async kycDetailsValidation(req) {
         let schema = Joi.object().keys({
             first_name: Joi.string().required(),
-            middle_name: Joi.string().optional(),
+            middle_name: Joi.string().optional().allow(''),
             surname: Joi.string().required(),
             date_of_birth: Joi.string().required(),
             address: Joi.string().required().max(100),

@@ -385,6 +385,16 @@ router.get('/referrer-history/:code',info,auth, async (req, res) => {
             'message': err.message
         }, 'users', 500));
     }
+});   
+
+router.get('/reward-history',info, auth, async(req,res)=>{
+    try {
+        return  user.rewardHistory(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'wallet', 500));
+    }
 });
 
 router.post('/kyc-details',info, auth, async (req, res) => {
