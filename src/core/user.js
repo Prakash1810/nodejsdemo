@@ -385,6 +385,8 @@ class User extends controller {
             browser_version: Joi.string().allow('').optional(),
             city: Joi.string().allow('').optional(),
             region: Joi.string().allow('').optional(),
+            opt: Joi.string().required(),
+            is_app: Joi.boolean()
         });
 
         return Joi.validate(req, schema, {
