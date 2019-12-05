@@ -144,7 +144,7 @@ class User extends controller {
                 await apiServices.sendEmailNotification(serviceData, res);
                 await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
                 return res.status(200).send(this.successFormat({
-                    'message': `Congratulation!, Your account has been activated.`
+                    'message': `Congratulation!, Your account has been successfully activated.`
                 }));
             } else {
                 return res.status(400).send(this.errorMsgFormat({
