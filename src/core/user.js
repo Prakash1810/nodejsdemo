@@ -40,9 +40,7 @@ class User extends controller {
 
     async activate(req, res) {
         const userHash = JSON.parse(helpers.decrypt(req.params.hash))
-        console.log(userHash);
         let checkhash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash })
-        console.log(checkhash);
         if (checkhash) {
             if (checkhash.is_active) {
                 return res.status(400).send(this.errorMsgFormat({
