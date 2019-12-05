@@ -41,27 +41,25 @@ class User extends controller {
     async activate(req, res) {
         const userHash = JSON.parse(helpers.decrypt(req.params.hash))
         let checkhash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash })
-        if (checkhash) {
-            if (checkhash.is_active) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'The verification link has already been used.'
-                }));
+            if (checkhash) {
+                if (checkhash.is_active) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'The verification link has already been used.'
+                    }));
+                }
+                else {
+                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true, count: 1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                }
             }
             else {
-                await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true, count: 1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'Hash cannot be found'
+                }));
             }
-        }
-        else {
-            return res.status(400).send(this.errorMsgFormat({
-                'message': 'Hash cannot be found'
-            }));
-        }
-
         let date = new Date(userHash.date);
         let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
         let duration = moment.duration(moment().diff(userHash.date));
         if (getSeconds > duration.asSeconds()) {
-
             if (userHash.id) {
                 userTemp.findById(userHash.id)
                     .exec((err, result) => {
@@ -85,7 +83,6 @@ class User extends controller {
                 return res.status(400).send(this.errorFormat({
                     'message': 'The verification link has expired. Please register again.'
                 }));
-
             }
             else {
                 return res.status(400).send(this.errorFormat({
@@ -93,7 +90,6 @@ class User extends controller {
                 }));
             }
         }
-
     }
     async getRandomString() {
         var result = '';
@@ -148,7 +144,7 @@ class User extends controller {
                 await apiServices.sendEmailNotification(serviceData, res);
                 await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
                 return res.status(200).send(this.successFormat({
-                    'message': `Congratulations! Your account has been successfully activated.`
+                    'message': `Congratulation!, Your account has been activated.`
                 }));
             } else {
                 return res.status(400).send(this.errorMsgFormat({
@@ -385,6 +381,8 @@ class User extends controller {
             browser_version: Joi.string().allow('').optional(),
             city: Joi.string().allow('').optional(),
             region: Joi.string().allow('').optional(),
+            otp:Joi.string().optional(),
+            is_app:Joi.boolean().optional()
         });
 
         return Joi.validate(req, schema, {
