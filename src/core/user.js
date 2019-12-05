@@ -40,24 +40,25 @@ class User extends controller {
 
     async activate(req, res) {
         const userHash = JSON.parse(helpers.decrypt(req.params.hash))
+        console.log(userHash);
         let checkhash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash })
-        {
-            if (checkhash) {
-                if (checkhash.is_active) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'The verification link has already been used.'
-                    }));
-                }
-                else {
-                    await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true, count: 1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
-                }
-            }
-            else {
+        console.log(checkhash);
+        if (checkhash) {
+            if (checkhash.is_active) {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'The verification link has expired. Please register again.'
+                    'message': 'The verification link has already been used.'
                 }));
             }
+            else {
+                await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true, count: 1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+            }
         }
+        else {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Hash cannot be found'
+            }));
+        }
+
         let date = new Date(userHash.date);
         let getSeconds = date.getSeconds() + config.get('activation.expiryTime');
         let duration = moment.duration(moment().diff(userHash.date));
@@ -70,7 +71,7 @@ class User extends controller {
                             return this.insertUser(result, res)
                         } else {
                             return res.status(400).send(this.errorMsgFormat({
-                                'message': 'The verification link has already been used.'
+                                'message': 'User cannot be found.'
                             }));
                         }
                     });
@@ -2103,7 +2104,7 @@ class User extends controller {
                 else {
                     return res.status(400).send(this.errorMsgFormat({ message: 'The API key entered is incorrect.' }, 'user', 401));
                 }
-               
+
 
             case 'create':
                 let checkUser = await apikey.findOne({ user: req.body.data.id });
@@ -2120,7 +2121,7 @@ class User extends controller {
                     type: requestData.type
                 }).save();
                 return res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your API key was created successfully.', }, 'user', 200));
-               
+
 
             case 'view':
                 let validateApiKey = await apikey.findOne({ user: req.body.data.id });
@@ -2136,7 +2137,7 @@ class User extends controller {
                     return res.status(400).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 401));
 
                 }
-                
+
 
         }
 

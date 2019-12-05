@@ -35,7 +35,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-router.post('/validate/otp', (req, res) => {
+router.post('/validate/otp', async (req, res) => {
     try {
         let { error } = await user.validateOtp(req.body.data.attributes);
         if (error) {
