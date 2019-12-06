@@ -20,7 +20,7 @@ module.exports = async (req, res, next) => {
     try {
         let token = req.headers.info;
         const deviceInfo = await jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
-        const checkToken = await accesstoken.findOne({ is_deleted: true, info_token: token });
+        const checkToken = await accesstoken.findOne({ user: deviceInfo.info, info_token: token, is_deleted: true, type_for: "info-token" });
         if (checkToken) {
             throw error
         } else {
@@ -47,7 +47,7 @@ module.exports = async (req, res, next) => {
                     user: deviceInfo.info,
                     browser_version: deviceInfo.browser_version,
                     is_deleted: true,
-                    is_app:true,
+                    is_app: true,
                     region: deviceInfo.region,
                     city: deviceInfo.city,
                     os: deviceInfo.os
@@ -63,7 +63,7 @@ module.exports = async (req, res, next) => {
 
             let checkActive = await users.findOne({ _id: deviceInfo.info, is_active: false });
             if (checkActive) {
-                await accesstoken.findOneAndUpdate({ info_token: token }, { is_deleted: true });
+                await accesstoken.findOneAndUpdate({ user: deviceInfo.info,info_token: token,type_for:"info-token" }, { is_deleted: true });
                 res.status(401).json(controller.errorMsgFormat({
                     message: 'Your account has been disabled. Please contact support.'
                 }, 'user', 401));
