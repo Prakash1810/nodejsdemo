@@ -381,7 +381,7 @@ class User extends controller {
             browser_version: Joi.string().allow('').optional(),
             city: Joi.string().allow('').optional(),
             region: Joi.string().allow('').optional(),
-            otp: Joi.string().required(),
+            otp: Joi.string().required  (),
             is_app: Joi.boolean().optional()
         });
 
