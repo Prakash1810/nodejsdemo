@@ -164,7 +164,8 @@ class User extends controller {
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.infoToken')
         };
-        return await jwt.sign(deviceInfo, config.get('secrete.infokey'), tokenOption);
+        let tokenAccess = JSON.stringify(deviceInfo);
+        return await jwt.sign(tokenAccess, config.get('secrete.infokey'), tokenOption);
     };
 
     async createToken(user, id, device_id) {
@@ -213,6 +214,12 @@ class User extends controller {
         let refreshToken = null, info = null;
         if (infoToken != null) {
             info = await this.infoToken(infoToken);
+            await new token({
+                user:user.id,
+                info_token:infoToken,
+                type_for:"info-token",
+                created_date: Date.now()
+            }).save()
         }
         let accessToken = await this.createToken(user, loginHistory, mobileDevice);
         if (mobileDevice == null) {
@@ -220,7 +227,7 @@ class User extends controller {
         }
         let data = {
             user: user._id,
-            info_token: info,
+            type_for:"token",
             access_token: accessToken,
             refresh_token: refreshToken,
             created_date: Date.now()
@@ -381,7 +388,7 @@ class User extends controller {
             browser_version: Joi.string().allow('').optional(),
             city: Joi.string().allow('').optional(),
             region: Joi.string().allow('').optional(),
-            otp: Joi.string().required  (),
+            otp: Joi.string().required(),
             is_app: Joi.boolean().optional()
         });
 
@@ -458,6 +465,7 @@ class User extends controller {
             const rand = Math.random() * (999999 - 100000) + 100000;
             const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
             const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
+            console.log("")
             const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false, type_for: typeFor }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
             if (!isChecked) {
                 let data =
@@ -536,9 +544,7 @@ class User extends controller {
             "anti_spoofing": result.anti_spoofing,
             "anti_spoofing_code": result.anti_spoofing_code,
             'white_list_address': result.white_list_address,
-            "loggedIn": timeNow,
             "withdraw": result.withdraw,
-            "expiresIn": config.get('secrete.expiry'),
             "taker_fee": result.taker_fee,
             "maker_fee": result.maker_fee,
             "kyc_verified": result.kyc_verified,
@@ -723,7 +729,6 @@ class User extends controller {
                 }
 
             }
-
             const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
             if (isChecked) {
                 let date = new Date(isChecked.create_date_time);
@@ -1409,16 +1414,21 @@ class User extends controller {
             })
 
             if (user) {
-                await token.findOneAndUpdate({ user: user._id, is_deleted: false }, { is_deleted: true, modified_date: Date.now() });
+                await token.findOneAndUpdate({ user: user._id, is_deleted: false,type_for:'token'}, { is_deleted: true, modified_date: Date.now() });
 
                 let tokens = await this.storeToken(user, data.login_id, null, null);
                 let result = {
+                    "apiKey": result.api_key,
                     "token": tokens.accessToken,
                     "refreshToken": tokens.refreshToken,
-                    "google_auth": user.google_auth,
-                    "sms_auth": user.sms_auth,
-                    "anti_spoofing": user.anti_spoofing,
-                    "expiresIn": config.get('secrete.expiry')
+                    "google_auth": result.google_auth,
+                    "sms_auth": result.sms_auth,
+                    "anti_spoofing": result.anti_spoofing,
+                    "anti_spoofing_code": result.anti_spoofing_code,
+                    'white_list_address': result.white_list_address,
+                    "withdraw": result.withdraw,
+                    "kyc_verified": result.kyc_verified,
+                    "trade": result.trade,
                 };
                 return res.status(200).send(this.successFormat(result, tokens.id))
             } else {
@@ -1445,10 +1455,10 @@ class User extends controller {
             });
             if (logout) {
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: tokens.info, is_deleted: false
+                    user: user.user, access_token: tokens.info, is_deleted: false,type_for:"info_token"
                 }, { is_deleted: true })
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: tokens.authorization, is_deleted: false
+                    user: user.user, access_token: tokens.authorization, is_deleted: false,type_for:"token"
                 }, { is_deleted: true })
                 return res.status(200).send(this.successFormat({
                     'message': 'You have successfully logged out.',
