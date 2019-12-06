@@ -569,7 +569,6 @@ class Wallet extends controller {
                 payloads.asset = asset
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available
-                let available = 600;
                 if (available !== undefined && amount <= available) {
                     return {
                         status: true,
