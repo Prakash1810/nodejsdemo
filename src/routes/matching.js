@@ -109,11 +109,11 @@ router.post('/order/put-market', info, auth, async (req, res) => {
                 'side': side,
                 'instrument_id': data.market,
                 'size': side == 1?Number(data.amount):0,
-                'client_oid': `beldex-${req.body.data.attributes.user_id}`,
+                'client_oid': `BDX-${req.body.data.attributes.user_id}-${checkUser.taker_fee}`,
                 "notional": side ==2?data.amount:'',
                 'order_type': '0'
             }
-            await matching.OkexHttp(input, req.body.data.attributes.user_id, checkUser.taker_fee);
+            await matching.OkexHttp(input);
         }
         else {
             //delete q from request;
@@ -154,16 +154,18 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
                 'side': side,
                 'instrument_id': data.market,
                 'size': Number(data.amount),
-                'client_oid': `beldex-${req.body.data.attributes.user_id}`,
+                'client_oid': `BDX-${req.body.data.attributes.user_id}-${checkUser.taker_fee}`,
                 'price': data.pride,
                 'order_type': '0'
             }
-            await matching.OkexHttp(input, req.body.data.attributes.user_id, checkUser.taker_fee,checkUser.maker_fee);
+            await matching.OkexHttp(input,req.body,res);
+        }else{
+            delete data.q;
+            await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
         }
 
         //delete q from request;
-        delete data.q;
-        await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
+     
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

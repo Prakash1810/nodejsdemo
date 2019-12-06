@@ -45,7 +45,8 @@ const usersSchema = mongoose.Schema({
     reason_for_withdraw: { type: String, default: null },
     deposit_status:{type:Boolean,default:false},
     dailyWithdrawAmount:{type:Number},
-    monthWithdrawAmount:{type:Number}
+    monthWithdrawAmount:{type:Number},
+    api_key: {type:String, default:null}
 });
 
 // autoIncrement.initialize(mongooseConnect.connect());
