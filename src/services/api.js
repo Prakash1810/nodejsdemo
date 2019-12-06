@@ -81,22 +81,21 @@ class Api extends Controller {
         });
     }
 
-    async OkexHttp(input, user_id,takerFee,makerFee) {
+    async OkexHttp(input,req,res) {
         const timestamp = await utils.getTime();
         const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
 
         let body = input;
         let response = await authClient.spot().postOrder(body);
         if(response.result){
-            response.user_id = user_id; 
-            if(resp)
             if (input.type == 'MARKET') {
-                response['takerFee']=takerFee
-                await this.addResponseInKAFKA(response, input.instrument_id);
-            } else {
-                response['takerFee']=takerFee
-                response['makerFee']=makerFee
+                repsonse.order_id = `OX:${response.order_id}`
                 await this.addResponseInREDIS(response);
+            } else {
+                repsonse.order_id = `OX:${response.order_id}`
+                req.data.attributes['source']=`OX-${response.order_id}`
+                await this.addResponseInREDIS(response);
+                await this.matchingEngineRequest('post', 'order/put-limit', req);
             }
     
         }
@@ -397,7 +396,7 @@ class Api extends Controller {
             }
         ]);
         redis.rpush([response.order_id, response]);
-        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.order_id} : ${response.user_id} : ${JSON.stringify(response)}`
+        let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.order_id} : ${response.client_oid} : ${JSON.stringify(response)}`
         fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
             if (err)
                 console.log("Error:", err);
@@ -406,49 +405,49 @@ class Api extends Controller {
 
     }
 
-    async addResponseInKAFKA(jsonData, market) {
-        let Producer = kafka.Producer,
-            Client = new kafka.KafkaClient({
-                kafkaHost: process.env.KAFKA
-            }),
-            producer = new Producer(Client, {
-                requireAcks: 1
-            });
+    // async addResponseInKAFKA(jsonData, market) {
+    //     let Producer = kafka.Producer,
+    //         Client = new kafka.KafkaClient({
+    //             kafkaHost: process.env.KAFKA
+    //         }),
+    //         producer = new Producer(Client, {
+    //             requireAcks: 1
+    //         });
 
-        producer.on('ready', async function () {
-            let response = await producer.send([{
-                topic: `${config.get('liquidity.topic')}${market}`,
-                messages: JSON.stringify(jsonData),
-            }]);
-            if (response) {
+    //     producer.on('ready', async function () {
+    //         let response = await producer.send([{
+    //             topic: `${config.get('liquidity.topic')}${market}`,
+    //             messages: JSON.stringify(jsonData),
+    //         }]);
+    //         if (response) {
 
-                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.order_id} : ${jsonData.user_id} : ${JSON.stringify(jsonData)}`
-                fs.appendFile('kafaSuccess.txt', `\n${fileConent} `, function (err) {
-                    if (err)
-                        console.log("Error:", err);
-                });
-                //return { status :true }
-            }
-            else {
-                let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.order_id} :${jsonData.user_id} : ${JSON.stringify(jsonData)}`
-                fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
-                    if (err)
-                        console.log("Error:", err);
-                });
-                //return { status : false , error : response.message }
-            }
-        });
+    //             let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.order_id} : ${jsonData.user_id} : ${JSON.stringify(jsonData)}`
+    //             fs.appendFile('kafaSuccess.txt', `\n${fileConent} `, function (err) {
+    //                 if (err)
+    //                     console.log("Error:", err);
+    //             });
+    //             //return { status :true }
+    //         }
+    //         else {
+    //             let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.order_id} :${jsonData.user_id} : ${JSON.stringify(jsonData)}`
+    //             fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
+    //                 if (err)
+    //                     console.log("Error:", err);
+    //             });
+    //             //return { status : false , error : response.message }
+    //         }
+    //     });
 
-        producer.on('error', function (err) {
-            let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.order_id} :${jsonData.user_id} : ${err}`
-            fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
-                if (err)
-                    console.log("Error:", err);
-            });
-            //return { status : false , error : response.message }
-        });
+    //     producer.on('error', function (err) {
+    //         let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.order_id} :${jsonData.user_id} : ${err}`
+    //         fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
+    //             if (err)
+    //                 console.log("Error:", err);
+    //         });
+    //         //return { status : false , error : response.message }
+    //     });
 
-    }
+    // }
  
 }
 

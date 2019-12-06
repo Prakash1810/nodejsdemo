@@ -505,16 +505,16 @@ class Wallet extends controller {
                                 }, null, 'transactions', 200));
                             } else {
                                 var totalPages = Math.ceil(totalCount / size);
-                                if (typeParam === 'withdraw') {
-                                    for (var i = 0; i < data.length; i++) {
-                                        if (data[i].status != "1" && data[i].status != "2") {
-                                            data.splice(i, 1);
-                                            i--;
-                                        }
+                                // if (typeParam === 'withdraw') {
+                                //     for (var i = 0; i < data.length; i++) {
+                                //         if (data[i].status != "1" && data[i].status != "2") {
+                                //             data.splice(i, 1);
+                                //             i--;
+                                //         }
 
-                                    }
+                                //     }
 
-                                }
+                                // }
                                 return res.status(200).json(this.successFormat({
                                     "data": data,
                                     "pages": totalPages,
