@@ -164,8 +164,8 @@ class User extends controller {
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.infoToken')
         };
-        let tokenAccess = JSON.stringify(deviceInfo);
-        return await jwt.sign(tokenAccess, config.get('secrete.infokey'), tokenOption);
+      
+        return await jwt.sign(deviceInfo, config.get('secrete.infokey'), tokenOption);
     };
 
     async createToken(user, id, device_id) {
@@ -184,7 +184,7 @@ class User extends controller {
         });
 
         let token = branca.encode(tokenAccess);
-        return await jwt.sign({ token }, config.get('secrete.key'), jwtOptions);
+        return await jwt.sign({token}, config.get('secrete.key'), jwtOptions);
     };
 
     async createRefreshToken(user, id) {
@@ -202,7 +202,7 @@ class User extends controller {
             user_id: user.user_id,
         });
         let tokenUser = branca.encode(tokenRefresh);
-        return await jwt.sign({ tokenUser }, config.get('secrete.refreshKey'), options);
+        return await jwt.sign({tokenUser}, config.get('secrete.refreshKey'), options);
 
 
 
@@ -213,10 +213,11 @@ class User extends controller {
 
         let refreshToken = null, info = null;
         if (infoToken != null) {
+            await token.findOneAndUpdate({ user: user._id, is_deleted: false,type_for:'info-token'}, { is_deleted: true, modified_date: Date.now() });
             info = await this.infoToken(infoToken);
             await new token({
                 user:user.id,
-                info_token:infoToken,
+                info_token:info,
                 type_for:"info-token",
                 created_date: Date.now()
             }).save()
@@ -1418,17 +1419,17 @@ class User extends controller {
 
                 let tokens = await this.storeToken(user, data.login_id, null, null);
                 let result = {
-                    "apiKey": result.api_key,
+                    "apiKey": user.api_key,
                     "token": tokens.accessToken,
                     "refreshToken": tokens.refreshToken,
-                    "google_auth": result.google_auth,
-                    "sms_auth": result.sms_auth,
-                    "anti_spoofing": result.anti_spoofing,
-                    "anti_spoofing_code": result.anti_spoofing_code,
-                    'white_list_address': result.white_list_address,
-                    "withdraw": result.withdraw,
-                    "kyc_verified": result.kyc_verified,
-                    "trade": result.trade,
+                    "google_auth": user.google_auth,
+                    "sms_auth": user.sms_auth,
+                    "anti_spoofing": user.anti_spoofing,
+                    "anti_spoofing_code": user.anti_spoofing_code,
+                    'white_list_address': user.white_list_address,
+                    "withdraw": user.withdraw,
+                    "kyc_verified": user.kyc_verified,
+                    "trade": user.trade,
                 };
                 return res.status(200).send(this.successFormat(result, tokens.id))
             } else {
