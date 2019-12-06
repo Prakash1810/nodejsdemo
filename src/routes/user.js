@@ -36,18 +36,18 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/validate/otp', async (req, res) => {
-    // try {
+    try {
         let { error } = await user.validateOtp(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
             user.validateOtpForEmail(req, res);
         }
-    // } catch (err) {
-    //     return res.status(500).send(controller.errorMsgFormat({
-    //         'message': err.message
-    //     }, 'users', 500));
-    // }
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
 });
 router.post('/resend/otp/', async (req, res) => {
     try {
