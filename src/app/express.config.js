@@ -14,6 +14,11 @@ const app        = express();
 // error log 
 require('./winston');
 
+// const corsOptions = {
+//   origin: 'http://localhost:3000',
+//   optionsSuccessStatus: 200 
+// }
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 

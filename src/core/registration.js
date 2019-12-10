@@ -52,6 +52,20 @@ class Registration extends Controller {
             .then(async result => {
 
                 let data = req.body.data.attributes
+                let index = data.email.indexOf('@');
+                let check = await apiServices.DisposableEmailAPI(data.email.substring(index+1));
+                // if(!check.dns && !check.temporary){
+                //    
+                if(!check.dns){
+                    return res.status(400).send(this.errorMsgFormat({
+                                'message': 'Your registration was not completed since you are using an invalid/blocked domain'
+                            }));
+                }
+                else if(!check.dns || check.temporary){
+                    return res.status(400).send(this.errorMsgFormat({
+                                'message': 'Your registration was not completed since you are using an invalid/blocked domain'
+                            }));
+                }
                 if (result.length) {
                     let salt = await bcrypt.genSalt(10);
                     data.password = await bcrypt.hash(data.password, salt);
