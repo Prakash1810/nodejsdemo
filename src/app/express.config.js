@@ -15,7 +15,7 @@ const app        = express();
 require('./winston');
 
 const corsOptions = {
-  origin: 'https://beldex.io',
+  origin: 'http://localhost:3000',
   optionsSuccessStatus: 200 
 }
 

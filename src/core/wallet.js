@@ -15,6 +15,7 @@ const user = require('../core/user');
 const mongoose = require('mongoose');
 const math = require('mathjs');
 const configs = require('../db/config');
+const rewards = require('../db/reward-history');
 const helpers = require('../helpers/helper.functions');
 // const Fawn = require("fawn");
 
@@ -512,9 +513,9 @@ class Wallet extends controller {
                                 }, null, 'transactions', 200));
                             } else {
                                 var totalPages = Math.ceil(totalCount / size);
-                                if (typeParam === 'withdraw') {
+                            if (typeParam === 'withdraw') {
                                     for (var i = 0; i < data.length; i++) {
-                                        if (data[i].status == "4") {
+                                        if (data[i].status == "4" || data[i].status == "0") {
                                             data.splice(i, 1);
                                             i--;
                                         }
@@ -548,7 +549,8 @@ class Wallet extends controller {
             g2f_code: Joi.string(),
             otp: Joi.string(),
             address: Joi.string(),
-            withdraw_id: Joi.string()
+            withdraw_id: Joi.string(),
+            payment_id: Joi.string()
         });
 
         return Joi.validate(req, schema, {
@@ -587,7 +589,7 @@ class Wallet extends controller {
                     if (amount > (Number(available) - sum)) {
                         return {
                             status: false,
-                            type: 'low-balnce'
+                            type: 'low-balance'
                         };
                     }
 
