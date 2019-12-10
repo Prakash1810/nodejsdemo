@@ -49,7 +49,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit', query, async (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id', query, async (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -426,11 +426,18 @@ class Wallet extends controller {
             })
             assetNames = _.values(_.reverse(collectOfAssetName)).join(',');
         }
+        let reward = await rewards.find({ user: req.user.user, reward_asset: "BDX" });
+        let i = 0;
+        let sum = 0;
+        while (i < reward.length) {
+            sum += Number(reward[i].reward);
+            i++;
+        }
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
         return res.status(200).json(this.successFormat({
-            "data": formatedResponse
+            "data": formatedResponse,sum
         }, null, 'asset-balance', 200));
     }
 
@@ -505,16 +512,16 @@ class Wallet extends controller {
                                 }, null, 'transactions', 200));
                             } else {
                                 var totalPages = Math.ceil(totalCount / size);
-                                // if (typeParam === 'withdraw') {
-                                //     for (var i = 0; i < data.length; i++) {
-                                //         if (data[i].status != "1" && data[i].status != "2") {
-                                //             data.splice(i, 1);
-                                //             i--;
-                                //         }
+                                if (typeParam === 'withdraw') {
+                                    for (var i = 0; i < data.length; i++) {
+                                        if (data[i].status == "4") {
+                                            data.splice(i, 1);
+                                            i--;
+                                        }
 
-                                //     }
+                                    }
 
-                                // }
+                                }
                                 return res.status(200).json(this.successFormat({
                                     "data": data,
                                     "pages": totalPages,
@@ -568,7 +575,23 @@ class Wallet extends controller {
                 asset.push(getAsset.asset_code.toUpperCase());
                 payloads.asset = asset
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
-                let available = apiResponse.data.attributes[payloads.asset].available
+                let available = apiResponse.data.attributes[payloads.asset].available;
+                if (getAsset.asset_code == 'BDX') {
+                    let reward = await rewards.find({ user: req.user.user, reward_asset: "BDX" });
+                    let i = 0;
+                    let sum = 0;
+                    while (i < reward.length) {
+                        sum += Number(reward[i].reward);
+                        i++;
+                    }
+                    if (amount > (Number(available) - sum)) {
+                        return {
+                            status: false,
+                            type: 'low-balnce'
+                        };
+                    }
+
+                }
                 if (available !== undefined && amount <= available) {
                     return {
                         status: true,
@@ -728,6 +751,9 @@ class Wallet extends controller {
                         msg = 'Your balance for the selected asset is too low to make a withdrawal.'
                     } else if (validateWithdraw.type === 'suspend') {
                         msg = 'The selected asset has been disabled temporarily. Please contact support for more information.'
+                    }
+                    else if (validateWithdraw.type === 'low-balance') {
+                        msg = 'Please enter a lesser amount. BDX rewards earned from a referral can be used only for trading.'
                     }
 
                     return res.status(400).json(this.errorMsgFormat({

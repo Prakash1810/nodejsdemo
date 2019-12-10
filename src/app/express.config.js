@@ -14,6 +14,11 @@ const app        = express();
 // error log 
 require('./winston');
 
+const corsOptions = {
+  origin: 'https://beldex.io',
+  optionsSuccessStatus: 200 
+}
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 
@@ -24,10 +29,10 @@ app.use(compress());
 app.use(helmet());
 
 // enable CORS - Cross Origin Resource Sharing
-app.use(cors());
+app.use(cors(corsOptions));
 
 // mount api v1 routes with multi language features
-app.use(`/api/${config.get('site.version')}`, cors() , (req, res, next) => {
+app.use(`/api/${config.get('site.version')}`, cors(corsOptions) , (req, res, next) => {
   var langFilepath = `./lang/${req.body.lang}.json`;
 
   if (fs.existsSync(langFilepath)) {

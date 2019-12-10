@@ -5,6 +5,7 @@ const referralHistorySchema = mongoose.Schema({
     referrer_code: { type: String, required: true },
     amount:{type:String},
     email:{type:String},
+    asset:{type:String},
     type:{type:String},
     created_date: { type: Date, default:new Date() }
 });
