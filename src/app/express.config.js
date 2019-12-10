@@ -14,10 +14,10 @@ const app        = express();
 // error log 
 require('./winston');
 
-const corsOptions = {
-  origin: 'http://localhost:3000',
-  optionsSuccessStatus: 200 
-}
+// const corsOptions = {
+//   origin: 'http://localhost:3000',
+//   optionsSuccessStatus: 200 
+// }
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
@@ -29,10 +29,10 @@ app.use(compress());
 app.use(helmet());
 
 // enable CORS - Cross Origin Resource Sharing
-app.use(cors(corsOptions));
+app.use(cors());
 
 // mount api v1 routes with multi language features
-app.use(`/api/${config.get('site.version')}`, cors(corsOptions) , (req, res, next) => {
+app.use(`/api/${config.get('site.version')}`, cors() , (req, res, next) => {
   var langFilepath = `./lang/${req.body.lang}.json`;
 
   if (fs.existsSync(langFilepath)) {
