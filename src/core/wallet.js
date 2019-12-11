@@ -515,7 +515,7 @@ class Wallet extends controller {
                                 var totalPages = Math.ceil(totalCount / size);
                             if (typeParam === 'withdraw') {
                                     for (var i = 0; i < data.length; i++) {
-                                        if (data[i].status == "4" || data[i].status == "0") {
+                                        if (data[i].status == "0") {
                                             data.splice(i, 1);
                                             i--;
                                         }
