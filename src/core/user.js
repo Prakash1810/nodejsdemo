@@ -34,6 +34,8 @@ const configs = require('../db/config');
 const audits = require('../db/auditlog-history');
 const apikey = require('../db/api-keys');
 const { RequestBuilder, Payload } = require('yoti');
+const authenticators = require('authenticator')
+
 
 
 class User extends controller {

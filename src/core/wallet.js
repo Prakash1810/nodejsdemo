@@ -578,22 +578,22 @@ class Wallet extends controller {
                 payloads.asset = asset
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available;
-                if (getAsset.asset_code == 'BDX') {
-                    let reward = await rewards.find({ user: req.user.user, reward_asset: "BDX" });
-                    let i = 0;
-                    let sum = 0;
-                    while (i < reward.length) {
-                        sum += Number(reward[i].reward);
-                        i++;
-                    }
-                    if (amount > (Number(available) - sum)) {
-                        return {
-                            status: false,
-                            type: 'low-balance'
-                        };
-                    }
+                // if (getAsset.asset_code == 'BDX') {
+                //     let reward = await rewards.find({ user: req.user.user, reward_asset: "BDX" });
+                //     let i = 0;
+                //     let sum = 0;
+                //     while (i < reward.length) {
+                //         sum += Number(reward[i].reward);
+                //         i++;
+                //     }
+                //     if (amount > (Number(available) - sum)) {
+                //         return {
+                //             status: false,
+                //             type: 'low-balance'
+                //         };
+                //     }
 
-                }
+                // }
                 if (available !== undefined && amount <= available) {
                     return {
                         status: true,
