@@ -7,7 +7,8 @@ const rewardHistorySchema = mongoose.Schema({
     reward: { type: String, required: true },
     reward_asset:{type:String},
     is_referral:{type:Boolean, default:false},
-    created_date: { type: Date, default: Date.now }
+    created_date: { type: Date, default: Date.now },
+    is_active: { type: Boolean, default: true }
 });
 
 module.exports =  mongoose.model('reward-history', rewardHistorySchema);
