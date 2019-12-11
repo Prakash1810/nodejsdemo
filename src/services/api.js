@@ -405,6 +405,14 @@ class Api extends Controller {
 
     }
 
+    async DisposableEmailAPI(data) {
+        
+        let axiosResponse = await axios.get(`https://block-temporary-email.com/check/domain/${data}`)
+        if(axiosResponse.data){
+            return axiosResponse.data
+        }
+     }
+
     // async addResponseInKAFKA(jsonData, market) {
     //     let Producer = kafka.Producer,
     //         Client = new kafka.KafkaClient({
