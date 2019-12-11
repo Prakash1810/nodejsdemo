@@ -164,7 +164,7 @@ class User extends controller {
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.infoToken')
         };
-      
+
         return await jwt.sign(deviceInfo, config.get('secrete.infokey'), tokenOption);
     };
 
@@ -184,7 +184,7 @@ class User extends controller {
         });
 
         let token = branca.encode(tokenAccess);
-        return await jwt.sign({token}, config.get('secrete.key'), jwtOptions);
+        return await jwt.sign({ token }, config.get('secrete.key'), jwtOptions);
     };
 
     async createRefreshToken(user, id) {
@@ -202,7 +202,7 @@ class User extends controller {
             user_id: user.user_id,
         });
         let tokenUser = branca.encode(tokenRefresh);
-        return await jwt.sign({tokenUser}, config.get('secrete.refreshKey'), options);
+        return await jwt.sign({ tokenUser }, config.get('secrete.refreshKey'), options);
 
 
 
@@ -213,12 +213,12 @@ class User extends controller {
 
         let refreshToken = null, info = null;
         if (infoToken != null) {
-            await token.findOneAndUpdate({ user: user._id, is_deleted: false,type_for:'info-token'}, { is_deleted: true, modified_date: Date.now() });
+            await token.findOneAndUpdate({ user: user._id, is_deleted: false, type_for: 'info-token' }, { is_deleted: true, modified_date: Date.now() });
             info = await this.infoToken(infoToken);
             await new token({
-                user:user.id,
-                info_token:info,
-                type_for:"info-token",
+                user: user.id,
+                info_token: info,
+                type_for: "info-token",
                 created_date: Date.now()
             }).save()
         }
@@ -228,7 +228,7 @@ class User extends controller {
         }
         let data = {
             user: user._id,
-            type_for:"token",
+            type_for: "token",
             access_token: accessToken,
             refresh_token: refreshToken,
             created_date: Date.now()
@@ -1307,6 +1307,7 @@ class User extends controller {
 
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
 
+      
         try {
             let data = req.body.data.attributes;
             let opts = {
@@ -1316,7 +1317,25 @@ class User extends controller {
                 step: 30
             };
             let counter = Math.floor(Date.now() / 1000 / opts.step);
-            let returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
+
+            let returnStatus;
+            if (google_secrete_key.length === config.get('g2fLength.length')) {
+                returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
+            }
+            else {
+                returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code);
+                if (returnStatus) {
+                    if (returnStatus.delta) {
+                        returnStatus = true;
+                    } else {
+                        returnStatus = true;
+                    }
+
+                } else {
+                    returnStatus = false;
+                }
+            }
+
             if (returnStatus === true) {
                 if (method == 'withoutAuth' && type != 'boolean') {
                     let user = await users.findOne({ _id: req.body.data.id });
@@ -1352,7 +1371,6 @@ class User extends controller {
                 'message': err.message
             }, '2factor', 400));
         }
-
     }
 
     async postVerifyG2F(req, res, type = 'json') {
@@ -1415,7 +1433,7 @@ class User extends controller {
             })
 
             if (user) {
-                await token.findOneAndUpdate({ user: user._id, is_deleted: false,type_for:'token'}, { is_deleted: true, modified_date: Date.now() });
+                await token.findOneAndUpdate({ user: user._id, is_deleted: false, type_for: 'token' }, { is_deleted: true, modified_date: Date.now() });
 
                 let tokens = await this.storeToken(user, data.login_id, null, null);
                 let result = {
@@ -1456,10 +1474,10 @@ class User extends controller {
             });
             if (logout) {
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: tokens.info, is_deleted: false,type_for:"info_token"
+                    user: user.user, access_token: tokens.info, is_deleted: false, type_for: "info_token"
                 }, { is_deleted: true })
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: tokens.authorization, is_deleted: false,type_for:"token"
+                    user: user.user, access_token: tokens.authorization, is_deleted: false, type_for: "token"
                 }, { is_deleted: true })
                 return res.status(200).send(this.successFormat({
                     'message': 'You have successfully logged out.',
@@ -2107,6 +2125,7 @@ class User extends controller {
                 const apiSecretRemove = await helpers.createSecret(`${validateUuidSplit[0]}-${validateUuidSplit[validateUuidSplit.length - 1]}`, requestData.passphrase);
                 if (checkApiKeyRemove.secretkey === apiSecretRemove) {
                     await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+                    await users.findOneAndUpdate({ _id: checkUserValidate.id }, { api_key: null });
                     return res.status(200).send(this.successFormat({ message: 'API key deleted.' }, 'user', 200));
                 }
                 else {
