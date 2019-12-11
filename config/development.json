@@ -52,7 +52,9 @@
 	},
 	"liquidity":{
 		"topic" : "trade-"
-	}
-	
+	},
+	"g2fLength":{
+		"length":16
+	}	
 
 }
