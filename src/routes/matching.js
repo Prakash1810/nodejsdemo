@@ -185,7 +185,7 @@ router.post('/order/cancel', info, auth, async (req, res) => {
         if (!check) {
             return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
         }
-        await matching.matchingEngineRequest('post', 'order/cancel', req.body, res,null,check);
+        await matching.matchingEngineRequest('post', 'order/cancel', req.body, res, null, check);
 
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
