@@ -337,7 +337,7 @@ class Api extends Controller {
 
     }
 
-    async matchingEngineRequest(method, path, data, res, type = 'json', liquidity) {
+    async matchingEngineRequest(method, path, input, res, type = 'json', liquidity) {
         let source,data=null
         if (path == 'order/cancel') {
              data= req.body.data.attributes;
@@ -351,7 +351,7 @@ class Api extends Controller {
             delete req.body.data.attributes.source
         }
         const axiosResponse = await axios[method](
-            `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, data)
+            `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, input)
         const result = axiosResponse.data;
 
         if (result.status) {

@@ -671,7 +671,6 @@ class User extends controller {
 
                 return res.status(401).send(this.errorMsgFormat({
                     'message': 'Your are logging in from a new device. We have sent a verification link to your registered email. Please check your email and authorize this device to continue.',
-                    'hash': urlHash
                 }, 'users', 401));
             }
             else {
