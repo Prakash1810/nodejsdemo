@@ -2,21 +2,23 @@ const crypto = require('crypto');
 const config = require('config');
 const http = require('http');
 const uuid = require('uuid/v4');
-const buttervalue =  Buffer.from("uyewdbnyjsyedord");
+const buttervalue = Buffer.from("uyewdbnyjsyedord");
+const iv =  Buffer.from(config.get('encryption.key'));
 class Helpers {
 
     encrypt(data) {
-        var cipher = crypto.createCipher('aes-256-cbc', config.get('encryption.key'));
-        var crypted = cipher.update(data, 'utf-8', 'hex');
-        crypted += cipher.final('hex');
-        return crypted;
+        let hash = crypto.createHash('sha256').update(config.get('encryption.key')).digest('base64').substr(0, 32);
+        let cipher = crypto.createCipheriv('aes-256-ctr', hash, iv)
+        let secret = cipher.update(data, 'utf8', 'hex')
+        secret += cipher.final('hex');
+        return secret;
     }
-
     decrypt(data) {
-        var decipher = crypto.createDecipher('aes-256-cbc', config.get('encryption.key'));
-        var decrypted = decipher.update(data, 'hex', 'utf-8');
-        decrypted += decipher.final('utf-8');
-        return decrypted;
+        let hash = crypto.createHash('sha256').update(config.get('encryption.key')).digest('base64').substr(0, 32);
+        let cipher = crypto.createDecipheriv('aes-256-ctr', hash, iv)
+        let secret = cipher.update(data, 'hex', 'utf8')
+        secret += cipher.final('utf8');
+        return secret;
     }
     requestDataFormat(data, id = null) {
         return {
@@ -39,7 +41,6 @@ class Helpers {
         secret += cipher.final('hex');
         return secret;
     }
-
 
 }
 

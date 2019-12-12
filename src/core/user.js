@@ -552,6 +552,7 @@ class User extends controller {
             "maker_fee": result.maker_fee,
             "kyc_verified": result.kyc_verified,
             "trade": result.trade,
+            "expiresIn": config.get('secrete.expiry'),
             "referral_code": result.referral_code
 
         }, result._id));
@@ -601,7 +602,7 @@ class User extends controller {
                     await this.addWhitelist(data, userID, true);
                     res.status(200).send(this.successFormat({
                         'message': "An OTP has been sent to your registered email address.",
-                        'opt': true,
+                        'otp': true,
                         "region": data.region,
                         "city": data.city,
                         "ip": data.ip
@@ -1127,6 +1128,19 @@ class User extends controller {
         });
     }
 
+    g2fSettingValidate(req) {
+        let schema = Joi.object().keys({
+            password: Joi.string().required(),
+            google_auth: Joi.boolean().required().valid(true),
+            google_secrete_key: Joi.string().required(),
+            g2f_code: Joi.string().required()
+        });
+
+        return Joi.validate(req, schema, {
+            abortEarly: false
+        });
+    }
+
     async patchSettings(req, res, type = 'withoutCallPatchSetting') {
         try {
             let requestData = req.body.data.attributes;
@@ -1449,6 +1463,7 @@ class User extends controller {
                     'white_list_address': user.white_list_address,
                     "withdraw": user.withdraw,
                     "kyc_verified": user.kyc_verified,
+                    "expiresIn": config.get('secrete.expiry'),
                     "trade": user.trade,
                 };
                 return res.status(200).send(this.successFormat(result, tokens.id))

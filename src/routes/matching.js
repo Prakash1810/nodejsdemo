@@ -100,7 +100,7 @@ router.post('/order/put-market', info, auth, async (req, res) => {
             return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
         }
         req.body.data.attributes.takerFeeRate = checkUser.taker_fee
-        if (data.q) {
+        if (check.q) {
             side = data.side == 2 ? "BUY" : "SELL";
 
             let input =
@@ -108,9 +108,9 @@ router.post('/order/put-market', info, auth, async (req, res) => {
                 'type': 'market',
                 'side': side,
                 'instrument_id': data.market,
-                'size': side == 1?Number(data.amount):0,
+                'size': side == 1 ? Number(data.amount) : 0,
                 'client_oid': `BDX-${req.body.data.attributes.user_id}-${checkUser.taker_fee}`,
-                "notional": side ==2?data.amount:'',
+                "notional": side == 2 ? data.amount : '',
                 'order_type': '0'
             }
             await matching.OkexHttp(input);
@@ -145,7 +145,7 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
         }
         req.body.data.attributes.takerFeeRate = checkUser.taker_fee
         req.body.data.attributes.makerFeeRate = checkUser.maker_fee
-        if (data.q) {
+        if (check.q) {
             side = data.side == 2 ? "BUY" : "SELL";
 
             let input =
@@ -158,14 +158,14 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
                 'price': data.pride,
                 'order_type': '0'
             }
-            await matching.OkexHttp(input,req.body,res);
-        }else{
+            await matching.OkexHttp(input, req.body, res);
+        } else {
             delete data.q;
             await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
         }
 
         //delete q from request;
-     
+
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -177,6 +177,7 @@ router.post('/order/cancel', info, auth, async (req, res) => {
     try {
         req.body.data.attributes.user_id = Number(req.user.user_id);
         let check = await markets.findOne({ market_name: data.market, is_active: true, disable_trade: false });
+        req.body.data.attributes.q = check.q
         let checkUser = await users.findOne({ _id: req.user.user, trade: false });
         if (checkUser) {
             return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
@@ -184,7 +185,8 @@ router.post('/order/cancel', info, auth, async (req, res) => {
         if (!check) {
             return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
         }
-        await matching.matchingEngineRequest('post', 'order/cancel', req.body, res);
+        await matching.matchingEngineRequest('post', 'order/cancel', req.body, res,null,check);
+
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
