@@ -266,7 +266,7 @@ router.post('/token', info, refresh_auth, async (req, res) => {
 });
 
 
-router.post('/logout', info, auth, async (req, res) => {
+router.post('/logout', auth, async (req, res) => {
     try {
         await user.logout(req.user, req.headers, res);
     } catch (err) {
