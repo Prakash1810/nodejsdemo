@@ -231,7 +231,12 @@ router.get("/gt/register-slide", function (req, res) {
 
 router.patch('/g2f-settings', info, auth, (req, res) => {
     try {
-        user.patch2FAuth(req, res);
+        let { error } = user.g2fSettingValidate(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        } else {
+            user.patch2FAuth(req, res);
+        }
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
