@@ -196,8 +196,8 @@ class Password extends Controller {
             checkHash = req.body.checkHash;
             return;
         }
-        const checkPassword = await Users.findById(req.body.data.id);
-        const comparePassword = await bcrypt.compare(req.body.data.attributes.password,checkPassword.password);
+        const checkPassword = await Users.findById({_id:req.body.data.id});
+        let comparePassword = await bcrypt.compare(req.body.data.attributes.password,checkPassword.password);
         if(comparePassword){
            return res.status(400).send(this.successFormat({
                'message': 'Please enter a password that you have not used before.'

@@ -264,7 +264,7 @@ class User extends controller {
                     if (passwordCompare == false) {
 
                         if (isChecked) {
-                            if (isChecked.count <= config.get('accountActive.hmt')) {
+                            if (isChecked.count < config.get('accountActive.hmt')) {
                                 await accountActive.findOneAndUpdate({ email: data.email, type_for: 'login' },
                                     {
                                         $inc: {
@@ -290,9 +290,9 @@ class User extends controller {
                                 }
 
                             }
-                            if (isChecked.count > config.get('accountActive.limit')) {
+                            if (isChecked.count >= config.get('accountActive.limit')) {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': `The email address and password you entered do not match. You have ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's' : ''} left`
+                                    'message': `The email address and password you entered do not match. You have ${config.get('accountActive.hmt') - isChecked.count}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's' : ''} left`
                                 }));
                             }
                         }
@@ -1269,6 +1269,25 @@ class User extends controller {
 
     }
 
+    async insert2faAuth(req, res) {
+        let checkUser = await users.findOne({ _id: req.user.user });
+        if (checkUser.google_auth || checkUser.google_secrete_key) {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Your 2factor already created.'
+            }));
+        }
+        else {
+            let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 20).toLowerCase();
+            let auth = authenticators.generateTotpUri(formattedKey, checkUser.email, config.get('secrete.issuer'), 'SHA1', 6, 30);
+            return res.status(200).send(this.successFormat({
+                'googleKey': formattedKey,
+                'googleQR': auth,
+                'message': 'You have successfully created googleKey.'
+            }));
+
+        }
+    }
+
     async patch2FAuth(req, res) {
         let requestedData = req.body.data.attributes;
         if ((requestedData.password !== undefined && requestedData.g2f_code !== undefined) && req.body.data.id != undefined) {
@@ -1323,7 +1342,7 @@ class User extends controller {
 
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
 
-      
+
         try {
             let data = req.body.data.attributes;
             let opts = {
@@ -2108,7 +2127,7 @@ class User extends controller {
         let schema = Joi.object().keys({
             type: Joi.string().required(),
             passphrase: Joi.string().required(),
-            g2f_code: Joi.string().required
+            g2f_code: Joi.string().required()
         });
         return Joi.validate(req, schema, {
             abortEarly: false
