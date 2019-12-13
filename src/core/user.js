@@ -278,7 +278,15 @@ class User extends controller {
                                 let getSeconds = date.getSeconds() + config.get('accountActive.timeExpiry');
                                 let duration = moment.duration(moment().diff(isChecked.create_date));
                                 if (getSeconds > duration.asSeconds()) {
-
+                                    if (isChecked.count == config.get('accountActive.check')) {
+                                        await accountActive.findOneAndUpdate({ email: data.email, type_for: 'login' },
+                                            {
+                                                $inc: {
+                                                    count: 1
+                                                },
+                                                create_date: timeNow
+                                            })
+                                    }
                                     return res.status(400).send(this.errorMsgFormat({
                                         'message': 'Your account has been locked due to multiple login attempts. Please try again after 2 hours.'
                                     }));
@@ -305,7 +313,7 @@ class User extends controller {
                         }));
                     } else {
                         if (isChecked) {
-                            if (isChecked.count > config.get('accountActive.hmt')) {
+                            if ((config.get('accountActive.check')+1) == isChecked.count) {
                                 let date = new Date(isChecked.create_date);
                                 let getSeconds = date.getSeconds() + config.get('accountActive.timeExpiry');
                                 let duration = moment.duration(moment().diff(isChecked.create_date));
@@ -1343,7 +1351,7 @@ class User extends controller {
 
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
 
-      
+
         try {
             let data = req.body.data.attributes;
             let opts = {
