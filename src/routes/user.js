@@ -268,7 +268,7 @@ router.post('/g2f-verify', (req, res) => {
 router.post('/token', info, refresh_auth, async (req, res) => {
     try {
 
-        await user.refreshToken(req.user, res);
+        await user.refreshToken(req, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

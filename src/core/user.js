@@ -213,7 +213,6 @@ class User extends controller {
     }
 
     async storeToken(user, loginHistory, infoToken, mobileDevice) {
-
         let refreshToken = null, info = null;
         if (infoToken != null) {
             info = await this.infoToken(infoToken);
@@ -1470,16 +1469,16 @@ class User extends controller {
 
     }
 
-    async refreshToken(data, res) {
+    async refreshToken(req, res) {
         try {
             const user = await users.findOne({
-                _id: data.user
+                _id: req.user.user
             })
 
             if (user) {
-                await token.findOneAndUpdate({ user: user._id, is_deleted: false, type_for: 'token' }, { is_deleted: true, modified_date: Date.now() });
+                await token.findOneAndUpdate({ user: user._id, refresh_token: req.headers.authorization, is_deleted: false, type_for: 'token' }, { is_deleted: true, modified_date: Date.now() });
 
-                let tokens = await this.storeToken(user, data.login_id, null, null);
+                let tokens = await this.storeToken(user, req.user.login_id, null, null);
                 let result = {
                     "apiKey": user.api_key,
                     "token": tokens.accessToken,
@@ -2140,7 +2139,7 @@ class User extends controller {
     async apiKeyValidation(req) {
         let schema = Joi.object().keys({
             type: Joi.string().required(),
-            passphrase: Joi.string().required(),
+            passphrase: joi.string().alphanum().required().min(5).max(8),
             g2f_code: Joi.string().required()
         });
         return Joi.validate(req, schema, {
@@ -2192,7 +2191,7 @@ class User extends controller {
                 await users.findOneAndUpdate({ _id: checkUserValidate.id }, { api_key: uuidSplit[0] });
                 await new apikey({
                     user: req.user.user,
-                    user_id:req.user.user_id,
+                    user_id: req.user.user_id,
                     apikey: apiKey,
                     secretkey: apiSecret,
                     type: requestData.type
