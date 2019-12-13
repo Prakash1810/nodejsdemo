@@ -213,7 +213,6 @@ class User extends controller {
     }
 
     async storeToken(user, loginHistory, infoToken, mobileDevice) {
-
         let refreshToken = null, info = null;
         if (infoToken != null) {
             info = await this.infoToken(infoToken);
@@ -2140,7 +2139,7 @@ class User extends controller {
     async apiKeyValidation(req) {
         let schema = Joi.object().keys({
             type: Joi.string().required(),
-            passphrase: Joi.string().required(),
+            passphrase: joi.string().alphanum().required().min(5).max(8),
             g2f_code: Joi.string().required()
         });
         return Joi.validate(req, schema, {
