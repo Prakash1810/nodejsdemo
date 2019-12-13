@@ -264,7 +264,7 @@ class User extends controller {
                     if (passwordCompare == false) {
 
                         if (isChecked) {
-                            if (isChecked.count < config.get('accountActive.hmt')) {
+                            if (isChecked.count <= config.get('accountActive.hmt')) {
                                 await accountActive.findOneAndUpdate({ email: data.email, type_for: 'login' },
                                     {
                                         $inc: {
@@ -290,9 +290,9 @@ class User extends controller {
                                 }
 
                             }
-                            if (isChecked.count >= config.get('accountActive.limit')) {
+                            if (isChecked.count > config.get('accountActive.limit')) {
                                 return res.status(400).send(this.errorMsgFormat({
-                                    'message': `The email address and password you entered do not match. You have ${config.get('accountActive.hmt') - isChecked.count}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's' : ''} left`
+                                    'message': `The email address and password you entered do not match. You have ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's' : ''} left`
                                 }));
                             }
                         }
@@ -1270,6 +1270,8 @@ class User extends controller {
     }
 
     async insert2faAuth(req, res) {
+
+        console.log(req.user.user)
         let checkUser = await users.findOne({ _id: req.user.user });
         if (checkUser.google_auth || checkUser.google_secrete_key) {
             return res.status(400).send(this.errorMsgFormat({
@@ -1342,7 +1344,7 @@ class User extends controller {
 
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
 
-
+      
         try {
             let data = req.body.data.attributes;
             let opts = {
