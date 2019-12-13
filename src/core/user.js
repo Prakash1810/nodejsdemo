@@ -562,7 +562,7 @@ class User extends controller {
             "trade": result.trade,
             "expiresIn": config.get('secrete.expiry'),
             "referral_code": result.referral_code,
-            "currency_code":result.currency_code
+            "currency_code": result.currency_code
         }, result._id));
     }
 
@@ -1524,7 +1524,7 @@ class User extends controller {
             });
             if (logout) {
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: tokens.info, is_deleted: false, type_for: "info_token"
+                    user: user.user, info_token: tokens.info, is_deleted: false, type_for: "info_token"
                 }, { is_deleted: true })
                 await token.findOneAndUpdate({
                     user: user.user, access_token: tokens.authorization, is_deleted: false, type_for: "token"
