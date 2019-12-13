@@ -215,7 +215,6 @@ class User extends controller {
 
         let refreshToken = null, info = null;
         if (infoToken != null) {
-            await token.findOneAndUpdate({ user: user._id, is_deleted: false, type_for: 'info-token' }, { is_deleted: true, modified_date: Date.now() });
             info = await this.infoToken(infoToken);
             await new token({
                 user: user.id,
@@ -1509,6 +1508,11 @@ class User extends controller {
 
     async logout(user, tokens, res) {
         try {
+            if(req.headers.info){
+                return res.status(404).send(this.errorMsgFormat({
+                    'message': 'Info Token must be provided.'
+                }, 'users', 404))
+            }
             const logout = await loginHistory.findOneAndUpdate({
                 user: user.user,
                 logout_status: 1,
@@ -1519,7 +1523,7 @@ class User extends controller {
             });
             if (logout) {
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: tokens.info, is_deleted: false, type_for: "info_token"
+                    user: user.user, access_token: req.headers.info, is_deleted: false, type_for: "info_token"
                 }, { is_deleted: true })
                 await token.findOneAndUpdate({
                     user: user.user, access_token: tokens.authorization, is_deleted: false, type_for: "token"
