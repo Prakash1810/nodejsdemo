@@ -35,6 +35,7 @@ const audits = require('../db/auditlog-history');
 const apikey = require('../db/api-keys');
 const { RequestBuilder, Payload } = require('yoti');
 const authenticators = require('authenticator')
+const changeCurrency = require('../db/currency-list');
 
 
 
@@ -560,8 +561,8 @@ class User extends controller {
             "kyc_verified": result.kyc_verified,
             "trade": result.trade,
             "expiresIn": config.get('secrete.expiry'),
-            "referral_code": result.referral_code
-
+            "referral_code": result.referral_code,
+            "currency_code":result.currency_code
         }, result._id));
     }
 
@@ -1508,7 +1509,7 @@ class User extends controller {
 
     async logout(user, tokens, res) {
         try {
-            if (!req.headers.info) {
+            if (!tokens.info) {
                 return res.status(404).send(this.errorMsgFormat({
                     'message': 'Info Token must be provided.'
                 }, 'users', 404))
@@ -1523,7 +1524,7 @@ class User extends controller {
             });
             if (logout) {
                 await token.findOneAndUpdate({
-                    user: user.user, access_token: req.headers.info, is_deleted: false, type_for: "info_token"
+                    user: user.user, access_token: tokens.info, is_deleted: false, type_for: "info_token"
                 }, { is_deleted: true })
                 await token.findOneAndUpdate({
                     user: user.user, access_token: tokens.authorization, is_deleted: false, type_for: "token"
@@ -2056,10 +2057,10 @@ class User extends controller {
     }
 
     async active(req, res) {
-        let data = await transaction.find({});
-        data.date = data.created_date;
-        data.create_date = null;
-        data.save();
+        // let data = await transaction.find({});
+        // data.date = data.created_date;
+        // data.create_date = null;
+        // data.save();
         // let data = {
         //     key: "referral reward-deposit",
         //     value: {
@@ -2209,6 +2210,37 @@ class User extends controller {
                     return res.status(400).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 400));
                 }
         }
+    }
+
+    async listCurrencies(req, res) {
+        let currencyList = await changeCurrency.find({});
+        let currency = [], i = 0;
+        while (i < currencyList.length) {
+            currency.push({ code: currencyList[i].code, currencyName: currencyList[i].currency_name });
+            i++;
+        }
+        return res.status(200).send(this.successFormat(currency, 'currency', 200));
+    }
+
+    async changeCurrency(req, res) {
+        let currency = req.body.data.attributes;
+        if (!currency.code) {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'Currency code must be provide.'
+            }));
+        }
+        let change = await changeCurrency.findOne({ code: currency.code });
+        if (!change) {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'Currency cannot be found.'
+            }));
+        }
+        let currencyPrice = await apiServices.marketPrice('bitcoin', currency.code.toLowerCase());
+        let price = currencyPrice.data.bitcoin[currency.code.toLowerCase()];
+        await users.findOneAndUpdate({ _id: req.user.user }, { currency_code: currency.code })
+        return res.status(200).send(this.successFormat({
+            'currencyPrice': price
+        }, 'currecy'));
     }
 
 

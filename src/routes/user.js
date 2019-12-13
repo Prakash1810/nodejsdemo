@@ -244,7 +244,7 @@ router.patch('/g2f-settings', info, auth, (req, res) => {
     try {
         let { error } = user.g2fSettingValidate(req.body.data.attributes);
         if (error) {
-            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+            return res.status(400).send(controller.errorMsgFormat(error, 'users', 400));
         } else {
             user.patch2FAuth(req, res);
         }
@@ -459,6 +459,28 @@ router.post('/apikey', info, auth, async (req, res) => {
     }
 
 
+});
+
+router.get('/currency-list', (req, res) => {
+    try {
+        return user.listCurrencies(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message,
+        }, 'users', 400));
+    }
+});
+
+router.post('/currency-convert',auth, async (req, res) => {
+    try {
+        await user.changeCurrency(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message,
+        }, 'users', 400));
+    }
 });
 
 // router.get('/active', async (req, res) => {
