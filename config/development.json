@@ -39,7 +39,8 @@
 	"accountActive":{
 		"hmt" : 5,
 		"timeExpiry":7200,
-		"limit":3
+		"limit":3,
+		"check":6
 	},
 
 	"accountActiveRegister":{
