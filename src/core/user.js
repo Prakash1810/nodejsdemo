@@ -312,7 +312,7 @@ class User extends controller {
                         }));
                     } else {
                         if (isChecked) {
-                            if ((config.get('accountActive.check')+1) == isChecked.count) {
+                            if ((config.get('accountActive.check') + 1) == isChecked.count) {
                                 let date = new Date(isChecked.create_date);
                                 let getSeconds = date.getSeconds() + config.get('accountActive.timeExpiry');
                                 let duration = moment.duration(moment().diff(isChecked.create_date));
@@ -1508,7 +1508,7 @@ class User extends controller {
 
     async logout(user, tokens, res) {
         try {
-            if(req.headers.info){
+            if (!req.headers.info) {
                 return res.status(404).send(this.errorMsgFormat({
                     'message': 'Info Token must be provided.'
                 }, 'users', 404))
