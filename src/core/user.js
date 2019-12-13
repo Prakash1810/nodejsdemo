@@ -2192,6 +2192,7 @@ class User extends controller {
                 await users.findOneAndUpdate({ _id: checkUserValidate.id }, { api_key: uuidSplit[0] });
                 await new apikey({
                     user: req.user.user,
+                    user_id:req.user.user_id,
                     apikey: apiKey,
                     secretkey: apiSecret,
                     type: requestData.type
