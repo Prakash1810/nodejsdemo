@@ -229,6 +229,17 @@ router.get("/gt/register-slide", function (req, res) {
     }
 });
 
+router.get('/g2f-create', info, auth, (req, res) => {
+    try {
+        user.insert2faAuth(req, res);
+    } catch (err) {
+        return res.status(400).send(controller.errorFormat({
+            'message': error
+        }, 'users', 400));
+    }
+
+});
+
 router.patch('/g2f-settings', info, auth, (req, res) => {
     try {
         let { error } = user.g2fSettingValidate(req.body.data.attributes);
