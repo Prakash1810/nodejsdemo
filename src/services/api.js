@@ -20,13 +20,14 @@ const device = require('../db/device-management');
 const branca = require("branca")(config.get('encryption.realKey'));
 const { AuthenticatedClient } = require("../helpers/AuthenticatedClient");
 const Utils = require('../helpers/utils');
+const utils = new Utils();
 class Api extends Controller {
 
     async sendEmailNotification(data, res) {
         if (data.email_for !== 'registration' && data.email_for !== 'welcome') {
 
             if (!data.user_id) {
-                return res.status(400).send(controller.errorFormat({ "message": "User could not be found." }, 'users', 400));
+                return res.status(400).send(controller.errorMsgFormat({ "message": "User could not be found." }, 'users', 400));
             }
             if (data.email_for == 'wallet-withdraw') {
                 data.code = helpers.encrypt(JSON.stringify(
@@ -86,16 +87,18 @@ class Api extends Controller {
         const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
 
         let body = input;
+        console.log(body);
         let response = await authClient.spot().postOrder(body);
         if (response.result) {
-            if (input.type == 'MARKET') {
-                repsonse.order_id = `OX:${response.order_id}`
+            if (input.type == 'market') {
+                response.order_id = `OX:${response.order_id}`
                 await this.addResponseInREDIS(response);
             } else {
-                repsonse.order_id = `OX:${response.order_id}`
-                req.data.attributes['source'] = `OX-${response.order_id}`
+                req.data.attributes['source'] = `OX-${response.order_id}`;
+                response.order_id = `OX:${response.order_id}`
+                console.log('Response:',response);
                 await this.addResponseInREDIS(response);
-                await this.matchingEngineRequest('post', 'order/put-limit', req);
+                await this.matchingEngineRequest('post', 'order/put-limit', req,res);
             }
 
         }
@@ -306,7 +309,7 @@ class Api extends Controller {
                 });
                 j++;
             }
-            let repsonse = [];
+            let response = [];
             let pairs = [];
             let market_name = []
             let pair = await _.unionBy(data, 'money');
@@ -326,9 +329,9 @@ class Api extends Controller {
                     }
 
                 })
-                repsonse.push({ [pairs[i]]: markets })
+                response.push({ [pairs[i]]: markets })
             }
-            return res.status(200).send(controller.successFormat([repsonse, market_name], result.result.id))
+            return res.status(200).send(controller.successFormat([response, market_name], result.result.id))
         } catch (err) {
             return res.status(result.errorCode).send(controller.errorMsgFormat({
                 'message': err.message
@@ -353,6 +356,7 @@ class Api extends Controller {
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, input)
         const result = axiosResponse.data;
+        console.log('Result:',result);
 
         if (result.status) {
             let value = result.result.result;

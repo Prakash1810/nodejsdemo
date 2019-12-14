@@ -83,12 +83,12 @@ class User extends controller {
         else {
             if (userTemp.removeUserTemp(userHash.id)) {
                 await accountActive.deleteOne({ email: userHash.email, type_for: 'register' })
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'The verification link has expired. Please register again.'
                 }));
             }
             else {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'The verification link has already used may be expired.'
                 }));
             }
@@ -1137,8 +1137,8 @@ class User extends controller {
     g2fSettingValidate(req) {
         let schema = Joi.object().keys({
             password: Joi.string().required(),
-            google_auth: Joi.boolean().required().valid(true),
-            google_secrete_key: Joi.string().required(),
+            google_auth: Joi.boolean().required().allow(true, false),
+            google_secrete_key: Joi.string(),
             g2f_code: Joi.string().required()
         });
 
@@ -1163,7 +1163,7 @@ class User extends controller {
                 if (check) {
                     let isChecked = await this.postVerifyG2F(req, res, 'setting');
                     if (isChecked.status == false) {
-                        return res.status(400).send(this.errorFormat({
+                        return res.status(400).send(this.errorMsgFormat({
                             'message': 'The google authentication code you entered is incorrect.'
                         }, 'user', 400));
                     }
@@ -1171,19 +1171,19 @@ class User extends controller {
                 else {
                     if (requestData.hasOwnProperty('anti_spoofing') || requestData.hasOwnProperty('white_list_address') || requestData.hasOwnProperty('anti_spoofing_code')) {
                         if (!requestData.type) {
-                            return res.status(400).send(this.errorFormat({
+                            return res.status(400).send(this.errorMsgFormat({
                                 'message': 'Invalid request.'
                             }, 'user', 400));
                         }
                         if (requestData.otp == null || undefined) {
-                            return res.status(400).send(this.errorFormat({
+                            return res.status(400).send(this.errorMsgFormat({
                                 'message': 'Otp must be provided'
                             }, 'user', 400));
                         }
                         req.body.data['id'] = req.user.user;
                         let checkOtp = await this.validateOtpForEmail(req, res, requestData.type);
                         if (checkOtp.status == false) {
-                            return res.status(400).send(this.errorFormat({
+                            return res.status(400).send(this.errorMsgFormat({
                                 'message': checkOtp.err
                             }, 'user', 400));
                         }
@@ -1401,7 +1401,7 @@ class User extends controller {
                 }
                 else {
 
-                    return res.status(400).send(this.errorFormat({
+                    return res.status(400).send(this.errorMsgFormat({
                         'status': returnStatus,
                         'message': 'Incorrect code'
                     }, '2factor', 400));
@@ -1723,7 +1723,7 @@ class User extends controller {
     async withdrawActive(user, res) {
         let checkUser = await users.findOne({ _id: user })
         if (!checkUser) {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': 'User cannot be found.'
             }));
         }
@@ -1732,7 +1732,7 @@ class User extends controller {
             let getSeconds = date.getSeconds() + config.get('withdrawActive.timeExpiry');
             let duration = moment.duration(moment().diff(checkUser.password_reset_time));
             if (getSeconds > duration.asSeconds()) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': `Your password was recently changed. You cannot make a withdrawal for 24 hours.`
                 }));
             }
@@ -1744,7 +1744,7 @@ class User extends controller {
                 }, null, 'user', 200));
             }
         }
-        return res.status(400).send(this.errorFormat({
+        return res.status(400).send(this.errorMsgFormat({
             'message': 'Withdrawals are disabled for your account. Please contact our support for assistance.'
         }));
 
@@ -1766,7 +1766,7 @@ class User extends controller {
             if (type == 'details') {
                 return { status: false, error: `Invalid request.` };
             }
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': `Invalid request.`
             }));
         }
@@ -1780,7 +1780,7 @@ class User extends controller {
             let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
             let checkUser = await users.findOne({ _id: checkSessionId.user });
             if (!checkUser) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'User cannot be found.'
                 }, 'user', 400));
             }
@@ -1795,7 +1795,7 @@ class User extends controller {
             let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
             let checkUser = await users.findOne({ _id: checkSessionId.user });
             if (!checkUser) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'User cannot be found.'
                 }, 'user', 400));
             }
@@ -1989,19 +1989,19 @@ class User extends controller {
         data.user = req.user.user;
         let checkUser = await users.findOne({ _id: data.user })
         if (!checkUser) {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': 'User cannot be found.'
             }, 'user', 400));
         }
 
         if (data.otp == null || undefined) {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': 'Please enter the OTP.'
             }, 'user', 400));
         }
         let checkOtp = await this.validateOtpForEmail(req, res, "kyc details");
         if (checkOtp.status == false) {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': checkOtp.err
             }, 'user', 400));
         }
@@ -2029,7 +2029,7 @@ class User extends controller {
             return res.status(200).send(this.successFormat(getData, null, 'user', 200))
         }
         else {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': response.error
             }, 'user', 400));
         }
@@ -2044,7 +2044,7 @@ class User extends controller {
             }, null, 'user', 200));
         }
         else {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': 'User cannot be found'
             }, 'user', 400));
         }
@@ -2154,13 +2154,13 @@ class User extends controller {
         req.body.data.attributes.google_secrete_key = checkUserValidate.google_secrete_key;
         let requestData = req.body.data.attributes;
         if (!requestData.g2f_code) {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': 'Google authentication code must be provided.'
             }, 'user', 400));
         }
         let check = await this.postVerifyG2F(req, res, 'boolean');
         if (check.status == false) {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': 'The google authentication code you entered is incorrect.'
             }, '2factor', 400));
         }

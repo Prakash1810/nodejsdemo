@@ -5,7 +5,7 @@ class Utils {
     async getTime() {
         const time = await axios({
             method: 'get',
-            url: `${process.env.urlHost}/api/general/v3/time`
+            url: `${process.env.URLHOST}/api/general/v3/time`
         });
         return time.data;
     }

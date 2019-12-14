@@ -145,7 +145,7 @@ class Registration extends Controller {
                         .exec()
                         .then(result => {
                             if (result.length) {
-                                return res.status(400).send(this.errorFormat({ 'message': 'This email address already exists.' }));
+                                return res.status(400).send(this.errorMsgFormat({ 'message': 'This email address already exists.' }));
                             }
 
                             return this.insertUser(req, res);
@@ -182,7 +182,7 @@ class Registration extends Controller {
         }, async (err, user) => {
             if (err) {
 
-                return res.status(500).json(this.errorFormat({ 'message': err.message }));
+                return res.status(500).json(this.errorMsgFormat({ 'message': err.message }));
             } else {
                 // send activation email
                 let isChecked = await this.sendActivationEmail(user);

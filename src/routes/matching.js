@@ -73,9 +73,9 @@ router.post('/balance/query', info, auth, async (req, res) => {
     }
 })
 
-// router.patch('/balance/update', auth, async (req, res) => {
+// router.patch('/balance/update', async (req, res) => {
 //     try {
-//         req.body.data.attributes.user_id = Number(req.user.user_id);
+//         //req.body.data.attributes.user_id = Number(req.user.user_id);
 //         await matching.matchingEngineRequest('patch', 'balance/update', req.body, res);
 //     } catch (err) {
 //         return res.status(500).send(controller.errorMsgFormat({
@@ -91,33 +91,39 @@ router.post('/order/put-market', info, auth, async (req, res) => {
         let side;
         let data = req.body.data.attributes;
         req.body.data.attributes.user_id = Number(req.user.user_id);
-        let check = await markets.findOne({ market_name: data.market, is_active: true, disable_trade: false });
-        let checkUser = await users.findOne({ _id: req.user.user, trade: false });
-        if (checkUser) {
+        let check = await markets.findOne({ market_name: data.market });
+        let checkUser = await users.findOne({ _id: req.user.user });
+        if (!checkUser.trade) {
             return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
         }
-        if (!check) {
+        if (check.active == false || check.disable_trade == true) {
             return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
         }
         req.body.data.attributes.takerFeeRate = checkUser.taker_fee
         if (check.q) {
-            side = data.side == 2 ? "BUY" : "SELL";
-
+            side = data.side == 2 ? "buy" : "sell";
+            let pair = data.market;
+            let body;
+            if (pair.substr(pair.length - 4) == 'USDT') {
+                body = pair.slice(0, pair.length - 4) + '-' + pair.slice(pair.length - 4);
+            }
+            else {
+                body = pair.slice(0, pair.length - 3) + '-' + pair.slice(pair.length - 3);
+            }
+            let fee = checkUser.taker_fee.replace('.', 'D');
             let input =
             {
                 'type': 'market',
                 'side': side,
-                'instrument_id': data.market,
+                'instrument_id': body,
                 'size': side == 1 ? Number(data.amount) : 0,
-                'client_oid': `BDX-${req.body.data.attributes.user_id}-${checkUser.taker_fee}`,
+                'client_oid': `BDX-${req.body.data.attributes.user_id}-${fee}`,
                 "notional": side == 2 ? data.amount : '',
                 'order_type': '0'
             }
             await matching.OkexHttp(input);
         }
         else {
-            //delete q from request;
-            delete data.q;
             await matching.matchingEngineRequest('post', 'order/put-market', req.body, res)
         }
 
@@ -135,36 +141,41 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
         let side;
         let data = req.body.data.attributes;
         req.body.data.attributes.user_id = Number(req.user.user_id);
-        let check = await markets.findOne({ market_name: data.market, is_active: true, disable_trade: false });
-        let checkUser = await users.findOne({ _id: req.user.user, trade: false });
-        if (checkUser) {
+        let check = await markets.findOne({ market_name: data.market });
+        let checkUser = await users.findOne({ _id: req.user.user });
+        if (!checkUser.trade) {
             return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
         }
-        if (!check) {
+        if (check.active == false || check.disable_trade == true) {
             return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
         }
         req.body.data.attributes.takerFeeRate = checkUser.taker_fee
         req.body.data.attributes.makerFeeRate = checkUser.maker_fee
         if (check.q) {
-            side = data.side == 2 ? "BUY" : "SELL";
-
+            side = data.side == 2 ? "buy" : "sell";
+            let pair = data.market;
+            let body;
+            if (pair.substr(pair.length - 4) == 'USDT') {
+                body = pair.slice(0, pair.length - 4) + '-' + pair.slice(pair.length - 4);
+            }
+            else {
+                body = pair.slice(0, pair.length - 3) + '-' + pair.slice(pair.length - 3);
+            }
+            let fee = checkUser.taker_fee.replace('.', 'D')
             let input =
             {
                 'type': 'limit',
                 'side': side,
-                'instrument_id': data.market,
+                'instrument_id': body,
                 'size': Number(data.amount),
-                'client_oid': `BDX-${req.body.data.attributes.user_id}-${checkUser.taker_fee}`,
+                'client_oid': `BDXU${req.body.data.attributes.user_id}F${fee}`,
                 'price': data.pride,
                 'order_type': '0'
             }
             await matching.OkexHttp(input, req.body, res);
         } else {
-            delete data.q;
             await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
         }
-
-        //delete q from request;
 
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -176,16 +187,15 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
 router.post('/order/cancel', info, auth, async (req, res) => {
     try {
         req.body.data.attributes.user_id = Number(req.user.user_id);
-        let check = await markets.findOne({ market_name: data.market, is_active: true, disable_trade: false });
-        req.body.data.attributes.q = check.q
+        let check = await markets.findOne({ market_name: data.market })
         let checkUser = await users.findOne({ _id: req.user.user, trade: false });
         if (checkUser) {
             return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
         }
-        if (!check) {
+        if (check.active == false || check.disable_trade == true) {
             return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
         }
-        await matching.matchingEngineRequest('post', 'order/cancel', req.body, res,'json', check);
+        await matching.matchingEngineRequest('post', 'order/cancel', req.body, res, 'json', check);
 
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({

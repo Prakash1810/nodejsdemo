@@ -84,13 +84,13 @@ class Wallet extends controller {
         let asset = req.body.data.attributes.asset;
         let isCheckDelist = await this.assetDelist(asset);
         if (isCheckDelist.status == false) {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
         }
         let isChecked = await assets.findOne({ _id: asset });
         if (!isChecked.deposit) {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': 'Deposits have been disabled for this asset.'
             }, 'asset-balance', 400));
         }
@@ -172,20 +172,20 @@ class Wallet extends controller {
         let requestData = req.body.data.attributes;
         let isCheckDelist = await this.assetDelist(requestData.asset);
         if (isCheckDelist.status == false) {
-            return res.status(400).send(this.errorFormat({
+            return res.status(400).send(this.errorMsgFormat({
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
         }
         let checkG2f = await users.findOne({ _id: req.user.user, google_auth: true });
         if (checkG2f) {
             if (!requestData.g2f_code) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'Google authentication code must be provided.'
                 }, 'user', 400));
             }
             let check = await user.postVerifyG2F(req, res, 'boolean');
             if (check.status == false) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'The google authentication code you entered is incorrect.'
                 }, '2factor', 400));
             }
@@ -193,14 +193,14 @@ class Wallet extends controller {
         }
         else {
             if (requestData.otp == null || undefined) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'OTP must be provided.'
                 }, 'user', 400));
             }
             req.body.data['id'] = req.user.user;
             let checkOtp = await user.validateOtpForEmail(req, res, "withdraw address");
             if (checkOtp.status == false) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': checkOtp.err
                 }, 'user', 400));
             }
@@ -415,7 +415,7 @@ class Wallet extends controller {
                 collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
             }
             else {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'Asset could not be found.'
                 }, 'asset-balance', 400));
             }
@@ -621,12 +621,12 @@ class Wallet extends controller {
         let config = await configs.findOne({ key: 'withdraw limit' });
         if (checkUser.kyc_verified === false) {
             if (checkUser.dailyWithdrawAmount > config.value.daily) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': `Since you have not verified your KYC, you can only withdraw crypto equivalent of ${config.value.daily} USDT/day. Please verify your KYC to unlock unlimited withdrawals.`,
                 }, 400));
             }
             if (checkUser.monthWithdrawAmount > config.value.monthly) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': `Since you have not verified your KYC, you can only withdraw crypto equivalent of ${config.value.monthly} USDT/month. Please verify your KYC to unlock unlimited withdrawals.`,
                 }, 400));
             }
@@ -635,26 +635,26 @@ class Wallet extends controller {
         let checkAsset = await assets.findOne({ _id: requestData.asset, withdraw: true });
         if (checkAsset) {
             if (checkAsset.minimum_withdrawal > requestData.amount) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': `The minimum withdrawal amount for the chosen asset is ${checkAsset.minimum_withdrawal} ${checkAsset.asset_code}.`,
                 }, 400));
             }
 
             if (!checkUser.withdraw) {
-                return res.status(400).send(this.errorFormat({
+                return res.status(400).send(this.errorMsgFormat({
                     'message': 'Your password was recently changed. You cannot make a withdrawal for 24 hours.'
                 }, 'user', 400));
             }
 
             else if (checkUser.google_auth) {
                 if (!requestData.g2f_code) {
-                    return res.status(400).send(this.errorFormat({
+                    return res.status(400).send(this.errorMsgFormat({
                         'message': 'Google authentication code must be provided.'
                     }, 'user', 400));
                 }
                 let check = await user.postVerifyG2F(req, res, 'boolean');
                 if (check.status == false) {
-                    return res.status(400).send(this.errorFormat({
+                    return res.status(400).send(this.errorMsgFormat({
                         'message': 'The google authentication code you entered is incorrect.'
                     }, '2factor', 400));
                 }
@@ -662,14 +662,14 @@ class Wallet extends controller {
             }
             else {
                 if (requestData.otp == null || undefined) {
-                    return res.status(400).send(this.errorFormat({
+                    return res.status(400).send(this.errorMsgFormat({
                         'message': 'OTP must be provided.'
                     }, 'user', 400));
                 }
                 req.body.data['id'] = req.user.user;
                 let checkOtp = await user.validateOtpForEmail(req, res, "withdraw confirmation");
                 if (checkOtp.status == false) {
-                    return res.status(400).send(this.errorFormat({
+                    return res.status(400).send(this.errorMsgFormat({
                         'message': checkOtp.err
                     }, 'user', 400));
                 }
@@ -677,7 +677,7 @@ class Wallet extends controller {
             if (requestData.asset != undefined) {
                 let checkWithdraw = await assets.findOne({ _id: requestData.asset });
                 if (!checkWithdraw.withdraw) {
-                    return res.status(400).send(this.errorFormat({
+                    return res.status(400).send(this.errorMsgFormat({
                         'message': 'Withdrawals have been disabled for this asset.'
                     }, 'withdraw', 400));
                 }

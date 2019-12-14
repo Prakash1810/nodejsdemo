@@ -20,7 +20,7 @@ class Controller {
         } else {
             errors = error;
         }
-        return this.errorMsgFormat(errors);
+        return this.errorMsgFormat({message:errors});
     }
 
     successFormat(res, id = null, type = 'users', code = 200) {
