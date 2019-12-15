@@ -37,7 +37,7 @@ module.exports = async (req, res, next) => {
 
                 if (checkDevice) {
                     res.status(401).json(controller.errorMsgFormat({
-                        message: 'The device are browser that you are currently logged in has been removed from the device whitelist.'
+                        message: 'The device or browser that you are currently logged in has been removed from the device whitelist.'
                     }, 'user', 401));
                 }
             }
@@ -54,7 +54,7 @@ module.exports = async (req, res, next) => {
                 });
                 if (checkDevice) {
                     res.status(401).json(controller.errorMsgFormat({
-                        message: 'The device are browser that you are currently logged in has been removed from the device whitelist.'
+                        message: 'The device or browser that you are currently logged in has been removed from the device whitelist.'
                     }, 'user', 401));
                 }
 

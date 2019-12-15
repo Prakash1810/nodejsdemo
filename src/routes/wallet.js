@@ -30,9 +30,7 @@ router.post('/withdraw-address',info, auth, (req, res) => {
     try {
         let { error } = wallet.postWithdrawAddressValidation(req.body.data.attributes);
         if (error) {
-            return res.status(400).send(controller.errorMsgFormat({
-                "message": error
-            }, 'withdraw', 400));
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
             return wallet.postWithdrawAddress(req, res);
         }
@@ -107,10 +105,7 @@ router.post('/withdraw',info,auth, (req, res) => {
     try {
         let { error } = wallet.postWithdrawValidation(req.body.data.attributes);
         if (error) {
-           
-            return res.status(400).send(controller.errorMsgFormat({
-                "message": error
-            }, 'withdraw', 400));
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
             return wallet.postWithdraw(req, res);
         }
@@ -125,9 +120,7 @@ router.patch('/withdraw', (req, res) => {
     try {
         let { error } = wallet.patchWithdrawConfirmationValidation(req.body.data.attributes);
         if (error) {
-            return res.status(400).send(controller.errorMsgFormat({
-                "message": error
-            }, 'withdraw', 400));
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
             return wallet.patchWithdrawConfirmation(req, res);
         }

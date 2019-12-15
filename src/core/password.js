@@ -288,13 +288,13 @@ class Password extends Controller {
                 
                 if (result.google_auth) {
                     if (!requestData.g2f_code) {
-                        return res.status(400).send(this.errorFormat({
+                        return res.status(400).send(this.errorMsgFormat({
                             'message': 'Google authentication code must be provided.'
                         }, 'user', 400));
                     }
                     let check = await user.postVerifyG2F(req, res, 'boolean');
                     if (check.status == false) {
-                        return res.status(400).send(this.errorFormat({
+                        return res.status(400).send(this.errorMsgFormat({
                             'message': 'The google authentication code you entered is incorrect.'
                         }, '2factor', 400));
                     }
@@ -302,13 +302,13 @@ class Password extends Controller {
                 }
                 else {
                     if (requestData.otp == null || undefined) {
-                        return res.status(400).send(this.errorFormat({
+                        return res.status(400).send(this.errorMsgFormat({
                             'message': 'OTP must be provided.'
                         }, 'user', 400));
                     }
                     let checkOtp = await user.validateOtpForEmail(req, res, "change password");
                     if(checkOtp.status == false){
-                        return res.status(400).send(this.errorFormat({
+                        return res.status(400).send(this.errorMsgFormat({
                             'message':checkOtp.err
                         }, 'user', 400));
                     }

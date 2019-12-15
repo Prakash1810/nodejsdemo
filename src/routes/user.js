@@ -233,7 +233,7 @@ router.get('/g2f-create', info, auth, (req, res) => {
     try {
         user.insert2faAuth(req, res);
     } catch (err) {
-        return res.status(400).send(controller.errorFormat({
+        return res.status(400).send(controller.errorMsgFormat({
             'message': error
         }, 'users', 400));
     }
@@ -244,7 +244,7 @@ router.patch('/g2f-settings', info, auth, (req, res) => {
     try {
         let { error } = user.g2fSettingValidate(req.body.data.attributes);
         if (error) {
-            return res.status(400).send(controller.errorMsgFormat(error, 'users', 400));
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
             user.patch2FAuth(req, res);
         }
