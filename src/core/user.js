@@ -243,7 +243,7 @@ class User extends controller {
         let data = req.body.data.attributes;
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
         users.findOne({
-            email: data.email,
+            email: data.email
 
         })
             .exec()
@@ -1384,7 +1384,7 @@ class User extends controller {
                     let user = await users.findOne({ _id: req.body.data.id });
                     delete data.g2f_code;
                     delete data.google_secrete_key;
-                    await this.returnToken(req, res, user, 2)
+                    await this.returnToken(req, res, user, 2,req.headers.device)
                 }
                 else if (method == 'setting' || type == 'boolean') {
                     return { status: true };
@@ -1418,6 +1418,20 @@ class User extends controller {
 
     async postVerifyG2F(req, res, type = 'json') {
         try {
+            let data = req.body.data.attributes;
+            let id = req.body.data.id;
+            let deviceId = null;
+            if (data.is_app && data.is_mobile) {
+                if (req.headers.device) {
+                    deviceId = req.headers.device;
+                } else {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Device_id must be provided.'
+                    }));
+
+                }
+
+            }
             var method = "withoutAuth";
             if (req.headers.authorization && req.headers.info && type != 'boolean') {
                 let isChecked = await apiServices.authentication(req);
