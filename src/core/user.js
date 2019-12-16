@@ -2197,7 +2197,7 @@ class User extends controller {
             case 'create':
                 let checkUser = await apikey.findOne({ user: req.body.data.id, is_deleted: false });
                 if (checkUser) {
-                    return res.status(400).send(this.errorMsgFormat({ message: 'An Passphrase key is already available for this account.' }, 'user', 400));
+                    return res.status(400).send(this.errorMsgFormat({ message: 'A Passphrase key is already available for this account.' }, 'user', 400));
                 }
                 const apiKey = await helpers.generateUuid();
                 let uuidSplit = apiKey.split('-');
