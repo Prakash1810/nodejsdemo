@@ -22,6 +22,7 @@ router.get('/activation/:hash', (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
+
         let { error } = await user.validate(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
@@ -29,6 +30,7 @@ router.post('/login', async (req, res) => {
             user.login(req, res);
         }
     } catch (err) {
+        console.log(err);
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
@@ -472,7 +474,7 @@ router.get('/currency-list', (req, res) => {
     }
 });
 
-router.post('/currency-convert',auth, async (req, res) => {
+router.post('/currency-convert', auth, async (req, res) => {
     try {
         await user.changeCurrency(req, res);
     }
