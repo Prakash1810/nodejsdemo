@@ -9,7 +9,7 @@ let verifyOptions = {
     issuer: config.get('secrete.issuer'),
     subject: 'Authentication',
     audience: config.get('secrete.domain'),
-    expiresIn: config.get('secrete.expiry')
+    //expiresIn: config.get('secrete.expiry')
 };
 
 module.exports = async (req, res, next) => {
