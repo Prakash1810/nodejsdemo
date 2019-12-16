@@ -145,7 +145,7 @@ class User extends controller {
                     link: `${process.env.LINKURL}${code}`
                 }
                 await apiServices.sendEmailNotification(serviceData, res);
-                await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
+                //await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
                 return res.status(200).send(this.successFormat({
                     'message': `Congratulation!, Your account has been successfully activated.`
                 }));
@@ -359,6 +359,7 @@ class User extends controller {
                         required: 'Please enter your {{label}} address.',
                         regex: {
                             base: 'Please enter a valid {{label}} address.'
+                          
                         }
                     }
                 }
@@ -1847,21 +1848,21 @@ class User extends controller {
                     checkUser.kyc_statistics = "APPROVE"
                     checkUser.save();
                     await this.updateBalance(checkUser.user_id, checkUser._id, res, 'kyc verification');
-                    let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
-                    if (checkReferrerCode) {
-                        let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referral reward-kyc');
-                        if (amount == null) {
-                            return;
-                        }
-                        await new referralHistory({
-                            user: checkUser._id,
-                            referrer_code: checkUser.referrer_code,
-                            email: checkUser.email,
-                            type: "referral code",
-                            amount: amount,
-                            created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                        }).save()
-                    }
+                    // let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
+                    // if (checkReferrerCode) {
+                    //     let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referral reward-kyc');
+                    //     if (amount == null) {
+                    //         return;
+                    //     }
+                    //     await new referralHistory({
+                    //         user: checkUser._id,
+                    //         referrer_code: checkUser.referrer_code,
+                    //         email: checkUser.email,
+                    //         type: "referral code",
+                    //         amount: amount,
+                    //         created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                    //     }).save()
+                    // }
                     let serviceData = {
                         "subject": `Your KYC verification was successful.`,
                         "email_for": "kyc-success",
