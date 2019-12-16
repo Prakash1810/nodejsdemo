@@ -165,7 +165,7 @@ class User extends controller {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
-            expiresIn: config.get('secrete.infoToken')
+            // expiresIn: config.get('secrete.infoToken')
         };
 
         return await jwt.sign(deviceInfo, config.get('secrete.infokey'), tokenOption);
@@ -177,7 +177,7 @@ class User extends controller {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
-            expiresIn: `${(device_id) ? config.get('secrete.mobileExpiry') : config.get('secrete.expiry')}`
+            // expiresIn: `${(device_id) ? config.get('secrete.mobileExpiry') : config.get('secrete.expiry')}`
         };
 
         let tokenAccess = JSON.stringify({
@@ -196,7 +196,7 @@ class User extends controller {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
-            expiresIn: config.get('secrete.refreshTokenExpiry')
+            //expiresIn: config.get('secrete.refreshTokenExpiry')
 
         };
         const tokenRefresh = JSON.stringify({
