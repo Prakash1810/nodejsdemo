@@ -6,7 +6,8 @@ const usersSchema = mongoose.Schema({
     user_id: { type: Number, default: 0 },
     email: {
         type: String,
-        required: [true, 'Your email cannot be blank.']
+        required: [true, 'Your email cannot be blank.'],    
+        lowercase: true
     },
     role: { type: mongoose.Schema.Types.ObjectId, ref: 'roles' },
     mobile: { type: String, default: null },
