@@ -24,42 +24,42 @@ module.exports = async (req, res, next) => {
         if (checkToken) {
             throw error
         } else {
-            if (!deviceInfo.is_app) {
+            // if (!deviceInfo.is_app) {
                 let checkDevice = await device.findOne({
                     browser: deviceInfo.browser,
                     user: deviceInfo.info,
                     browser_version: deviceInfo.browser_version,
-                    is_deleted: true,
+                    is_deleted: false,
                     region: deviceInfo.region,
                     city: deviceInfo.city,
                     os: deviceInfo.os
-                });
+                })
 
-                if (checkDevice) {
+                if (!checkDevice) {
                     res.status(401).json(controller.errorMsgFormat({
                         message: 'The device or browser that you are currently logged in has been removed from the device whitelist.'
                     }, 'user', 401));
                 }
-            }
-            else {
-                let checkDevice = await device.findOne({
-                    browser: deviceInfo.browser,
-                    user: deviceInfo.info,
-                    browser_version: deviceInfo.browser_version,
-                    is_deleted: true,
-                    is_app: true,
-                    region: deviceInfo.region,
-                    city: deviceInfo.city,
-                    os: deviceInfo.os
-                });
-                if (checkDevice) {
-                    res.status(401).json(controller.errorMsgFormat({
-                        message: 'The device or browser that you are currently logged in has been removed from the device whitelist.'
-                    }, 'user', 401));
-                }
+            // }
+            // else {
+            //     let checkDevice = await device.findOne({
+            //         browser: deviceInfo.browser,
+            //         user: deviceInfo.info,
+            //         browser_version: deviceInfo.browser_version,
+            //         is_deleted: false,
+            //         is_app: false,
+            //         region: deviceInfo.region,
+            //         city: deviceInfo.city,
+            //         os: deviceInfo.os
+            //     });
+            //     if (!checkDevice) {
+            //         res.status(401).json(controller.errorMsgFormat({
+            //             message: 'The device or browser that you are currently logged in has been removed from the device whitelist.'
+            //         }, 'user', 401));
+            //     }
 
 
-            }
+            // }
 
             let checkActive = await users.findOne({ _id: deviceInfo.info, is_active: false });
             if (checkActive) {

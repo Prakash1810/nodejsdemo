@@ -356,8 +356,6 @@ class Api extends Controller {
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, input)
         const result = axiosResponse.data;
-        console.log('Result:',result);
-
         if (result.status) {
             let value = result.result.result;
             if (type === 'json') {
