@@ -154,15 +154,14 @@ class Api extends Controller {
                     browser: deviceInfo.browser,
                     user: deviceInfo.info,
                     browser_version: deviceInfo.browser_version,
-                    is_deleted: true,
+                    is_deleted: false,
                     region: deviceInfo.region,
                     city: deviceInfo.city,
                     os: deviceInfo.os
-                });
-
+                })
                 let checkActive = await users.findOne({ _id: deviceInfo.info, is_active: false });
 
-                if (checkDevice) {
+                if (!checkDevice) {
                     res.status(401).json(controller.errorMsgFormat({
                         message: 'The device are browser that you are currently logged in has been removed from the device whitelist.'
                     }, 'user', 401));
