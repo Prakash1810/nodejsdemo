@@ -578,14 +578,14 @@ class Wallet extends controller {
                 payloads.asset = asset
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available;
-                let checkPending = await transactions.find({ user: req.user.user, asset: getAsset._id })
+                let checkPending = await transactions.find({ user: req.user.user, asset: getAsset._id, type: "1", status: "1" })
                 let i = 0;
                 let pendingTotal = 0;
                 while (i < checkPending.length) {
                     pendingTotal += checkPending[i].final_amount
                     i++;
                 }
-                if(requestData.amount < Number(available)-pendingTotal){
+                if (requestData.amount > Number(available) - pendingTotal) {
                     return {
                         status: false,
                         type: 'non-Balance'
@@ -771,7 +771,7 @@ class Wallet extends controller {
                         msg = 'Please enter a lesser amount. BDX rewards earned from a referral can be used only for trading.'
                     }
                     else if (validateWithdraw.type === 'non-Balance') {
-                        msg = 'Please enter a lesser amount. BDX rewards earned from a referral can be used only for trading.'
+                        msg = 'The request amount is greater than your available balance.'
                     }
 
                     return res.status(400).json(this.errorMsgFormat({
@@ -888,7 +888,7 @@ class Wallet extends controller {
 
     patchWithdrawConfirmationValidation(req) {
         let schema = Joi.object().keys({
-            accept:Joi.boolean().required(),
+            accept: Joi.boolean().required(),
             ip: Joi.string().required()
         });
 
