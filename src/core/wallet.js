@@ -438,7 +438,7 @@ class Wallet extends controller {
         let marketResponse = await apiServices.marketPrice(assetNames);
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
         return res.status(200).json(this.successFormat({
-            "data": formatedResponse,sum
+            "data": formatedResponse, sum
         }, null, 'asset-balance', 200));
     }
 
@@ -513,7 +513,7 @@ class Wallet extends controller {
                                 }, null, 'transactions', 200));
                             } else {
                                 var totalPages = Math.ceil(totalCount / size);
-                            if (typeParam === 'withdraw') {
+                                if (typeParam === 'withdraw') {
                                     for (var i = 0; i < data.length; i++) {
                                         if (data[i].status == "0") {
                                             data.splice(i, 1);
@@ -578,6 +578,19 @@ class Wallet extends controller {
                 payloads.asset = asset
                 let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available;
+                let checkPending = await transactions.find({ user: req.user.user, asset: getAsset._id })
+                let i = 0;
+                let pendingTotal = 0;
+                while (i < checkPending.length) {
+                    pendingTotal += checkPending[i].final_amount
+                    i++;
+                }
+                if(requestData.amount < Number(available)-pendingTotal){
+                    return {
+                        status: false,
+                        type: 'non-Balance'
+                    };
+                }
                 // if (getAsset.asset_code == 'BDX') {
                 //     let reward = await rewards.find({ user: req.user.user, reward_asset: "BDX" });
                 //     let i = 0;
@@ -757,6 +770,9 @@ class Wallet extends controller {
                     else if (validateWithdraw.type === 'low-balance') {
                         msg = 'Please enter a lesser amount. BDX rewards earned from a referral can be used only for trading.'
                     }
+                    else if (validateWithdraw.type === 'non-Balance') {
+                        msg = 'Please enter a lesser amount. BDX rewards earned from a referral can be used only for trading.'
+                    }
 
                     return res.status(400).json(this.errorMsgFormat({
                         "message": msg
@@ -872,6 +888,7 @@ class Wallet extends controller {
 
     patchWithdrawConfirmationValidation(req) {
         let schema = Joi.object().keys({
+            accept:Joi.boolean().required(),
             ip: Joi.string().required()
         });
 

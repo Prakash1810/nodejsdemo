@@ -15,14 +15,13 @@ class Controller {
         let errors = {};
         if (error.details) {
             error.details.forEach((detail) => {
-                console.log(typeof(errors))
                 errors[detail.path] = detail.message;
                
             });
         } else {
             errors = error;
         }
-        return this.errorMsgFormat({message:error},'users',400);
+        return this.errorMsgFormat({message:errors},'users',400);
     }
 
     successFormat(res, id = null, type = 'users', code = 200) {
