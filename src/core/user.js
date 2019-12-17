@@ -244,7 +244,6 @@ class User extends controller {
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
         users.findOne({
             email: data.email
-
         })
             .exec()
             .then(async (result) => {
