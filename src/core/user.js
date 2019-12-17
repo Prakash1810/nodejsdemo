@@ -1350,8 +1350,6 @@ class User extends controller {
     }
 
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
-
-
         try {
             let data = req.body.data.attributes;
             let opts = {
@@ -1368,6 +1366,7 @@ class User extends controller {
             }
             else {
                 returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code);
+                console.log(returnStatus);
                 if (returnStatus) {
                     if (returnStatus.delta) {
                         returnStatus = true;
