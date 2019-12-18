@@ -455,7 +455,7 @@ class User extends controller {
             const decoded = JSON.parse(branca.decode(verifyToken.token));
             if (data === 'json') {
                 return res.status(200).json({
-                    "code": 200,
+                    "code": 0,
                     "message": null,
                     "data": {
                         "user_id": decoded.user_id
