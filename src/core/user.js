@@ -358,7 +358,7 @@ class User extends controller {
                         required: 'Please enter your {{label}} address.',
                         regex: {
                             base: 'Please enter a valid {{label}} address.'
-                          
+
                         }
                     }
                 }
@@ -1209,7 +1209,7 @@ class User extends controller {
                 }
                 else {
                     if (type == 'withCallPatchSetting' || type == 'disable') {
-                        return { status: false }
+                        return { status: false, err: 'Invalid request. The changes you made were not saved.' }
                     }
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Invalid request. The changes you made were not saved.'
@@ -1321,7 +1321,7 @@ class User extends controller {
             }
             else {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Invalid request. The changes you made were not saved.'
+                    'message': checked.err
                 }, 'users', 400));
             }
         } else {
@@ -1338,13 +1338,15 @@ class User extends controller {
 
             delete req.body.data.attributes.password;
 
-            return await this.patchSettings(req, res, 'withCallPatchSetting');
+            let check = await this.patchSettings(req, res, 'withCallPatchSetting');
+            if (check.status == true) {
+                return { status: true }
+            } else {
+                return { status: false, err: check.err }
+            }
 
         } else {
-
-            return res.status(400).send(this.errorMsgFormat({
-                'message': 'The google authentication code you entered is invalid. Please enter a valid code.'
-            }));
+            return { status: false, err: 'The google authentication code you entered is invalid. Please enter a valid code.' }
         }
     }
 
