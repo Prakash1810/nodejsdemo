@@ -220,7 +220,7 @@ class Api extends Controller {
             if (!isInfo.status || !isChecked.status) {
                 return res.status(401).json(controller.errorMsgFormat({
                     message: "Authentication failed. Your request could not be authenticated."
-                }), 'user', 401);
+                }, 'user', 401));
             }
             let getMarket = await market.find({});
             if (getMarket.length == 0) {

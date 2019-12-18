@@ -1367,7 +1367,6 @@ class User extends controller {
             }
             else {
                 returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code);
-                console.log(returnStatus);
                 if (returnStatus) {
                     if (returnStatus.delta) {
                         returnStatus = true;
