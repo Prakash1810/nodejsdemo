@@ -141,7 +141,7 @@ class Api extends Controller {
                 issuer: config.get('secrete.issuer'),
                 subject: 'Authentication',
                 audience: config.get('secrete.domain'),
-                // expiresIn: config.get('secrete.infoToken')
+                expiresIn: config.get('secrete.infoToken')
             };
 
             let token = req.headers.info;
@@ -190,7 +190,7 @@ class Api extends Controller {
                 issuer: config.get('secrete.issuer'),
                 subject: 'Authentication',
                 audience: config.get('secrete.domain'),
-                // expiresIn: config.get('secrete.expiry')
+                expiresIn: config.get('secrete.expiry')
             };
             const token = req.headers.authorization;
             const dataUser = await jwt.verify(token, config.get('secrete.key'), verifyOptions);

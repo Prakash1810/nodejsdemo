@@ -165,7 +165,7 @@ class User extends controller {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
-            // expiresIn: config.get('secrete.infoToken')
+            expiresIn: config.get('secrete.infoToken')
         };
 
         return await jwt.sign(deviceInfo, config.get('secrete.infokey'), tokenOption);
@@ -177,7 +177,7 @@ class User extends controller {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
-            // expiresIn: `${(device_id) ? config.get('secrete.mobileExpiry') : config.get('secrete.expiry')}`
+            expiresIn: `${(device_id) ? config.get('secrete.mobileExpiry') : config.get('secrete.expiry')}`
         };
 
         let tokenAccess = JSON.stringify({
@@ -196,7 +196,7 @@ class User extends controller {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
-            //expiresIn: config.get('secrete.refreshTokenExpiry')
+            expiresIn: config.get('secrete.refreshTokenExpiry')
 
         };
         const tokenRefresh = JSON.stringify({
@@ -559,7 +559,7 @@ class User extends controller {
             "maker_fee": result.maker_fee,
             "kyc_verified": result.kyc_verified,
             "trade": result.trade,
-            "expiresIn": config.get('secrete.expiry'),
+            "expiresIn": 300000,
             "referral_code": result.referral_code,
             "currency_code": result.currency_code
         }, result._id));
@@ -1503,7 +1503,7 @@ class User extends controller {
                     'white_list_address': user.white_list_address,
                     "withdraw": user.withdraw,
                     "kyc_verified": user.kyc_verified,
-                    "expiresIn": config.get('secrete.expiry'),
+                    "expiresIn": 300000,
                     "trade": user.trade,
                 };
                 return res.status(200).send(this.successFormat(result, tokens.id))
