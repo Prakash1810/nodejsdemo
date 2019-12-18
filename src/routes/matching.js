@@ -53,8 +53,6 @@ router.post('/balance/history', info, auth, async (req, res) => {
 
 router.post('/balance/query', info, auth, async (req, res) => {
     try {
-
-
         if (!req.body.data) {
             req.body.data = {
                 attributes: {

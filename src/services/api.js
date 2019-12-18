@@ -96,7 +96,6 @@ class Api extends Controller {
             } else {
                 req.data.attributes['source'] = `OX-${response.order_id}`;
                 response.order_id = `OX:${response.order_id}`
-                console.log('Response:',response);
                 await this.addResponseInREDIS(response);
                 await this.matchingEngineRequest('post', 'order/put-limit', req,res);
             }
@@ -400,7 +399,6 @@ class Api extends Controller {
     }
 
     async addResponseInREDIS(response) {
-        console.log("...............Hello....................");
         // var client = redis.createClient('6379','127.0.0.1');
 
         // client.on('connect', function () {
@@ -423,13 +421,16 @@ class Api extends Controller {
         //     //return { status:false, error:'Something went wrong' };
         // });
 
-        var redis = new Redis.Cluster([
+        const redis = new Redis.Cluster([
             {
                 port: process.env.REDIS_PORT,
                 host: process.env.REDIS_HOST
             }
         ]);
-        redis.rpush([response.order_id, response]);
+        redis.rpush(response.order_id, response);
+        redis.on('error',(err)=>{
+            console.log(err);
+        })
         let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.order_id} : ${response.client_oid} : ${JSON.stringify(response)}`
         fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
             if (err)
