@@ -1,5 +1,6 @@
 const moment = require('moment');
 const assets = require('../db/assets');
+const userAddress = require('../db/user-address');
 const users = require('../db/users');
 const fee = require('../db/matching-engine-config');
 const apiServices = require('../services/api');
@@ -580,6 +581,22 @@ class User extends controller {
     async checkDevice(req, res, user) {
         let userID = user._id;
         let data = req.body.data.attributes;
+        let nonAddressCreatedUser = [], i = 0;
+        let assetCheck = await assets.find({});
+        let userAddressCheck = await userAddress.find({ user: userID });
+        if (assetCheck.length !== userAddressCheck.length) {
+            nonAddressCreatedUser = assetCheck.filter(userAssets => userAddressCheck.every((userAddress) => JSON.stringify(userAddress.asset) !== JSON.stringify(userAssets._id)));
+            while (i < nonAddressCreatedUser.length) {
+                let data = {
+                    "coin": nonAddressCreatedUser[i].asset_code,
+                    "user_id": user.user_id,
+                    "user": user._id,
+                    "asset": nonAddressCreatedUser[i]._id
+                }
+                await apiServices.axiosAPI(data);
+                i++;
+            }
+        };
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let count = await deviceWhitelist.countDocuments({ user: userID });
         if (count == 0) {
@@ -719,6 +736,7 @@ class User extends controller {
             }
 
         }
+
 
 
     }
