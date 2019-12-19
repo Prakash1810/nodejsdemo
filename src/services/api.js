@@ -61,7 +61,6 @@ class Api extends Controller {
                     "user": user._id,
                     "asset": result._id
                 };
-                console.log("data:",data)
                 return this.axiosAPI(data)
             });
 
