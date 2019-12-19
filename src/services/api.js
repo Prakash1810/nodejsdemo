@@ -145,7 +145,7 @@ class Api extends Controller {
 
             let token = req.headers.info;
             const deviceInfo = await jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
-            const checkToken = await accesToken.findOne({ is_deleted: true, info_token: token });
+            const checkToken = await accesToken.findOne({ user: deviceInfo.info, is_deleted: true, info_token: token, type_for: "info-token" });
             if (checkToken) {
                 throw error
             } else {
@@ -165,7 +165,7 @@ class Api extends Controller {
                         message: 'The device are browser that you are currently logged in has been removed from the device whitelist.'
                     }, 'user', 401));
                 } else if (checkActive) {
-                    await accesstoken.findOneAndUpdate({ info_token: token }, { is_deleted: true });
+                    await accesstoken.findOneAndUpdate({ user: checkActive.id, info_token: token, type_for: "info-token" }, { is_deleted: true });
                     res.status(401).json(controller.errorMsgFormat({
                         message: 'Your account has been disabled. Please contact support.'
                     }, 'user', 401));
@@ -195,7 +195,7 @@ class Api extends Controller {
             const dataUser = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
             const data = JSON.parse(branca.decode(dataUser.token));
             const isChecked = await accesToken.findOne({
-                user: data.user, access_token: token, is_deleted: true
+                user: data.user, access_token: token, is_deleted: true, type_for: "token"
             })
             if (isChecked) {
                 throw error;
