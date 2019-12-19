@@ -103,19 +103,16 @@ router.post('/order/put-market', info, auth, async (req, res) => {
                 'type': 'market',
                 'side': side,
                 'instrument_id': body,
-                'size': side == 1 ? Number(data.amount) : 0,
-                'client_oid': `BDX-${req.body.data.attributes.user_id}-${fee}`,
-                "notional": side == 2 ? data.amount : '',
+                'size': data.side == 1 ? Number(data.amount) : 0,
+                'client_oid': `BDXU${req.body.data.attributes.user_id}F${fee}`,
+                "notional": data.side == 2 ? data.amount : '',
                 'order_type': '0'
             }
-            await matching.OkexHttp(input);
+            await matching.OkexHttp(input, req, res);
         }
         else {
             await matching.matchingEngineRequest('post', 'order/put-market', req.body, res)
         }
-
-        ;
-
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message

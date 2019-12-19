@@ -87,17 +87,17 @@ class Api extends Controller {
         const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
 
         let body = input;
-        console.log(body);
         let response = await authClient.spot().postOrder(body);
         if (response.result) {
             if (input.type == 'market') {
                 response.order_id = `OX:${response.order_id}`
                 await this.addResponseInREDIS(response);
+                return res.status(200).send(controller.successFormat({ 'message': "The Market order has been placed " }))
             } else {
                 req.data.attributes['source'] = `OX-${response.order_id}`;
                 response.order_id = `OX:${response.order_id}`
                 await this.addResponseInREDIS(response);
-                await this.matchingEngineRequest('post', 'order/put-limit', req,res);
+                await this.matchingEngineRequest('post', 'order/put-limit', req, res);
             }
 
         }
@@ -339,15 +339,15 @@ class Api extends Controller {
     }
 
     async matchingEngineRequest(method, path, input, res, type = 'json', liquidity) {
-        let source,data=null
+        let source, data = null
         if (path == 'order/cancel') {
-             data= req.body.data.attributes;
+            data = req.body.data.attributes;
             if (!data.source) {
                 return res.status(500).send(controller.errorMsgFormat({
                     'message': "Source must be provide"
                 }, 'order-matching', 500));
             }
-         
+
             source = data.source
             delete req.body.data.attributes.source
         }
@@ -365,16 +365,16 @@ class Api extends Controller {
                         const timestamp = await utils.getTime();
                         const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
                         let pair = data.market
-                        if(pair.substr(pair.length - 4) == 'USDT'){
-                           body  = pair.slice(0, pair.length-4) + '-' + pair.slice(pair.length-4);
+                        if (pair.substr(pair.length - 4) == 'USDT') {
+                            body = pair.slice(0, pair.length - 4) + '-' + pair.slice(pair.length - 4);
                         }
-                        else{
-                         body = pair.slice(0, pair.length-3) + '-' + pair.slice(pair.length-3);
+                        else {
+                            body = pair.slice(0, pair.length - 3) + '-' + pair.slice(pair.length - 3);
                         }
-                        let response = await authClient.spot().postCancelOrder(source.substr(source.indexOf('-')+1),{"instrument_id":body.toLowerCase()});
+                        let response = await authClient.spot().postCancelOrder(source.substr(source.indexOf('-') + 1), { "instrument_id": body.toLowerCase() });
                         if (response[body.toLowerCase()][0].result) {
-                                response[body.toLowerCase()][0].order_id = `OX:${response[body.toLowerCase()][0].order_id}`
-                                await this.addResponseInREDIS(response[body.toLowerCase()][0]);
+                            response[body.toLowerCase()][0].order_id = `OX:${response[body.toLowerCase()][0].order_id}`
+                            await this.addResponseInREDIS(response[body.toLowerCase()][0]);
                         }
                         else {
                             return res.status(500).send(controller.errorMsgFormat({
@@ -427,8 +427,8 @@ class Api extends Controller {
                 host: process.env.REDIS_HOST
             }
         ]);
-        redis.rpush(response.order_id, response);
-        redis.on('error',(err)=>{
+        redis.rpush(response.order_id, JSON.stringify(response));
+        redis.on('error', (err) => {
             console.log(err);
         })
         let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.order_id} : ${response.client_oid} : ${JSON.stringify(response)}`
