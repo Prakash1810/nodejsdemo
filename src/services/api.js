@@ -375,6 +375,7 @@ class Api extends Controller {
                         if (response[body.toLowerCase()][0].result) {
                             response[body.toLowerCase()][0].order_id = `OX:${response[body.toLowerCase()][0].order_id}`
                             await this.addResponseInREDIS(response[body.toLowerCase()][0]);
+                            return res.status(200).send(controller.successFormat({ 'message': "Your order can be cancel" }));
                         }
                         else {
                             return res.status(500).send(controller.errorMsgFormat({
