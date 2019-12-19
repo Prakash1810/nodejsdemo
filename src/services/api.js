@@ -71,11 +71,9 @@ class Api extends Controller {
     }
 
     axiosAPI(data) {
-        console.log("Dataaa:", data);
         axios.post(
             `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {
-            console.log(axiosResponse.data)
             if (axiosResponse.data !== undefined) {
                 return axiosResponse.data;
             }
