@@ -170,10 +170,10 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
 
 router.post('/order/cancel', info, auth, async (req, res) => {
     try {
-        //req.body.data.attributes.user_id = Number(req.user.user_id);
+        req.body.data.attributes.user_id = Number(req.user.user_id);
         let data = req.body.data.attributes;
         let check = await markets.findOne({ market_name: data.market })
-        let checkUser = await users.findOne({ _id: '5de610036f439e002d9d22da', trade: false });
+        let checkUser = await users.findOne({ _id: req.user.user, trade: false });
         if (checkUser) {
             return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
         }
