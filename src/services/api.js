@@ -254,8 +254,12 @@ class Api extends Controller {
                 })
 
                 //add q in response 
-                for (let k = 0; k < getMarket.length; k++) {
-                    data[k].q = getMarket[k].q;
+                for (let k = 0; k < data.length; k++) {
+                    for (let j = 0; j < getMarket.length; j++) {
+                        if (data[k].name == getMarket[j].market_name) {
+                            data[k].q = getMarket[j].q
+                        }
+                    }
                 }
                 await this.marketPairs(data, result, res);
             }
@@ -278,7 +282,11 @@ class Api extends Controller {
                     return { status: true, result: data };
                 }
                 for (let k = 0; k < data.length; k++) {
-                    data[k].q = getMarket[k].q
+                    for (let j = 0; j < getMarket.length; j++) {
+                        if (data[k].name == getMarket[j].market_name) {
+                            data[k] = getMarket[j].q
+                        }
+                    }
                 }
                 await this.marketPairs(data, result, res);
             } else {
@@ -340,7 +348,7 @@ class Api extends Controller {
     async matchingEngineRequest(method, path, input, res, type = 'json', liquidity) {
         let source, data = null
         if (path == 'order/cancel') {
-            data = req.body.data.attributes;
+            data = input.data.attributes;
             if (!data.source) {
                 return res.status(500).send(controller.errorMsgFormat({
                     'message': "Source must be provide"
@@ -348,7 +356,7 @@ class Api extends Controller {
             }
 
             source = data.source
-            delete req.body.data.attributes.source
+            delete input.data.attributes.source
         }
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, input)
