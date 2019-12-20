@@ -31,7 +31,6 @@ const rewardBalance = require('../db/reward-balance');
 const branca = require("branca")(config.get('encryption.realKey'));
 const fs = require('fs');
 const _ = require('lodash');
-const userAddress = require('../db/user-address');
 const kyc = require('./kyc');
 const configs = require('../db/config');
 const audits = require('../db/auditlog-history');
