@@ -254,8 +254,12 @@ class Api extends Controller {
                 })
 
                 //add q in response 
-                for (let k = 0; k < getMarket.length; k++) {
-                    data[k].q = getMarket[k].q;
+                for (let k = 0; k < data.length; k++) {
+                    for (let j = 0; j < getMarket.length; j++) {
+                        if (data[k].name == getMarket[j].market_name) {
+                            data[k].q = getMarket[j].q
+                        }
+                    }
                 }
                 await this.marketPairs(data, result, res);
             }
@@ -278,7 +282,11 @@ class Api extends Controller {
                     return { status: true, result: data };
                 }
                 for (let k = 0; k < data.length; k++) {
-                    data[k].q = getMarket[k].q
+                    for (let j = 0; j < getMarket.length; j++) {
+                        if (data[k].name == getMarket[j].market_name) {
+                            data[k] = getMarket[j].q
+                        }
+                    }
                 }
                 await this.marketPairs(data, result, res);
             } else {
