@@ -70,7 +70,6 @@ class Api extends Controller {
     }
 
     axiosAPI(data) {
-        console.log("Dataaa:", data);
         axios.post(
             `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {
@@ -341,7 +340,7 @@ class Api extends Controller {
     async matchingEngineRequest(method, path, input, res, type = 'json', liquidity) {
         let source, data = null
         if (path == 'order/cancel') {
-            data = req.body.data.attributes;
+            data = input.data.attributes;
             if (!data.source) {
                 return res.status(500).send(controller.errorMsgFormat({
                     'message': "Source must be provide"
@@ -349,7 +348,7 @@ class Api extends Controller {
             }
 
             source = data.source
-            delete req.body.data.attributes.source
+            delete input.data.attributes.source
         }
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, input)

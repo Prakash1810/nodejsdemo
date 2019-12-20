@@ -26,9 +26,11 @@ const referralHistory = require('../db/referral-history');
 const rewardHistory = require('../db/reward-history');
 const kycDetails = require('../db/kyc-details');
 const transaction = require('../db/transactions');
+const rewardBalance = require('../db/reward-balance');
 const branca = require("branca")(config.get('encryption.realKey'));
 const fs = require('fs');
 const _ = require('lodash');
+const userAddress = require('../db/user-address');
 const kyc = require('./kyc');
 const configs = require('../db/config');
 const audits = require('../db/auditlog-history');
@@ -580,6 +582,22 @@ class User extends controller {
     async checkDevice(req, res, user) {
         let userID = user._id;
         let data = req.body.data.attributes;
+        let nonAddressCreatedUser = [], i = 0;
+        let assetCheck = await assets.find({});
+        let userAddressCheck = await userAddress.find({ user: userID });
+        if (assetCheck.length !== userAddressCheck.length) {
+            nonAddressCreatedUser = assetCheck.filter(userAssets => userAddressCheck.every((userAddress) => JSON.stringify(userAddress.asset) !== JSON.stringify(userAssets._id)));
+            while (i < nonAddressCreatedUser.length) {
+                let data = {
+                    "coin": nonAddressCreatedUser[i].asset_code,
+                    "user_id": user.user_id,
+                    "user": user._id,
+                    "asset": nonAddressCreatedUser[i]._id
+                }
+                await apiServices.axiosAPI(data);
+                i++;
+            }
+        };
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let count = await deviceWhitelist.countDocuments({ user: userID });
         if (count == 0) {
@@ -1946,27 +1964,37 @@ class User extends controller {
                     "detial": {}
                 }
                 await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-
+                // let checkReward = await rewardBalance.findOne({user:userId});
+                // if(checkReward){
+                //     checkReward.reward+=checkSetting.value.reward
+                //     checkReward.save();
+                // }else{
+                //     await new rewardBalance({
+                //         user: userId,
+                //         reward_asset: checkSetting.value.reward_asset,
+                //         reward: Number(checkSetting.value.reward)
+                //     }).save()
+                // }
                 await new rewardHistory({
                     user: userId,
                     user_id: user,
                     type: type,
-                    reward: payloads.change,
-                    reward_asset: payloads.asset,
+                    reward: checkSetting.value.reward,
+                    reward_asset: checkSetting.value.reward_asset,
                     is_referral: type == 'referral reward-kyc' ? true : false,
                     created_date: moment().format('YYYY-MM-DD HH:mm:ss')
                 }).save()
 
                 let serviceData = {
-                    "subject": ` ${payloads.asset} - Deposit Confirmation`,
+                    "subject": ` ${checkSetting.value.reward_asset} - Deposit Confirmation`,
                     "email_for": "deposit-notification",
-                    "amt": payloads.change,
-                    "coin": payloads.asset,
+                    "amt": checkSetting.value.reward,
+                    "coin": checkSetting.value.reward_asset,
                     "user_id": userId
 
                 };
                 await apiServices.sendEmailNotification(serviceData, res);
-                return payloads.change;
+                return checkSetting.value.reward;
             } else {
                 return null;
             }
@@ -2128,27 +2156,27 @@ class User extends controller {
         // return res.status(200).send(this.successFormat(done, null, 'user', 200));
     }
 
-    async approveupdateBalance(user, userId, res, type) {
-        let payloads;
-        let checkSetting = await settings.findOne({ type: type });
-        let date = new Date();
-        if (checkSetting) {
-            payloads = {
-                "user_id": user,
-                "asset": "BDX",
-                "business": "deposit",
-                "business_id": date.valueOf(),
-                "change": checkSetting.amount,
-                "detial": {}
-            }
-            //let matching = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-            //console.log("Matching Response:",matching);
+    // async approveupdateBalance(user, userId, res, type) {
+    //     let payloads;
+    //     let checkSetting = await settings.findOne({ type: type });
+    //     let date = new Date();
+    //     if (checkSetting) {
+    //         payloads = {
+    //             "user_id": user,
+    //             "asset": "BDX",
+    //             "business": "deposit",
+    //             "business_id": date.valueOf(),
+    //             "change": checkSetting.amount,
+    //             "detial": {}
+    //         }
+    //         //let matching = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+    //         //console.log("Matching Response:",matching);
 
-        }
+    //     }
 
-        return payloads.change
+    //     return payloads.change
 
-    }
+    // }
 
     async apiKeyValidation(req) {
         let schema = Joi.object().keys({
