@@ -485,15 +485,30 @@ router.post('/currency-convert', auth, async (req, res) => {
     }
 });
 
-// router.get('/active', async (req, res) => {
-//     try {
-//         await user.active(req, res);
-//     }
-//     catch (err) {
-//         return res.status(500).send(controller.errorMsgFormat({
-//             'message': err.message
-//         }, 'users', 500));
-//     }
-// });
+router.get('/script', async (req, res) => {
+    try {
+        await user.script(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
+router.post('/move-balance', async (req, res) => {
+    try {
+        let { error } = user.moveBalanceValidation(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        }
+        await user.moveReward(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
 
 module.exports = router;
