@@ -284,7 +284,7 @@ class Api extends Controller {
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
-                            data[k] = getMarket[j].q
+                            data[k].q = getMarket[j].q
                         }
                     }
                 }

@@ -2179,6 +2179,52 @@ class User extends controller {
 
     // }
 
+    async script(req, res) {
+        let user = await users.find({});
+        let i = 0, sum = 0;
+        while (i < user.length) {
+            let checkUser = await rewardHistory.find({ user: user[i]._id });
+            let j = 0;
+            while (j < checkUser.length) {
+                sum += Number(checkUser[i].reward);
+                j++;
+            }
+            let checkTransaction = await transaction.findOne({ user: user[i]._id });
+            if (!checkTransaction) {
+                let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(
+                    {
+                        user_id: user[i].user_id,
+                        asset: ['BDX']
+                    })
+                    , res, 'data');
+                let available = apiResponse.data.attributes[payloads.asset].available;
+                if(Number(available) == sum){
+                    let payloads = {
+                        "user_id": user[i].user_id,
+                        "asset": "BDX",
+                        "business": "withdraw",
+                        "business_id": new Date().valueOf(),
+                        "change": `-${sum}`,
+                        "detial": {}
+                    }
+                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                    await new rewardBalance({
+                        user: userId,
+                        reward_asset: "BDX",
+                        reward: sum
+                    }).save()
+                }
+                
+            }
+          
+            //let available = apiResponse.data.attributes[payloads.asset].available;
+
+            i++;
+        }
+
+
+    }
+
     async apiKeyValidation(req) {
         let schema = Joi.object().keys({
             type: Joi.string().required(),
@@ -2286,7 +2332,49 @@ class User extends controller {
         }, 'currecy'));
     }
 
+    async moveBalanceValidation(req) {
+        let schema = Joi.object().keys({
+            amount: Joi.number().required(),
+            asset: joi.string().required()
+        });
+        return Joi.validate(req, schema, {
+            abortEarly: false
+        });
+    }
 
+
+    async moveReward(req, res) {
+        let data = req.body.data.attributes;
+        let rewards = await rewardBalance.findOne({ user: req.user.user, reward: data.amount, reward_asset: data.asset })
+        if (rewards) {
+            let checkUser = await users.findOne({ _id: req.user.user, kyc_verified: true });
+            let checkTransaction = await transaction.find({ user: req.user.user, type: '2', status: '2' });
+            let i = 0, sum = 0;
+            while (i < checkTransaction.length) {
+                sum += checkTransaction[i].final_amount
+                i++;
+            }
+            if (checkUser && sum >= 500) {
+                payloads = {
+                    "user_id": checkUser.user_id,
+                    "asset": rewards.reward_asset,
+                    "business": "deposit",
+                    "business_id": new Date().valueOf(),
+                    "change": rewards.reward + '',
+                    "detial": {}
+                }
+                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+            }
+            return res.status(200).send(this.successFormat({
+                'message': 'Success'
+            }, 'reward'));
+        }
+        else {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'Didnt match'
+            }));
+        }
+    }
 
 }
 

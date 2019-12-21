@@ -16,7 +16,8 @@ const schema = new mongoose.Schema({
     taker_fee: { type: String },
     maker_fee: { type: String },
     deal_money: { type: String },
-    deal_fee: { type: String }
-})
+    deal_fee: { type: String },
+
+},{timestamps: { createdAt: 'created_date', updatedAt: 'modified_date' }})
 
 module.exports = mongoose.model('order-cancel', schema);
