@@ -113,7 +113,7 @@ router.patch('/reset-password', (req, res) => {
     }
 });
 
-router.patch('/change-password', info, auth, (req, res) => {
+router.patch('/change-password', auth, info, (req, res) => {
     try {
         let { error } = password.changePasswordValidate(req.body.data.attributes);
 
@@ -147,7 +147,7 @@ router.get('/get-user-id', (req, res) => {
     }
 });
 
-router.get('/login-history', info, auth, (req, res) => {
+router.get('/login-history', auth, info, (req, res) => {
     try {
         user.getLoginHistory(req, res);
     } catch (err) {
@@ -157,7 +157,7 @@ router.get('/login-history', info, auth, (req, res) => {
     }
 });
 
-router.get('/device-history', info, auth, (req, res) => {
+router.get('/device-history', auth, info, (req, res) => {
     try {
         user.getDeviceHistory(req, res);
     } catch (err) {
@@ -177,7 +177,7 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
     }
 });
 
-router.patch('/settings', info, auth, (req, res) => {
+router.patch('/settings',  auth, info,(req, res) => {
     try {
         let { error } = user.settingsValidate(req.body.data.attributes);
         if (error) {
@@ -496,7 +496,7 @@ router.get('/script', async (req, res) => {
     }
 });
 
-router.post('/move-balance', auth, info, async (req, res) => {
+router.post('/move-balance', auth,info, async (req, res) => {
     try {
         let { error } = user.moveBalanceValidation(req.body.data.attributes);
         if (error) {
