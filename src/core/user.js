@@ -38,9 +38,6 @@ const apikey = require('../db/api-keys');
 const { RequestBuilder, Payload } = require('yoti');
 const authenticators = require('authenticator')
 const changeCurrency = require('../db/currency-list');
-const
-
-
 
 class User extends controller {
 
