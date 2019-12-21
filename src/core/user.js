@@ -2198,7 +2198,7 @@ class User extends controller {
                     })
                     , res, 'data');
                 let available = apiResponse.data.attributes[payloads.asset].available;
-                if(Number(available) == sum){
+                if (Number(available) == sum) {
                     let payloads = {
                         "user_id": user[i].user_id,
                         "asset": "BDX",
@@ -2214,9 +2214,9 @@ class User extends controller {
                         reward: sum
                     }).save()
                 }
-                
+
             }
-          
+
             //let available = apiResponse.data.attributes[payloads.asset].available;
 
             i++;
@@ -2342,6 +2342,13 @@ class User extends controller {
         });
     }
 
+    async rewardUserBalance(req, res) {
+        let checkBalance = await rewardBalance.findOne({ user: req.user.user }).select('reward reward_asset')
+        if (checkBalance) {
+            return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_assets], 'reward'));
+        }
+        return res.status(200).send(this.successFormat([], 'reward'));
+    }
 
     async moveReward(req, res) {
         let data = req.body.data.attributes;

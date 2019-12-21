@@ -496,6 +496,17 @@ router.get('/script', async (req, res) => {
     }
 });
 
+router.get('/reward-balance', auth,info, async (req, res) => {
+    try {
+        await user.rewardUserBalance(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
 router.post('/move-balance', auth,info, async (req, res) => {
     try {
         let { error } = user.moveBalanceValidation(req.body.data.attributes);
