@@ -27,6 +27,7 @@ const referralHistory = require('../db/referral-history');
 const rewardHistory = require('../db/reward-history');
 const kycDetails = require('../db/kyc-details');
 const transaction = require('../db/transactions');
+const trade = require('../db/user-trades');
 const rewardBalance = require('../db/reward-balance');
 const branca = require("branca")(config.get('encryption.realKey'));
 const fs = require('fs');
@@ -38,8 +39,6 @@ const apikey = require('../db/api-keys');
 const { RequestBuilder, Payload } = require('yoti');
 const authenticators = require('authenticator')
 const changeCurrency = require('../db/currency-list');
-
-
 
 class User extends controller {
 
@@ -2345,40 +2344,59 @@ class User extends controller {
     async rewardUserBalance(req, res) {
         let checkBalance = await rewardBalance.findOne({ user: req.user.user }).select('reward reward_asset')
         if (checkBalance) {
-            return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_assets], 'reward'));
+            return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_asset]));
         }
-        return res.status(200).send(this.successFormat([], 'reward'));
+        return res.status(200).send(this.successFormat([]));
     }
 
     async moveReward(req, res) {
+        let sum;
         let data = req.body.data.attributes;
         let rewards = await rewardBalance.findOne({ user: req.user.user, reward: data.amount, reward_asset: data.asset })
         if (rewards) {
+            let i = 0, j = 0;
             let checkUser = await users.findOne({ _id: req.user.user, kyc_verified: true });
-            let checkTransaction = await transaction.find({ user: req.user.user, type: '2', status: '2' });
-            let i = 0, sum = 0;
-            while (i < checkTransaction.length) {
-                sum += checkTransaction[i].final_amount
-                i++;
-            }
-            if (checkUser && sum >= 500) {
-                payloads = {
-                    "user_id": checkUser.user_id,
-                    "asset": rewards.reward_asset,
-                    "business": "deposit",
-                    "business_id": new Date().valueOf(),
-                    "change": rewards.reward + '',
-                    "detial": {}
+            let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
+            if (!userTrade) {
+                sum = 0;
+            } else {
+                while (i < userTrade.sell.length) {
+                    if (Object.keys(userTrade.sell[i]) == "sixMonth") {
+                        sum += userTrade.sell[i].sixMonth.amount.btc
+                    }
+                    i++;
                 }
-                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                while (j < userTrade.buy.length) {
+                    if (Object.keys(userTrade.buy[j]) == "sixMonth") {
+                        sum += userTrade.buy[j].sixMonth.amount.btc
+                    }
+                    j++;
+                }
+                if (checkUser && sum >= 500) {
+                    payloads = {
+                        "user_id": checkUser.user_id,
+                        "asset": rewards.reward_asset,
+                        "business": "deposit",
+                        "business_id": new Date().valueOf(),
+                        "change": rewards.reward + '',
+                        "detial": {}
+                    }
+                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                }
+                else {
+                    return res.status(400).send(this.errorMsgFormat({
+                        message: 'You should verifiy your kyc and Should have trade volume of 1 BTC to move the rewards to wallet balance'
+                    }));
+                }
             }
+
             return res.status(200).send(this.successFormat({
-                'message': 'Success'
+                'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
             }, 'reward'));
         }
         else {
             return res.status(400).send(this.errorMsgFormat({
-                message: 'Didnt match'
+                message: 'Not enough reward balance for the given asset'
             }));
         }
     }
