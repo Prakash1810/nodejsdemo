@@ -112,7 +112,7 @@ router.patch('/reset-password', (req, res) => {
     }
 });
 
-router.patch('/change-password', info, auth, (req, res) => {
+router.patch('/change-password', auth, info, (req, res) => {
     try {
         let { error } = password.changePasswordValidate(req.body.data.attributes);
 
@@ -146,7 +146,7 @@ router.get('/get-user-id', (req, res) => {
     }
 });
 
-router.get('/login-history', info, auth, (req, res) => {
+router.get('/login-history', auth, info, (req, res) => {
     try {
         user.getLoginHistory(req, res);
     } catch (err) {
@@ -156,7 +156,7 @@ router.get('/login-history', info, auth, (req, res) => {
     }
 });
 
-router.get('/device-history', info, auth, (req, res) => {
+router.get('/device-history', auth, info, (req, res) => {
     try {
         user.getDeviceHistory(req, res);
     } catch (err) {
@@ -176,7 +176,7 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
     }
 });
 
-router.patch('/settings', info, auth, (req, res) => {
+router.patch('/settings',  auth, info,(req, res) => {
     try {
         let { error } = user.settingsValidate(req.body.data.attributes);
         if (error) {
@@ -484,16 +484,42 @@ router.post('/currency-convert', auth, async (req, res) => {
     }
 });
 
-// router.get('/active', async (req, res) => {
-//     try {
-//         await user.active(req, res);
-//     }
-//     catch (err) {
-//         return res.status(500).send(controller.errorMsgFormat({
-//             'message': err.message
-//         }, 'users', 500));
-//     }
-// });
+router.get('/script', async (req, res) => {
+    try {
+        await user.script(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
+router.get('/reward-balance', auth,info, async (req, res) => {
+    try {
+        await user.rewardUserBalance(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
+router.post('/move-balance', auth,info, async (req, res) => {
+    try {
+        let { error } = user.moveBalanceValidation(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        }
+        await user.moveReward(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
 
 
 module.exports = router;
