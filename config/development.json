@@ -11,13 +11,13 @@
 		"refreshTokenExpiry": "365d",
 		"infoToken": "365d",
 		"infokey": "Skp9PyY*C6Cute_@Mwnu-w",
-		"refreshKey" : "Nkqw^h%MDeR5m7DGQ",
+		"refreshKey": "Nkqw^h%MDeR5m7DGQ",
 		"mobileExpiry": "365d"
 	},
 	"site": {
 		"url": "http://localhost:3000",
 		"version": "v1",
-		"hmtLink":2
+		"hmtLink": 2
 	},
 	"settings": {
 		"expiryTime": 72,
@@ -27,35 +27,32 @@
 		"expiryTime": 1800,
 		"timeZone": "UTC"
 	},
-	"otpForEmail":
-	{
-		"hmt":3,
-		"timeExpiry":180 
+	"otpForEmail": {
+		"hmt": 3,
+		"timeExpiry": 180
 	},
-	"walletForEmail":{
-		"timeExpiry":1800
+	"walletForEmail": {
+		"timeExpiry": 1800
 	},
-
-	"accountActive":{
-		"hmt" : 5,
-		"timeExpiry":7200,
-		"limit":3,
-		"check":6
+	"accountActive": {
+		"hmt": 5,
+		"timeExpiry": 7200,
+		"limit": 3,
+		"check": 6
 	},
-
-	"accountActiveRegister":{
-		"hmt" : 1,
-		"timeExpiry":7200,
-		"limit":0
+	"accountActiveRegister": {
+		"hmt": 1,
+		"timeExpiry": 7200,
+		"limit": 0
 	},
-	"withdrawActive":{
-		"timeExpiry":86400
+	"withdrawActive": {
+		"timeExpiry": 86400
 	},
-	"liquidity":{
-		"topic" : "trade-"
+	"liquidity": {
+		"topic": "trade-"
 	},
-	"g2fLength":{
-		"length":16
-	}	
-
+	"g2fDateCheck": {
+		"start": "2019-10-22T22:04:27.824Z",
+		"end":   "2019-12-14T21:30:00.000Z"
+	}
 }
