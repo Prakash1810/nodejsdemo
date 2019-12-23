@@ -2381,7 +2381,7 @@ class User extends controller {
     }
 
     async rewardUserBalance(req, res) {
-        let checkBalance = await rewardBalance.findOne({ user: req.user.user }).select('reward reward_asset')
+        let checkBalance = await rewardBalance.findOne({ user: req.user.user }).select('reward reward_asset');
         if (checkBalance) {
             return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_asset]));
         }
@@ -2411,7 +2411,7 @@ class User extends controller {
                     }
                     j++;
                 }
-                if (checkUser && sum >= 500) {
+                if (checkUser && sum >= 1) {
                     payloads = {
                         "user_id": checkUser.user_id,
                         "asset": rewards.reward_asset,
