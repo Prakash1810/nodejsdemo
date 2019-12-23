@@ -1398,7 +1398,7 @@ class User extends controller {
                 }
             }
 
-            if (returnStatus === true) {
+            if (returnStatus) {
                 if (method == 'withoutAuth' && type != 'boolean') {
                     let user = await users.findOne({ _id: req.body.data.id });
                     delete data.g2f_code;
