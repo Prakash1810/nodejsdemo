@@ -61,7 +61,6 @@ class Registration extends Controller {
                 }
                 let index = data.email.indexOf('@');
                 let check = await apiServices.DisposableEmailAPI(data.email.substring(index + 1));
-                console.log(data)
                 // if(!check.dns && !check.temporary){
                 //    
                 if (!check.dns) {
