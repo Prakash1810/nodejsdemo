@@ -2373,7 +2373,7 @@ class User extends controller {
                     }
                     j++;
                 }
-                if (checkUser && sum >= 500) {
+                if (checkUser && sum >= 1) {
                     payloads = {
                         "user_id": checkUser.user_id,
                         "asset": rewards.reward_asset,
