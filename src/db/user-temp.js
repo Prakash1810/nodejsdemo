@@ -6,7 +6,7 @@ const userTempSchema = new mongoose.Schema({
     email: { type: String, lowercase: true },
     password: String,
     referrer_code: { type: String, default: null },
-    created_date: { type: Date,default: Date.now  },
+    created_date: { type: Date},
     modified_date: { type: Date, default: null },
     is_deleted: { type: Boolean, default: false },
 });

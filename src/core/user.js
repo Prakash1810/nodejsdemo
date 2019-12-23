@@ -765,7 +765,6 @@ class User extends controller {
 
             }
             const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
-            const mod = await otpHistory.findOneAndUpdate({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor }, { modified_date: isChecked.create_date_time });
             if (isChecked) {
                 let date = new Date(isChecked.create_date_time);
                 let getSeconds = date.getSeconds() + config.get('otpForEmail.timeExpiry');
@@ -1329,7 +1328,7 @@ class User extends controller {
             }));
         }
         else {
-            let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 16).toLowerCase();
+            let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 20).toLowerCase();
             let auth = authenticators.generateTotpUri(formattedKey, checkUser.email, config.get('secrete.issuer'), 'SHA1', 6, 30);
             return res.status(200).send(this.successFormat({
                 'googleKey': formattedKey,
@@ -2430,7 +2429,6 @@ class User extends controller {
                 }
             }
 
-<<<<<<< Updated upstream
             return res.status(200).send(this.successFormat({
                 'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
             }, 'reward'));
@@ -2442,8 +2440,6 @@ class User extends controller {
         }
     }
 
-=======
->>>>>>> Stashed changes
 }
 
 module.exports = new User;
