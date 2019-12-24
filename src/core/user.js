@@ -2186,7 +2186,7 @@ class User extends controller {
             let checkUser = await rewardHistory.find({ user: user[i]._id });
             let j = 0;
             while (j < checkUser.length) {
-                sum += Number(checkUser[i].reward);
+                sum += Number(checkUser[j].reward);
                 j++;
             }
             let checkTransaction = await transaction.findOne({ user: user[i]._id });
@@ -2197,7 +2197,7 @@ class User extends controller {
                         asset: ['BDX']
                     })
                     , res, 'data');
-                let available = apiResponse.data.attributes[payloads.asset].available;
+                let available = apiResponse.data.attributes['BDX'].available;
                 if (Number(available) == sum) {
                     let payloads = {
                         "user_id": user[i].user_id,
@@ -2209,7 +2209,7 @@ class User extends controller {
                     }
                     await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                     await new rewardBalance({
-                        user: userId,
+                        user: user[i]._id,
                         reward_asset: "BDX",
                         reward: sum
                     }).save()
@@ -2222,7 +2222,7 @@ class User extends controller {
             i++;
         }
 
-
+        return res.status(200).send('Success')
     }
 
     async apiKeyValidation(req) {
