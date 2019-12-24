@@ -1303,7 +1303,7 @@ class User extends controller {
             }));
         }
         else {
-            let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 20).toLowerCase();
+            let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 16).toLowerCase();
             let auth = authenticators.generateTotpUri(formattedKey, checkUser.email, config.get('secrete.issuer'), 'SHA1', 6, 30);
             return res.status(200).send(this.successFormat({
                 'googleKey': formattedKey,
@@ -1379,25 +1379,26 @@ class User extends controller {
             };
             let counter = Math.floor(Date.now() / 1000 / opts.step);
 
-            let returnStatus;
-            if (google_secrete_key.length === config.get('g2fLength.length')) {
+            let returnStatus, user;
+            if (data.google_secrete_key && google_secrete_key) {
+                user = await users.findOneAndUpdate({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } }, { modified_date: new Date() });
+            } else {
+                user = await users.findOne({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } });
+            }
+
+            if (user) {
                 returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
             }
             else {
                 returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code);
                 if (returnStatus) {
-                    if (returnStatus.delta) {
-                        returnStatus = true;
-                    } else {
-                        returnStatus = true;
-                    }
-
+                    returnStatus = returnStatus.delta == 0 ? true : false
                 } else {
                     returnStatus = false;
                 }
             }
 
-            if (returnStatus === true) {
+            if (returnStatus) {
                 if (method == 'withoutAuth' && type != 'boolean') {
                     let user = await users.findOne({ _id: req.body.data.id });
                     delete data.g2f_code;
@@ -2372,7 +2373,7 @@ class User extends controller {
                     }
                     j++;
                 }
-                if (checkUser && sum >= 500) {
+                if (checkUser && sum >= 1) {
                     payloads = {
                         "user_id": checkUser.user_id,
                         "asset": rewards.reward_asset,
