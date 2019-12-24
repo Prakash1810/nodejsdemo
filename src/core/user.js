@@ -1381,9 +1381,9 @@ class User extends controller {
 
             let returnStatus, user;
             if (data.google_secrete_key && google_secrete_key) {
-                user = await users.findOneAndUpdate({ _id: req.body.data.id, modified_date: { $gt: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } }, { modified_date: new Date() });
+                user = await users.findOneAndUpdate({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } }, { modified_date: new Date() });
             } else {
-                user = await users.findOne({ _id: req.body.data.id, created_date: { $gt: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') }, modified_date: { $gt: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } });
+                user = await users.findOne({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } });
             }
 
             if (user) {
