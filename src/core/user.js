@@ -2181,10 +2181,10 @@ class User extends controller {
 
     async script(req, res) {
         let user = await users.find({});
-        let i = 0, sum = 0;
+        let i = 0;
         while (i < user.length) {
             let checkUser = await rewardHistory.find({ user: user[i]._id });
-            let j = 0;
+            let j = 0, sum = 0;
             while (j < checkUser.length) {
                 sum += Number(checkUser[j].reward);
                 j++;
@@ -2198,7 +2198,7 @@ class User extends controller {
                     })
                     , res, 'data');
                 let available = apiResponse.data.attributes['BDX'].available;
-                if (Number(available) == sum) {
+                if (Number(available) == sum && sum > 0) {
                     let payloads = {
                         "user_id": user[i].user_id,
                         "asset": "BDX",
@@ -2217,7 +2217,7 @@ class User extends controller {
 
             }
 
-            //let available = apiResponse.data.attributes[payloads.asset].available;
+
 
             i++;
         }
@@ -2400,6 +2400,45 @@ class User extends controller {
                 message: 'Not enough reward balance for the given asset'
             }));
         }
+    }
+
+    async script2(req, res) {
+        let user = await users.find({})
+        let j = 0;
+        while (j < user.length) {
+            let transactions = await transaction.find({ user: user[j]._id, type: "2", status: "2", asset: '5d23299e683e4d0006d33d5d' });
+            let i = 0, sum = 0;
+            while (i < transactions.length) {
+                sum += transactions[i].final_amount;
+                i++;
+            }
+            let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(
+                {
+                    user_id: user[j].user_id,
+                    asset: ['BDX']
+                })
+                , res, 'data');
+            let available = apiResponse.data.attributes['BDX'].available;
+            let result = Number(available) - sum
+            if (result > 0) {
+                let payloads = {
+                    "user_id": user[j].user_id,
+                    "asset": "BDX",
+                    "business": "withdraw",
+                    "business_id": new Date().valueOf(),
+                    "change": `-${result}`,
+                    "detial": {}
+                }
+                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                await new rewardBalance({
+                    user: user[j]._id,
+                    reward_asset: "BDX",
+                    reward: result
+                }).save()
+            }
+            j++;
+        }
+        return res.send('Succes').status(200)
     }
 
 }
