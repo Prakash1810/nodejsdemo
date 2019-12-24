@@ -2209,7 +2209,7 @@ class User extends controller {
                     }
                     await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                     await new rewardBalance({
-                        user: userId,
+                        user: user[i]._id,
                         reward_asset: "BDX",
                         reward: sum
                     }).save()
