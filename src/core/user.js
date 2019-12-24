@@ -2222,7 +2222,7 @@ class User extends controller {
             i++;
         }
 
-
+        return res.status(200).send('Success')
     }
 
     async apiKeyValidation(req) {
