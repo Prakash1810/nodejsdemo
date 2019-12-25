@@ -1,4 +1,4 @@
-const Joi = require('joi');
+const Joi = require('@hapi/joi');
 const UserTemp = require('../db/user-temp');
 const Users = require('../db/users');
 const apiServices = require('../services/api');
@@ -15,34 +15,14 @@ const users = require('../db/users');
 class Registration extends Controller {
 
     validate(req) {
-        let emailReg = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
         let schema = Joi.object().keys({
-            email: Joi.string().required().regex(emailReg).options({
-                language: {
-                    string: {
-                        required: 'Please enter your {{label}} address.',
-                        regex: {
-                            base: 'Please enter a valid {{label}} address.'
-                        }
-                    }
-                }
-            }).label('email'),
-            password: Joi.string().required().min(8).max(50).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/).options({
-                language: {
-                    string: {
-                        required: 'Please enter a {{label}}.',
-                        min: '{{label}} must be a minimum of 8 characters. Please use a combination of alpha numeric, upper case and lower case characters.',
-                        regex: {
-                            base: '{{label}} must be a minimum of 8  req characters. Please use a combination of alpha numeric, upper case and lower case characters.'
-                        }
-                    }
-                }
-            }).label('password'),
-            password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
+            email: Joi.string().required().email(),
+            password: Joi.string().required().min(8).max(50).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/),
+            password_confirmation: Joi.any().valid(Joi.ref('password')).required(),
             referrer_code: Joi.string().allow('').optional()
         });
 
-        return Joi.validate(req, schema, { abortEarly: false })
+        return schema.validate(req, { abortEarly: false })
     }
 
     post(req, res) {
