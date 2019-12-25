@@ -3,7 +3,7 @@ const controller = require('../core/controller');
 const assets = require('../db/assets');
 const userAddress = require('../db/user-address');
 const withdrawAddress = require('../db/withdrawal-addresses');
-const Joi = require('joi');
+const Joi = require('@hapi/joi');
 const users = require('../db/users');
 const coinAddressValidator = require('wallet-address-validator');
 const apiServices = require('../services/api');
@@ -138,12 +138,7 @@ class Wallet extends controller {
             otp: Joi.string().optional()
         });
 
-        return Joi.validate(req, schema, {
-            abortEarly: false,
-            language: {
-                escapeHtml: true
-            }
-        });
+        return schema.validate(req, { abortEarly : false });
     }
 
     async coinAddressValidate(address, asset) {
@@ -553,12 +548,7 @@ class Wallet extends controller {
             payment_id: Joi.string()
         });
 
-        return Joi.validate(req, schema, {
-            abortEarly: false,
-            language: {
-                escapeHtml: true
-            }
-        });
+        return schema.validate(req, { abortEarly : false });
     }
 
     async withdrawValidate(req, res) {
@@ -892,12 +882,7 @@ class Wallet extends controller {
             ip: Joi.string().required()
         });
 
-        return Joi.validate(req, schema, {
-            abortEarly: false,
-            language: {
-                escapeHtml: true
-            }
-        });
+        return schema.validate(req, { abortEarly : false });
     }
 
     async patchWithdrawConfirmation(req, res) {

@@ -1,4 +1,4 @@
-const Joi = require('joi');
+const Joi = require('@hapi/joi');
 const Users = require('../db/users');
 const apiServices = require('../services/api');
 const Controller = require('../core/controller');
@@ -12,22 +12,12 @@ let checkHash = null;
 class Password extends Controller {
 
     validate(req) {
-        let emailReg = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
         let schema = Joi.object().keys({
-            email: Joi.string().required().regex(emailReg).options({
-                language: {
-                    string: {
-                        required: 'Please enter your {{label}} address.',
-                        regex: {
-                            base: 'Please enter a valid {{label}} address.'
-                        }
-                    }
-                }
-            }).label('email'),
+            email: Joi.string().required().email(),
             ip: Joi.string().allow('').optional()
         });
 
-        return Joi.validate(req, schema, { abortEarly: false });
+        return schema.validate(req, { abortEarly: false });
     }
 
     encryptHash(email, user) {
@@ -173,21 +163,12 @@ class Password extends Controller {
 
     resetPasswordValidate(req) {
         let schema = Joi.object().keys({
-            password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
-                language: {
-                    string: {
-                        required: 'Please enter a {{label}}.',
-                        regex: {
-                            base: '{{label}} must be a minimum of 8 characters. Please use a combination of alpha numeric, upper case and lower case characters.'
-                        }
-                    }
-                }
-            }).label('password'),
-            password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
+            password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/),
+            password_confirmation: Joi.any().valid(Joi.ref('password')).required(),
             hash: Joi.string()
         });
 
-        return Joi.validate(req, schema, { abortEarly: false })
+        return schema.validate(req, { abortEarly: false })
     }
 
     async resetPassword(req, res, type = 'reset') {
@@ -258,20 +239,11 @@ class Password extends Controller {
             g2f_code: Joi.string(),
             otp: Joi.string(),
             old_password: Joi.string().required(),
-            password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
-                language: {
-                    string: {
-                        required: 'Please enter a {{label}}.',
-                        regex: {
-                            base: ' {{label}} must be a minimum of 8 characters. Please use a combination of alpha numeric, upper case and lower case characters.'
-                        }          
-                    }
-                }
-            }).label('password'),
-            password_confirmation: Joi.any().valid(Joi.ref('password')).required().label('password confirmation').options({ language: { any: { allowOnly: 'must match password' } } }),
+            password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/),
+            password_confirmation: Joi.any().valid(Joi.ref('password')).required(),
         });
 
-        return Joi.validate(req, schema, { abortEarly: false })
+        return schema.validate(req, { abortEarly: false })
     }
 
     changePassword(req, res) {

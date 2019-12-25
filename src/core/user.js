@@ -11,7 +11,7 @@ const userTemp = require('../db/user-temp');
 const helpers = require('../helpers/helper.functions');
 const config = require('config');
 const jwt = require('jsonwebtoken');
-const Joi = require('joi');
+const Joi = require('@hapi/joi');
 const bcrypt = require('bcrypt');
 const controller = require('../core/controller');
 const g2fa = require('2fa');
@@ -351,26 +351,9 @@ class User extends controller {
     }
 
     validate(req) {
-        let emailReg = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
         let schema = Joi.object().keys({
-            email: Joi.string().required().regex(emailReg).options({
-                language: {
-                    string: {
-                        required: 'Please enter your {{label}} address.',
-                        regex: {
-                            base: 'Please enter a valid {{label}} address.'
-
-                        }
-                    }
-                }
-            }).label("email"),
-            password: Joi.string().required().options({
-                language: {
-                    string: {
-                        required: 'Please enter a {{label}}.',
-                    }
-                }
-            }).label('password'),
+            email: Joi.string().required().email(),
+            password: Joi.string().required(),
             is_browser: Joi.boolean().required(),
             is_mobile: Joi.boolean().required(),
             ip: Joi.string().required(),
@@ -383,9 +366,7 @@ class User extends controller {
             region: Joi.string().allow('').optional(),
         });
 
-        return Joi.validate(req, schema, {
-            abortEarly: false
-        });
+        return schema.validate(req, { abortEarly : false })
     }
     validateOtp(req) {
         let schema = Joi.object().keys({
@@ -403,9 +384,7 @@ class User extends controller {
             is_app: Joi.boolean().optional()
         });
 
-        return Joi.validate(req, schema, {
-            abortEarly: false
-        });
+        return schema.validate(req, { abortEarly : false });
     }
 
     deviceValidate(data) {
@@ -422,9 +401,7 @@ class User extends controller {
             city: Joi.string().allow('').optional(),
             region: Joi.string().allow('').optional(),
         })
-        return Joi.validate(data, schema, {
-            abortEarly: false
-        });
+        return schema.validate(data, { abortEarly : false });
     }
     removeUser(email, res) {
         users.deleteOne({
@@ -816,9 +793,7 @@ class User extends controller {
             type: Joi.string().required(),
         });
 
-        return Joi.validate(req, schema, {
-            abortEarly: false,
-        });
+        return schema.validate(req, { abortEarly : false });
     }
     async resendOtpForEmail(req, res, typeFor) {
         let data = req.body.data.attributes;
@@ -1147,9 +1122,7 @@ class User extends controller {
             type: Joi.string().optional()
         });
 
-        return Joi.validate(req, schema, {
-            abortEarly: false
-        });
+        return schema.validate(req, { abortEarly : false });
     }
 
     g2fSettingValidate(req) {
@@ -1160,9 +1133,7 @@ class User extends controller {
             g2f_code: Joi.string().required()
         });
 
-        return Joi.validate(req, schema, {
-            abortEarly: false
-        });
+        return schema.validate(req, { abortEarly : false });
     }
 
     async patchSettings(req, res, type = 'withoutCallPatchSetting') {
@@ -1695,9 +1666,7 @@ class User extends controller {
         let schema = Joi.object().keys({
             market: Joi.string().required()
         });
-        return Joi.validate(data, schema, {
-            abortEarly: false
-        });
+        return schema.validate(data, { abortEarly : false });
     }
     async addFavouriteUser(req, res) {
         let data = req.body.data.attributes;
@@ -2021,9 +1990,7 @@ class User extends controller {
             otp: Joi.string(),
         });
 
-        return Joi.validate(req, schema, {
-            abortEarly: false
-        });
+        return schema.validate(req, { abortEarly : false });
     }
 
     async kycDetails(req, res) {
@@ -2231,9 +2198,7 @@ class User extends controller {
             passphrase: joi.string().alphanum().required().min(5).max(8),
             g2f_code: Joi.string().required()
         });
-        return Joi.validate(req, schema, {
-            abortEarly: false
-        });
+        return schema.validate(req, { abortEarly : false });
     }
 
 
@@ -2337,9 +2302,7 @@ class User extends controller {
             amount: Joi.number().required(),
             asset: joi.string().required()
         });
-        return Joi.validate(req, schema, {
-            abortEarly: false
-        });
+        return schema.validate(req, { abortEarly : false });
     }
 
     async rewardUserBalance(req, res) {
