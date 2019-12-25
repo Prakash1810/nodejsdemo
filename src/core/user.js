@@ -460,7 +460,6 @@ class User extends controller {
             const rand = Math.random() * (999999 - 100000) + 100000;
             const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
             const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
-            console.log("")
             const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false, type_for: typeFor }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
             if (!isChecked) {
                 let data =
@@ -1207,7 +1206,9 @@ class User extends controller {
                 }
             }
             if (req.body.data.id !== undefined && Object.keys(requestData).length) {
-
+                if (requestData.google_secrete_key) {
+                    requestData.google_secrete_key = helpers.encrypt(requestData.google_secrete_key);
+                }
                 // find and update the reccord
                 let update = await users.findOneAndUpdate({
                     _id: req.body.data.id
@@ -1291,8 +1292,6 @@ class User extends controller {
     }
 
     async insert2faAuth(req, res) {
-
-        console.log(req.user.user)
         let checkUser = await users.findOne({ _id: req.user.user });
         if (checkUser.google_auth) {
             return res.status(400).send(this.errorMsgFormat({
@@ -1301,7 +1300,7 @@ class User extends controller {
         }
         else {
             let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 16).toLowerCase();
-            let auth = authenticators.generateTotpUri(formattedKey, checkUser.email, config.get('secrete.issuer'), 'SHA1', 6, 30);
+            let auth = authenticators.generateTotpUri(formattedKey, checkUser.email,process.env.G2F_HOST_NAME, 'SHA1', 6, 30);
             return res.status(200).send(this.successFormat({
                 'googleKey': formattedKey,
                 'googleQR': auth,
@@ -1484,6 +1483,8 @@ class User extends controller {
             if (requestedData.g2f_code !== undefined) {
                 if (requestedData.google_secrete_key === undefined) {
                     let result = await users.findById(req.body.data.id).exec();
+                    result.google_secrete_key = await helpers.decrypt(result.google_secrete_key);
+
                     if (!result) {
                         return res.status(400).send(this.errorMsgFormat({
                             'message': 'Invalid request. Please provide your key to continue.'
@@ -1821,7 +1822,6 @@ class User extends controller {
     async kycUpdate(req, res) {
 
         let data = req.body;
-        // console.log("Data:", data);
         if (data.topic == 'resource_update') {
             let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
             let checkUser = await users.findOne({ _id: checkSessionId.user });
