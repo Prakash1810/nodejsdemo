@@ -242,10 +242,9 @@ class User extends controller {
     async login(req, res) {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = req.body.data.attributes;
-        console.log("data:", data)
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
         data.password = await helpers.decrypt(data.password, res);
-        if (data.password === '' ) {
+        if (data.password === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
             }));
@@ -374,7 +373,7 @@ class User extends controller {
             region: Joi.string().allow('').optional(),
         });
 
-        return schema.validate(req, { abortEarly : false })
+        return schema.validate(req, { abortEarly: false })
     }
     validateOtp(req) {
         let schema = Joi.object().keys({
@@ -392,7 +391,7 @@ class User extends controller {
             is_app: Joi.boolean().optional()
         });
 
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
 
     deviceValidate(data) {
@@ -409,7 +408,7 @@ class User extends controller {
             city: Joi.string().allow('').optional(),
             region: Joi.string().allow('').optional(),
         })
-        return schema.validate(data, { abortEarly : false });
+        return schema.validate(data, { abortEarly: false });
     }
     removeUser(email, res) {
         users.deleteOne({
@@ -802,7 +801,7 @@ class User extends controller {
             type: Joi.string().required(),
         });
 
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
     async resendOtpForEmail(req, res, typeFor) {
         let data = req.body.data.attributes;
@@ -1131,7 +1130,7 @@ class User extends controller {
             type: Joi.string().optional()
         });
 
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
 
     g2fSettingValidate(req) {
@@ -1142,7 +1141,7 @@ class User extends controller {
             g2f_code: Joi.string().required()
         });
 
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
 
     async patchSettings(req, res, type = 'withoutCallPatchSetting') {
@@ -1382,6 +1381,7 @@ class User extends controller {
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
         try {
             let data = req.body.data.attributes;
+            let userG2fLength = 0;;
             let opts = {
                 beforeDrift: 2,
                 afterDrift: 2,
@@ -1390,14 +1390,18 @@ class User extends controller {
             };
             let counter = Math.floor(Date.now() / 1000 / opts.step);
 
-            let returnStatus, user;
+            let returnStatus, user = null;
             if (data.google_secrete_key && google_secrete_key) {
                 user = await users.findOneAndUpdate({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } }, { modified_date: new Date() });
+
             } else {
                 user = await users.findOne({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } });
-            }
+                if (user) {
+                    userG2fLength = user['google_secrete_key'].length;
+                }
 
-            if (user) {
+            }
+            if (userG2fLength === config.get('g2fOldLength.lenght')) {
                 returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
             }
             else {
@@ -1706,7 +1710,7 @@ class User extends controller {
         let schema = Joi.object().keys({
             market: Joi.string().required()
         });
-        return schema.validate(data, { abortEarly : false });
+        return schema.validate(data, { abortEarly: false });
     }
     async addFavouriteUser(req, res) {
         let data = req.body.data.attributes;
@@ -2030,7 +2034,7 @@ class User extends controller {
             otp: Joi.string(),
         });
 
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
 
     async kycDetails(req, res) {
@@ -2238,7 +2242,7 @@ class User extends controller {
             passphrase: joi.string().alphanum().required().min(5).max(8),
             g2f_code: Joi.string().required()
         });
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
 
 
@@ -2342,7 +2346,7 @@ class User extends controller {
             amount: Joi.number().required(),
             asset: joi.string().required()
         });
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
 
     async rewardUserBalance(req, res) {
