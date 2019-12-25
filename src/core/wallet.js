@@ -887,7 +887,7 @@ class Wallet extends controller {
 
     async patchWithdrawConfirmation(req, res) {
         let requestData = req.body.data.attributes;
-        let code = JSON.parse(helpers.decrypt(req.query.code));
+        let code = JSON.parse(helpers.decrypt(req.query.code,res));
         if (code.code !== undefined && code.code !== null) {
             let notify = await beldexNotification.findOne({
                 _id: code.code,

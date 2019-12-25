@@ -31,20 +31,27 @@ class Registration extends Controller {
             .exec()
             .then(async result => {
 
-                let data = req.body.data.attributes
+                let data = req.body.data.attributes;
+                data.password = await helpers.decrypt(data.password,res);
+                data.password_confirmation = await helpers.decrypt(data.password_confirmation,res);
+                if (data.password === '' || data.password_confirmation === '') {
+                    return res.status(400).send(this.errorMsgFormat({
+                        message: 'Your request was not encrypted.'
+                    }));
+                }
                 let index = data.email.indexOf('@');
-                let check = await apiServices.DisposableEmailAPI(data.email.substring(index+1));
+                let check = await apiServices.DisposableEmailAPI(data.email.substring(index + 1));
                 // if(!check.dns && !check.temporary){
                 //    
-                if(!check.dns){
+                if (!check.dns) {
                     return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Your registration was not completed since you are using an invalid/blocked domain'
-                            }));
+                        'message': 'Your registration was not completed since you are using an invalid/blocked domain'
+                    }));
                 }
-                else if(!check.dns || check.temporary){
+                else if (!check.dns || check.temporary) {
                     return res.status(400).send(this.errorMsgFormat({
-                                'message': 'Your registration was not completed since you are using an invalid/blocked domain'
-                            }));
+                        'message': 'Your registration was not completed since you are using an invalid/blocked domain'
+                    }));
                 }
                 if (result.length) {
                     let salt = await bcrypt.genSalt(10);
@@ -154,11 +161,11 @@ class Registration extends Controller {
             }
 
         }
-
         UserTemp.create({
             email: data.email,
             password: data.password,
-            referrer_code: data.referrer_code ? data.referrer_code : null
+            referrer_code: data.referrer_code ? data.referrer_code : null,
+            created_date: new Date()
         }, async (err, user) => {
             if (err) {
 

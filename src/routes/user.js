@@ -30,7 +30,6 @@ router.post('/login', async (req, res) => {
             user.login(req, res);
         }
     } catch (err) {
-        console.log(err);
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'users', 500));
@@ -532,5 +531,6 @@ router.post('/move-balance', auth,info, async (req, res) => {
         }, 'users', 500));
     }
 });
+
 
 module.exports = router;
