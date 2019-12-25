@@ -244,13 +244,8 @@ class User extends controller {
         let data = req.body.data.attributes;
         console.log("data:", data)
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
-<<<<<<< Updated upstream
-        data.password = await helpers.decrypt(data.password, res);
-        if (data.password === '') {
-=======
         data.password = await helpers.decrypt(data.password, res);
         if (data.password === '' ) {
->>>>>>> Stashed changes
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
             }));
