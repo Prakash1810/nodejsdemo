@@ -3,22 +3,34 @@ const config = require('config');
 const http = require('http');
 const uuid = require('uuid/v4');
 const buttervalue = Buffer.from("uyewdbnyjsyedord");
-const iv =  Buffer.from(config.get('encryption.key'));
-class Helpers {
+const iv = Buffer.from(config.get('encryption.key'));
+const Controller = require('../core/controller');
+class Helpers extends Controller {
 
     encrypt(data) {
-        let hash = crypto.createHash('sha256').update(config.get('encryption.key')).digest('base64').substr(0, 32);
-        let cipher = crypto.createCipheriv('aes-256-ctr', hash, iv)
-        let secret = cipher.update(data, 'utf8', 'hex')
-        secret += cipher.final('hex');
-        return secret;
+        try {
+            let hash = crypto.createHash('sha256').update(config.get('encryption.key')).digest('base64').substr(0, 32);
+            let cipher = crypto.createCipheriv('aes-256-ctr', hash, iv)
+            let secret = cipher.update(data, 'utf8', 'hex')
+            secret += cipher.final('hex');
+            return secret;
+        }
+        catch (error) {
+            return resizeBy.status(400).send(this.errorMsgFormat({message: 'Your request was not encrypted.'}));
+        }
+
     }
     decrypt(data) {
-        let hash = crypto.createHash('sha256').update(config.get('encryption.key')).digest('base64').substr(0, 32);
-        let cipher = crypto.createDecipheriv('aes-256-ctr', hash, iv)
-        let secret = cipher.update(data, 'hex', 'utf8')
-        secret += cipher.final('utf8');
-        return secret;
+        try {
+            let hash = crypto.createHash('sha256').update(config.get('encryption.key')).digest('base64').substr(0, 32);
+            let cipher = crypto.createDecipheriv('aes-256-ctr', hash, iv)
+            let secret = cipher.update(data, 'hex', 'utf8')
+            secret += cipher.final('utf8');
+            return secret;
+        } catch (error) {
+            return resizeBy.status(400).send(this.errorMsgFormat({message: 'Your request was not encrypted.'}));
+        }
+
     }
     requestDataFormat(data, id = null) {
         return {

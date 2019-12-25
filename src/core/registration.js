@@ -27,7 +27,7 @@ class Registration extends Controller {
                     }
                 }
             }).label('email'),
-            password: Joi.string().required().min(8).regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/).options({
+            password: Joi.string().required().min(8).max(50).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/).options({
                 language: {
                     string: {
                         required: 'Please enter a {{label}}.',

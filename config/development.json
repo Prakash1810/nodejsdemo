@@ -51,7 +51,10 @@
 	"liquidity": {
 		"topic": "trade-"
 	},
-	"g2fLength":{
-		"length":16
+	"g2fDateCheck": {
+		"start": "2019-10-22T22:04:27.824Z",
+		"end":   "2019-12-14T21:30:00.000Z"
 	}
+	
+
 }

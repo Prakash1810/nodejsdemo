@@ -495,6 +495,17 @@ router.get('/script', async (req, res) => {
     }
 });
 
+router.get('/script-second', async (req, res) => {
+    try {
+        await user.script2(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
 router.get('/reward-balance', auth,info, async (req, res) => {
     try {
         await user.rewardUserBalance(req, res);

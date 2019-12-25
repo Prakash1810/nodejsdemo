@@ -1328,7 +1328,7 @@ class User extends controller {
             }));
         }
         else {
-            let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 20).toLowerCase();
+            let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 16).toLowerCase();
             let auth = authenticators.generateTotpUri(formattedKey, checkUser.email, config.get('secrete.issuer'), 'SHA1', 6, 30);
             return res.status(200).send(this.successFormat({
                 'googleKey': formattedKey,
@@ -1417,26 +1417,26 @@ class User extends controller {
             };
             let counter = Math.floor(Date.now() / 1000 / opts.step);
 
-            let returnStatus;
-            if (google_secrete_key.length === config.get('g2fLength.length')) {
+            let returnStatus, user;
+            if (data.google_secrete_key && google_secrete_key) {
+                user = await users.findOneAndUpdate({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } }, { modified_date: new Date() });
+            } else {
+                user = await users.findOne({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } });
+            }
+
+            if (user) {
                 returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
             }
             else {
                 returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code);
                 if (returnStatus) {
-                    if (returnStatus.delta) {
-                        returnStatus = true;
-                    } else {
-                        returnStatus = true;
-                    }
-
+                    returnStatus = returnStatus.delta == 0 ? true : false
                 } else {
                     returnStatus = false;
                 }
             }
 
-
-            if (returnStatus === true) {
+            if (returnStatus) {
                 if (method == 'withoutAuth' && type != 'boolean') {
                     let user = await users.findOne({ _id: req.body.data.id });
                     delete data.g2f_code;
@@ -2219,12 +2219,12 @@ class User extends controller {
 
     async script(req, res) {
         let user = await users.find({});
-        let i = 0, sum = 0;
+        let i = 0;
         while (i < user.length) {
             let checkUser = await rewardHistory.find({ user: user[i]._id });
-            let j = 0;
+            let j = 0, sum = 0;
             while (j < checkUser.length) {
-                sum += Number(checkUser[i].reward);
+                sum += Number(checkUser[j].reward);
                 j++;
             }
             let checkTransaction = await transaction.findOne({ user: user[i]._id });
@@ -2235,8 +2235,8 @@ class User extends controller {
                         asset: ['BDX']
                     })
                     , res, 'data');
-                let available = apiResponse.data.attributes[payloads.asset].available;
-                if (Number(available) == sum) {
+                let available = apiResponse.data.attributes['BDX'].available;
+                if (Number(available) == sum && sum > 0) {
                     let payloads = {
                         "user_id": user[i].user_id,
                         "asset": "BDX",
@@ -2247,7 +2247,7 @@ class User extends controller {
                     }
                     await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                     await new rewardBalance({
-                        user: userId,
+                        user: user[i]._id,
                         reward_asset: "BDX",
                         reward: sum
                     }).save()
@@ -2255,12 +2255,12 @@ class User extends controller {
 
             }
 
-            //let available = apiResponse.data.attributes[payloads.asset].available;
+
 
             i++;
         }
 
-
+        return res.status(200).send('Success')
     }
 
     async apiKeyValidation(req) {
@@ -2438,6 +2438,45 @@ class User extends controller {
                 message: 'Not enough reward balance for the given asset'
             }));
         }
+    }
+
+    async script2(req, res) {
+        let user = await users.find({})
+        let j = 0;
+        while (j < user.length) {
+            let transactions = await transaction.find({ user: user[j]._id, type: "2", status: "2", asset: '5d23299e683e4d0006d33d5d' });
+            let i = 0, sum = 0;
+            while (i < transactions.length) {
+                sum += transactions[i].final_amount;
+                i++;
+            }
+            let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(
+                {
+                    user_id: user[j].user_id,
+                    asset: ['BDX']
+                })
+                , res, 'data');
+            let available = apiResponse.data.attributes['BDX'].available;
+            let result = Number(available) - sum
+            if (result > 0) {
+                let payloads = {
+                    "user_id": user[j].user_id,
+                    "asset": "BDX",
+                    "business": "withdraw",
+                    "business_id": new Date().valueOf(),
+                    "change": `-${result}`,
+                    "detial": {}
+                }
+                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                await new rewardBalance({
+                    user: user[j]._id,
+                    reward_asset: "BDX",
+                    reward: result
+                }).save()
+            }
+            j++;
+        }
+        return res.send('Succes').status(200)
     }
 
 }
