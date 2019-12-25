@@ -17,7 +17,7 @@ class Registration extends Controller {
     validate(req) {
         let schema = Joi.object().keys({
             email: Joi.string().required().email(),
-            password: Joi.string().required().min(8).regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/),
+            password: Joi.string().required().min(8).max(50).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/),
             password_confirmation: Joi.any().valid(Joi.ref('password')).required(),
             referrer_code: Joi.string().allow('').optional()
         });

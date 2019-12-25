@@ -163,7 +163,7 @@ class Password extends Controller {
 
     resetPasswordValidate(req) {
         let schema = Joi.object().keys({
-            password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/),
+            password: Joi.string().required().min(8).max(50).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/),
             password_confirmation: Joi.any().valid(Joi.ref('password')).required(),
             hash: Joi.string()
         });
@@ -247,7 +247,7 @@ class Password extends Controller {
             g2f_code: Joi.string(),
             otp: Joi.string(),
             old_password: Joi.string().required(),
-            password: Joi.string().required().regex(/^(?=.*?[A-Z])(?=.*?[0-9]).{8,}$/),
+            password: Joi.string().required().min(8).max(50).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/),
             password_confirmation: Joi.any().valid(Joi.ref('password')).required(),
         });
 
