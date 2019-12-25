@@ -52,8 +52,8 @@ class Registration extends Controller {
             .then(async result => {
 
                 let data = req.body.data.attributes;
-                data.password = await helpers.decrypt(data.password);
-                data.password_confirmation = await helpers.decrypt(data.password_confirmation);
+                data.password = await helpers.decrypt(data.password,res);
+                data.password_confirmation = await helpers.decrypt(data.password_confirmation,res);
                 if (data.password === '' || data.password_confirmation === '') {
                     return res.status(400).send(this.errorMsgFormat({
                         message: 'Your request was not encrypted.'

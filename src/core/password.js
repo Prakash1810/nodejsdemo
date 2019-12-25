@@ -113,7 +113,7 @@ class Password extends Controller {
     async checkResetLink(req, res) {
 
 
-        let userHash = JSON.parse(helpers.decrypt(req.params.hash));
+        let userHash = JSON.parse(helpers.decrypt(req.params.hash,res));
         let checkHash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash });
         if (checkHash) {
             if (checkHash.is_active) {
@@ -197,8 +197,8 @@ class Password extends Controller {
             return;
         }
         let data = req.body.data.attributes;
-        data.password = await helpers.decrypt(data.password);
-        data.password_confirmation = await helpers.decrypt(data.password_confirmation);
+        data.password = await helpers.decrypt(data.password,res);
+        data.password_confirmation = await helpers.decrypt(data.password_confirmation,res);
         if (data.password === '' || data.password_confirmation === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
@@ -284,7 +284,7 @@ class Password extends Controller {
 
     async changePassword(req, res) {
         let requestData = req.body.data.attributes;
-        requestData.old_password = await helpers.decrypt(requestData.old_password);
+        requestData.old_password = await helpers.decrypt(requestData.old_password,res);
         if (requestData.old_password === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'

@@ -43,7 +43,7 @@ const changeCurrency = require('../db/currency-list');
 class User extends controller {
 
     async activate(req, res) {
-        const userHash = JSON.parse(helpers.decrypt(req.params.hash))
+        const userHash = JSON.parse(helpers.decrypt(req.params.hash,res))
         let checkhash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash })
         if (checkhash) {
             if (checkhash.is_active) {
@@ -243,7 +243,7 @@ class User extends controller {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = req.body.data.attributes;
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
-        data.password = await helpers.decrypt(data.password);
+        data.password = await helpers.decrypt(data.password,res);
         if (data.password === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
@@ -1062,7 +1062,7 @@ class User extends controller {
 
     async patchWhiteListIP(req, res) {
         try {
-            let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
+            let deviceHash = JSON.parse(helpers.decrypt(req.params.hash,res));
 
             if (deviceHash.data.user_id) {
                 let check = await mangHash.findOne({ email: deviceHash.data.email, type_for: "new_authorize_device", hash: req.params.hash });
@@ -1180,7 +1180,7 @@ class User extends controller {
             }
             if (type != 'withCallPatchSetting' || type == 'withg2f') {
                 if (requestData.password) {
-                    requestData.password = await helpers.decrypt(requestData.password);
+                    requestData.password = await helpers.decrypt(requestData.password,res);
                     if (requestData.password === '') {
                         return res.status(400).send(this.errorMsgFormat({
                             message: 'Your request was not encrypted.'
@@ -1188,7 +1188,7 @@ class User extends controller {
                     }
                 }
                 if (requestData.google_secrete_key) {
-                    requestData.google_secrete_key = await helpers.decrypt(requestData.google_secrete_key);
+                    requestData.google_secrete_key = await helpers.decrypt(requestData.google_secrete_key,res);
                     if (requestData.google_secrete_key === '') {
                         return res.status(400).send(this.errorMsgFormat({
                             message: 'Your request was not encrypted.'
@@ -1197,7 +1197,7 @@ class User extends controller {
                 }
             }
             if (requestData.code !== undefined) {
-                let userHash = JSON.parse(helpers.decrypt(requestData.code));
+                let userHash = JSON.parse(helpers.decrypt(requestData.code,res));
                 requestData.is_active = userHash.is_active;
             }
             if (type != 'withCallPatchSetting' && type != 'disable') {
@@ -1274,7 +1274,7 @@ class User extends controller {
     async disableAccount(req, res) {
         try {
             let requestedData = req.body.data.attributes;
-            let userHash = JSON.parse(helpers.decrypt(requestedData.code));
+            let userHash = JSON.parse(helpers.decrypt(requestedData.code,res));
             if (userHash.is_active !== undefined) {
                 let checkActive = await users.findOne({ _id: req.body.data.id });
                 if (!checkActive) {
@@ -1341,14 +1341,14 @@ class User extends controller {
 
     async patch2FAuth(req, res) {
         let requestedData = req.body.data.attributes;
-        requestedData.password = await helpers.decrypt(requestedData.password);
+        requestedData.password = await helpers.decrypt(requestedData.password,res);
         if (requestedData.password === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
             }));
         }
         if (requestedData.google_secrete_key) {
-            requestedData.google_secrete_key = await helpers.decrypt(requestedData.google_secrete_key);
+            requestedData.google_secrete_key = await helpers.decrypt(requestedData.google_secrete_key,res);
             if (requestedData.google_secrete_key === '') {
                 return res.status(400).send(this.errorMsgFormat({
                     message: 'Your request was not encrypted.'
