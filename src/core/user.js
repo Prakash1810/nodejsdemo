@@ -43,7 +43,7 @@ const changeCurrency = require('../db/currency-list');
 class User extends controller {
 
     async activate(req, res) {
-        const userHash = JSON.parse(helpers.decrypt(req.params.hash))
+        const userHash = JSON.parse(helpers.decrypt(req.params.hash, res))
         let checkhash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash })
         if (checkhash) {
             if (checkhash.is_active) {
@@ -242,7 +242,15 @@ class User extends controller {
     async login(req, res) {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = req.body.data.attributes;
+        console.log("data:", data)
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
+        data.password = await helpers.decrypt(data.password, res);
+        if (data.password === '' ) {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'Your request was not encrypted.'
+            }));
+        }
+
         users.findOne({
             email: data.email
         })
@@ -597,6 +605,7 @@ class User extends controller {
                 i++;
             }
         };
+
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let count = await deviceWhitelist.countDocuments({ user: userID });
         if (count == 0) {
@@ -1055,7 +1064,7 @@ class User extends controller {
 
     async patchWhiteListIP(req, res) {
         try {
-            let deviceHash = JSON.parse(helpers.decrypt(req.params.hash));
+            let deviceHash = JSON.parse(helpers.decrypt(req.params.hash, res));
 
             if (deviceHash.data.user_id) {
                 let check = await mangHash.findOne({ email: deviceHash.data.email, type_for: "new_authorize_device", hash: req.params.hash });
@@ -1171,8 +1180,26 @@ class User extends controller {
             if (type != 'disable') {
                 req.body.data.id = req.user.user;
             }
+            if (type != 'withCallPatchSetting' || type == 'withg2f') {
+                if (requestData.password) {
+                    requestData.password = await helpers.decrypt(requestData.password, res);
+                    if (requestData.password === '') {
+                        return res.status(400).send(this.errorMsgFormat({
+                            message: 'Your request was not encrypted.'
+                        }));
+                    }
+                }
+                if (requestData.google_secrete_key) {
+                    requestData.google_secrete_key = await helpers.decrypt(requestData.google_secrete_key, res);
+                    if (requestData.google_secrete_key === '') {
+                        return res.status(400).send(this.errorMsgFormat({
+                            message: 'Your request was not encrypted.'
+                        }));
+                    }
+                }
+            }
             if (requestData.code !== undefined) {
-                let userHash = JSON.parse(helpers.decrypt(requestData.code));
+                let userHash = JSON.parse(helpers.decrypt(requestData.code, res));
                 requestData.is_active = userHash.is_active;
             }
             if (type != 'withCallPatchSetting' && type != 'disable') {
@@ -1249,7 +1276,7 @@ class User extends controller {
     async disableAccount(req, res) {
         try {
             let requestedData = req.body.data.attributes;
-            let userHash = JSON.parse(helpers.decrypt(requestedData.code));
+            let userHash = JSON.parse(helpers.decrypt(requestedData.code, res));
             if (userHash.is_active !== undefined) {
                 let checkActive = await users.findOne({ _id: req.body.data.id });
                 if (!checkActive) {
@@ -1316,6 +1343,20 @@ class User extends controller {
 
     async patch2FAuth(req, res) {
         let requestedData = req.body.data.attributes;
+        requestedData.password = await helpers.decrypt(requestedData.password, res);
+        if (requestedData.password === '') {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'Your request was not encrypted.'
+            }));
+        }
+        if (requestedData.google_secrete_key) {
+            requestedData.google_secrete_key = await helpers.decrypt(requestedData.google_secrete_key, res);
+            if (requestedData.google_secrete_key === '') {
+                return res.status(400).send(this.errorMsgFormat({
+                    message: 'Your request was not encrypted.'
+                }));
+            }
+        }
         if ((requestedData.password !== undefined && requestedData.g2f_code !== undefined) && req.body.data.id != undefined) {
             let result = await users.findById(req.body.data.id).exec();
             if (!result) {
@@ -1355,7 +1396,6 @@ class User extends controller {
             // delete password attribute
 
             delete req.body.data.attributes.password;
-
             let check = await this.patchSettings(req, res, 'withCallPatchSetting');
             if (check.status == true) {
                 return { status: true }
@@ -2343,7 +2383,7 @@ class User extends controller {
     }
 
     async rewardUserBalance(req, res) {
-        let checkBalance = await rewardBalance.findOne({ user: req.user.user }).select('reward reward_asset')
+        let checkBalance = await rewardBalance.findOne({ user: req.user.user }).select('reward reward_asset');
         if (checkBalance) {
             return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_asset]));
         }
@@ -2441,7 +2481,6 @@ class User extends controller {
 
             j++;
         }
-        return res.send('Succes').status(200)
     }
 
 }
