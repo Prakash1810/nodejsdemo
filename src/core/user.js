@@ -2412,30 +2412,33 @@ class User extends controller {
                 sum += transactions[i].final_amount;
                 i++;
             }
-            let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(
-                {
-                    user_id: user[j].user_id,
-                    asset: ['BDX']
-                })
-                , res, 'data');
-            let available = apiResponse.data.attributes['BDX'].available;
-            let result = Number(available) - sum
-            if (result > 0) {
-                let payloads = {
-                    "user_id": user[j].user_id,
-                    "asset": "BDX",
-                    "business": "withdraw",
-                    "business_id": new Date().valueOf(),
-                    "change": `-${result}`,
-                    "detial": {}
+            if (sum > 0) {
+                let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(
+                    {
+                        user_id: user[j].user_id,
+                        asset: ['BDX']
+                    })
+                    , res, 'data');
+                let available = apiResponse.data.attributes['BDX'].available;
+                let result = Number(available) - sum
+                if (result > 0 && sum > 0) {
+                    let payloads = {
+                        "user_id": user[j].user_id,
+                        "asset": "BDX",
+                        "business": "withdraw",
+                        "business_id": new Date().valueOf(),
+                        "change": `-${result}`,
+                        "detial": {}
+                    }
+                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                    await new rewardBalance({
+                        user: user[j]._id,
+                        reward_asset: "BDX",
+                        reward: result
+                    }).save()
                 }
-                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                await new rewardBalance({
-                    user: user[j]._id,
-                    reward_asset: "BDX",
-                    reward: result
-                }).save()
             }
+
             j++;
         }
         return res.send('Succes').status(200)
