@@ -379,7 +379,6 @@ class Api extends Controller {
                             body = pair.slice(0, pair.length - 3) + '-' + pair.slice(pair.length - 3);
                         }
                         let response = await authClient.spot().postCancelOrder(source.substr(source.indexOf('-') + 1), { "instrument_id": body.toLowerCase() });
-                        console.log("Response:", response);
                         if (response[body.toLowerCase()][0].result) {
                             response[body.toLowerCase()][0].order_id = `OX:${response[body.toLowerCase()][0].order_id}`
                             await this.addResponseInREDIS(response[body.toLowerCase()][0], "cancel");
