@@ -381,7 +381,7 @@ class Api extends Controller {
                         let response = await authClient.spot().postCancelOrder(source.substr(source.indexOf('-') + 1), { "instrument_id": body.toLowerCase() });
                         if (response[body.toLowerCase()][0].result) {
                             response[body.toLowerCase()][0].order_id = `OX:${response[body.toLowerCase()][0].order_id}`
-                            await this.addResponseInREDIS(response[body.toLowerCase()][0]);
+                            await this.addResponseInREDIS(response[body.toLowerCase()][0], "cancel");
                             return res.status(200).send(controller.successFormat({ 'message': "Your order can be cancel" }));
                         }
                         else {
@@ -406,7 +406,7 @@ class Api extends Controller {
         return await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${assetsName}&vs_currencies=${convertTo}`);
     }
 
-    async addResponseInREDIS(response) {
+    async addResponseInREDIS(response, type = 'nonCancel') {
         // var client = redis.createClient('6379','127.0.0.1');
 
         // client.on('connect', function () {
@@ -436,6 +436,7 @@ class Api extends Controller {
             }
         ]);
         redis.rpush(response.order_id, JSON.stringify(response));
+        redis.rpush(response.order_id, type == 'cancel' ? JSON.stringify({ cancel: true }) : JSON.stringify({ cancel: false }));
         redis.on('error', (err) => {
             console.log(err);
         })
