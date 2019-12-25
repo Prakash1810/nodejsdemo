@@ -33,7 +33,7 @@ class Registration extends Controller {
                         required: 'Please enter a {{label}}.',
                         min: '{{label}} must be a minimum of 8 characters. Please use a combination of alpha numeric, upper case and lower case characters.',
                         regex: {
-                            base: '{{label}} must be a minimum of 8 characters. Please use a combination of alpha numeric, upper case and lower case characters.'
+                            base: '{{label}} must be a minimum of 8  req characters. Please use a combination of alpha numeric, upper case and lower case characters.'
                         }
                     }
                 }
@@ -52,8 +52,14 @@ class Registration extends Controller {
             .then(async result => {
 
                 let data = req.body.data.attributes;
+<<<<<<< Updated upstream
                 data.password = await helpers.decrypt(data.password,res);
                 data.password_confirmation = await helpers.decrypt(data.password_confirmation,res);
+=======
+                console.log("data:",data)
+                data.password = await helpers.decrypt(data.password,res);
+                data.password_confirmation = await helpers.decrypt(data.password_confirmation);
+>>>>>>> Stashed changes
                 if (data.password === '' || data.password_confirmation === '') {
                     return res.status(400).send(this.errorMsgFormat({
                         message: 'Your request was not encrypted.'

@@ -43,7 +43,7 @@ const changeCurrency = require('../db/currency-list');
 class User extends controller {
 
     async activate(req, res) {
-        const userHash = JSON.parse(helpers.decrypt(req.params.hash,res))
+        const userHash = JSON.parse(helpers.decrypt(req.params.hash, res))
         let checkhash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash })
         if (checkhash) {
             if (checkhash.is_active) {
@@ -242,13 +242,20 @@ class User extends controller {
     async login(req, res) {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = req.body.data.attributes;
+        console.log("data:", data)
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
-        data.password = await helpers.decrypt(data.password,res);
+<<<<<<< Updated upstream
+        data.password = await helpers.decrypt(data.password, res);
         if (data.password === '') {
+=======
+        data.password = await helpers.decrypt(data.password, res);
+        if (data.password === '' ) {
+>>>>>>> Stashed changes
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
             }));
         }
+
         users.findOne({
             email: data.email
         })
@@ -1062,7 +1069,7 @@ class User extends controller {
 
     async patchWhiteListIP(req, res) {
         try {
-            let deviceHash = JSON.parse(helpers.decrypt(req.params.hash,res));
+            let deviceHash = JSON.parse(helpers.decrypt(req.params.hash, res));
 
             if (deviceHash.data.user_id) {
                 let check = await mangHash.findOne({ email: deviceHash.data.email, type_for: "new_authorize_device", hash: req.params.hash });
@@ -1180,7 +1187,7 @@ class User extends controller {
             }
             if (type != 'withCallPatchSetting' || type == 'withg2f') {
                 if (requestData.password) {
-                    requestData.password = await helpers.decrypt(requestData.password,res);
+                    requestData.password = await helpers.decrypt(requestData.password, res);
                     if (requestData.password === '') {
                         return res.status(400).send(this.errorMsgFormat({
                             message: 'Your request was not encrypted.'
@@ -1188,7 +1195,7 @@ class User extends controller {
                     }
                 }
                 if (requestData.google_secrete_key) {
-                    requestData.google_secrete_key = await helpers.decrypt(requestData.google_secrete_key,res);
+                    requestData.google_secrete_key = await helpers.decrypt(requestData.google_secrete_key, res);
                     if (requestData.google_secrete_key === '') {
                         return res.status(400).send(this.errorMsgFormat({
                             message: 'Your request was not encrypted.'
@@ -1197,7 +1204,7 @@ class User extends controller {
                 }
             }
             if (requestData.code !== undefined) {
-                let userHash = JSON.parse(helpers.decrypt(requestData.code,res));
+                let userHash = JSON.parse(helpers.decrypt(requestData.code, res));
                 requestData.is_active = userHash.is_active;
             }
             if (type != 'withCallPatchSetting' && type != 'disable') {
@@ -1274,7 +1281,7 @@ class User extends controller {
     async disableAccount(req, res) {
         try {
             let requestedData = req.body.data.attributes;
-            let userHash = JSON.parse(helpers.decrypt(requestedData.code,res));
+            let userHash = JSON.parse(helpers.decrypt(requestedData.code, res));
             if (userHash.is_active !== undefined) {
                 let checkActive = await users.findOne({ _id: req.body.data.id });
                 if (!checkActive) {
@@ -1341,14 +1348,14 @@ class User extends controller {
 
     async patch2FAuth(req, res) {
         let requestedData = req.body.data.attributes;
-        requestedData.password = await helpers.decrypt(requestedData.password,res);
+        requestedData.password = await helpers.decrypt(requestedData.password, res);
         if (requestedData.password === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
             }));
         }
         if (requestedData.google_secrete_key) {
-            requestedData.google_secrete_key = await helpers.decrypt(requestedData.google_secrete_key,res);
+            requestedData.google_secrete_key = await helpers.decrypt(requestedData.google_secrete_key, res);
             if (requestedData.google_secrete_key === '') {
                 return res.status(400).send(this.errorMsgFormat({
                     message: 'Your request was not encrypted.'
@@ -2450,33 +2457,34 @@ class User extends controller {
                 sum += transactions[i].final_amount;
                 i++;
             }
-            let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(
-                {
-                    user_id: user[j].user_id,
-                    asset: ['BDX']
-                })
-                , res, 'data');
-            let available = apiResponse.data.attributes['BDX'].available;
-            let result = Number(available) - sum
-            if (result > 0) {
-                let payloads = {
-                    "user_id": user[j].user_id,
-                    "asset": "BDX",
-                    "business": "withdraw",
-                    "business_id": new Date().valueOf(),
-                    "change": `-${result}`,
-                    "detial": {}
+            if (sum > 0) {
+                let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(
+                    {
+                        user_id: user[j].user_id,
+                        asset: ['BDX']
+                    })
+                    , res, 'data');
+                let available = apiResponse.data.attributes['BDX'].available;
+                let result = Number(available) - sum
+                if (result > 0 && sum > 0) {
+                    let payloads = {
+                        "user_id": user[j].user_id,
+                        "asset": "BDX",
+                        "business": "withdraw",
+                        "business_id": new Date().valueOf(),
+                        "change": `-${result}`,
+                        "detial": {}
+                    }
+                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                    await new rewardBalance({
+                        user: user[j]._id,
+                        reward_asset: "BDX",
+                        reward: result
+                    }).save()
                 }
-                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                await new rewardBalance({
-                    user: user[j]._id,
-                    reward_asset: "BDX",
-                    reward: result
-                }).save()
             }
             j++;
         }
-        return res.send('Succes').status(200)
     }
 
 }
