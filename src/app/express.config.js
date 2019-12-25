@@ -10,7 +10,11 @@ const fs         = require('fs')
 const AuditLog   = require('../db/auditlog-history');
 
 const app        = express();
-
+const cookieParser = require('cookie-parser');
+const csrf         = require('csurf');
+var csrfProtection = csrf({ cookie: true });
+app.use(cookieParser());
+// app.use(csrfProtection);
 // error log 
 require('./winston');
 
@@ -30,6 +34,11 @@ app.use(helmet());
 
 // enable CORS - Cross Origin Resource Sharing
 app.use(cors());
+
+app.get('/api/v1',csrfProtection,(req,res)=>{
+  res.cookie('XSRF-TOKEN', req.csrfToken());
+  res.send({})
+})
 
 // mount api v1 routes with multi language features
 app.use(`/api/${config.get('site.version')}`, cors() , (req, res, next) => {

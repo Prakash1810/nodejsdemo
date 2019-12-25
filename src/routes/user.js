@@ -9,6 +9,8 @@ const slide = require('../core/geetest-captcha');
 const router = express.Router();
 const info = require('../middlewares/info');
 const controller = new Controller;
+const csrf         = require('csurf');
+var csrfProtection = csrf({ cookie: true });
 
 router.get('/activation/:hash', (req, res) => {
     try {
@@ -20,7 +22,7 @@ router.get('/activation/:hash', (req, res) => {
     }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', csrfProtection, async (req, res) => {
     try {
 
         let { error } = await user.validate(req.body.data.attributes);
