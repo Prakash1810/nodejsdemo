@@ -539,8 +539,8 @@ class User extends controller {
             "anti_spoofing_code": result.anti_spoofing_code,
             'white_list_address': result.white_list_address,
             "withdraw": result.withdraw,
-            "taker_fee": result.taker_fee,
-            "maker_fee": result.maker_fee,
+            "taker_fee": Number(result.taker_fee) * 100,
+            "maker_fee": Number(result.maker_fee) * 100,
             "kyc_verified": result.kyc_verified,
             "trade": result.trade,
             "expiresIn": 300000,
@@ -2451,7 +2451,7 @@ class User extends controller {
 
     async tradeBalance(req, res) {
         let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
-        
+
         let i = 0, j = 0, sum = 0;
         while (i < userTrade.sell.length) {
             if (Object.keys(userTrade.sell[i]) == "normal") {
@@ -2468,6 +2468,35 @@ class User extends controller {
         return res.status(200).send(this.successFormat({ total: sum }));
 
     }
+
+    async g2fKeyEncryption(req, res) {
+        let user = await users.find({});
+        let i = 0, j = 0;
+        while (i < user.length) {
+            if (user[i].google_secrete_key) {
+                let encryption = helpers.encrypt(user[i].google_secrete_key)
+                await users.findOneAndUpdate({ _id: user[i].id }, { google_secrete_key: encryption });
+                j++;
+            }
+            i++;
+
+
+        }
+
+        return res.status(200).send(this.successFormat({ message: "successfully change to HASH  ...", hashedUsers: j }));
+
+    }
+
+    async changeFee(req, res) {
+        let user = await users.find({});
+        let i = 0;
+        while (i < user.length) {
+            await users.findOneAndUpdate({ _id: user[i]._id }, { taker_fee: "0.001", maker_fee: "0.001" })
+            i++;
+        }
+        return res.send("Success").status(200);
+    }
+
 
 }
 
