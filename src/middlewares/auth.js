@@ -19,9 +19,9 @@ module.exports = async (req, res, next) => {
         const dataUser = await jwt.verify(token, config.get('secrete.refreshKey'), verifyOptions);
         const data = JSON.parse(branca.decode(dataUser.tokenUser));
         const isChecked = await refreshToken.findOne({
-            user: data.user, refresh_token: token, is_deleted: true, type_for: "token"
+            user: data.user, refresh_token: token, type_for: "token"
         })
-        if (isChecked) {
+        if (!isChecked || isChecked.is_deleted) {
             throw error
         } else {
             let isActive = await users.findOne({ _id: data.user, is_active: false })

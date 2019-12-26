@@ -20,26 +20,26 @@ module.exports = async (req, res, next) => {
     try {
         let token = req.headers.info;
         const deviceInfo = await jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
-        const checkToken = await accesstoken.findOne({ user: deviceInfo.info, info_token: token, is_deleted: true, type_for: "info-token" });
-        if (checkToken) {
+        const checkToken = await accesstoken.findOne({ user: deviceInfo.info, info_token: token, type_for: "info-token" });
+        if (!checkToken || checkToken.is_deleted) {
             throw error
         } else {
             // if (!deviceInfo.is_app) {
-                let checkDevice = await device.findOne({
-                    browser: deviceInfo.browser,
-                    user: deviceInfo.info,
-                    browser_version: deviceInfo.browser_version,
-                    is_deleted: false,
-                    region: deviceInfo.region,
-                    city: deviceInfo.city,
-                    os: deviceInfo.os
-                })
+            let checkDevice = await device.findOne({
+                browser: deviceInfo.browser,
+                user: deviceInfo.info,
+                browser_version: deviceInfo.browser_version,
+                is_deleted: false,
+                region: deviceInfo.region,
+                city: deviceInfo.city,
+                os: deviceInfo.os
+            })
 
-                if (!checkDevice) {
-                    res.status(401).json(controller.errorMsgFormat({
-                        message: 'The device or browser that you are currently logged in has been removed from the device whitelist.'
-                    }, 'user', 401));
-                }
+            if (!checkDevice) {
+                res.status(401).json(controller.errorMsgFormat({
+                    message: 'The device or browser that you are currently logged in has been removed from the device whitelist.'
+                }, 'user', 401));
+            }
             // }
             // else {
             //     let checkDevice = await device.findOne({
@@ -63,7 +63,7 @@ module.exports = async (req, res, next) => {
 
             let checkActive = await users.findOne({ _id: deviceInfo.info, is_active: false });
             if (checkActive) {
-                await accesstoken.findOneAndUpdate({ user: deviceInfo.info,info_token: token,type_for:"info-token" }, { is_deleted: true });
+                await accesstoken.findOneAndUpdate({ user: deviceInfo.info, info_token: token, type_for: "info-token" }, { is_deleted: true });
                 res.status(401).json(controller.errorMsgFormat({
                     message: 'Your account has been disabled. Please contact support.'
                 }, 'user', 401));
