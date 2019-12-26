@@ -1970,26 +1970,26 @@ class User extends controller {
             let checkSetting = await configs.findOne({ key: type, is_active: true });
             let date = new Date();
             if (checkSetting) {
-                payloads = {
-                    "user_id": user,
-                    "asset": checkSetting.value.reward_asset,
-                    "business": "deposit",
-                    "business_id": date.valueOf(),
-                    "change": checkSetting.value.reward,
-                    "detial": {}
-                }
-                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                // let checkReward = await rewardBalance.findOne({user:userId});
-                // if(checkReward){
-                //     checkReward.reward+=checkSetting.value.reward
-                //     checkReward.save();
-                // }else{
-                //     await new rewardBalance({
-                //         user: userId,
-                //         reward_asset: checkSetting.value.reward_asset,
-                //         reward: Number(checkSetting.value.reward)
-                //     }).save()
+                // payloads = {
+                //     "user_id": user,
+                //     "asset": checkSetting.value.reward_asset,
+                //     "business": "deposit",
+                //     "business_id": date.valueOf(),
+                //     "change": checkSetting.value.reward,
+                //     "detial": {}
                 // }
+                // await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                let checkReward = await rewardBalance.findOne({user:userId});
+                if(checkReward){
+                    checkReward.reward+=checkSetting.value.reward
+                    checkReward.save();
+                }else{
+                    await new rewardBalance({
+                        user: userId,
+                        reward_asset: checkSetting.value.reward_asset,
+                        reward: Number(checkSetting.value.reward)
+                    }).save()
+                }
                 await new rewardHistory({
                     user: userId,
                     user_id: user,
