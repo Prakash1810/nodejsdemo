@@ -1300,7 +1300,7 @@ class User extends controller {
         }
         else {
             let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 16).toLowerCase();
-            let auth = authenticators.generateTotpUri(formattedKey, checkUser.email,process.env.G2F_HOST_NAME, 'SHA1', 6, 30);
+            let auth = authenticators.generateTotpUri(formattedKey, checkUser.email, process.env.G2F_HOST_NAME, 'SHA1', 6, 30);
             return res.status(200).send(this.successFormat({
                 'googleKey': formattedKey,
                 'googleQR': auth,
@@ -2449,6 +2449,25 @@ class User extends controller {
             j++;
         }
     }
+
+    async g2fKeyEncryption(req, res) {
+        let user = await users.find({google_auth:true});
+        let i = 0, j = 0;
+        while (i < user.length) {
+            if (user[i].google_secrete_key) {
+                let encryption = helpers.encrypt(user[i].google_secrete_key)
+                await users.findOneAndUpdate({ _id: user[i].id }, { google_secrete_key: encryption });
+                j++;
+            }
+            i++;
+
+
+        }
+
+        return res.status(200).send(this.successFormat({ message: "successfully change to HASH  ...", hashedUsers: j }));
+
+    }
+
 
 }
 
