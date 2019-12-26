@@ -1482,8 +1482,9 @@ class User extends controller {
             let requestedData = req.body.data.attributes;
             if (requestedData.g2f_code !== undefined) {
                 if (requestedData.google_secrete_key === undefined) {
+
                     let result = await users.findById(req.body.data.id).exec();
-                    result.google_secrete_key = await helpers.decrypt(result.google_secrete_key);
+                    result.google_secrete_key = await helpers.decrypt(result.google_secrete_key, res);
 
                     if (!result) {
                         return res.status(400).send(this.errorMsgFormat({
@@ -2247,9 +2248,7 @@ class User extends controller {
 
 
     async checkApikey(req, res) {
-        let checkUserValidate = await users.findOne({ _id: req.user.user });
         req.body.data['id'] = req.user.user;
-        req.body.data.attributes.google_secrete_key = checkUserValidate.google_secrete_key;
         let requestData = req.body.data.attributes;
         if (!requestData.g2f_code) {
             return res.status(400).send(this.errorMsgFormat({
@@ -2272,7 +2271,7 @@ class User extends controller {
                 const apiSecretRemove = await helpers.createSecret(`${validateUuidSplit[0]}-${validateUuidSplit[validateUuidSplit.length - 1]}`, requestData.passphrase);
                 if (checkApiKeyRemove.secretkey === apiSecretRemove) {
                     await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
-                    await users.findOneAndUpdate({ _id: checkUserValidate.id }, { api_key: null });
+                    await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
                     return res.status(200).send(this.successFormat({ message: 'Passphrase key deleted.' }, 'user', 200));
                 }
                 else {
@@ -2286,7 +2285,7 @@ class User extends controller {
                 const apiKey = await helpers.generateUuid();
                 let uuidSplit = apiKey.split('-');
                 const apiSecret = await helpers.createSecret(`${uuidSplit[0]}-${uuidSplit[uuidSplit.length - 1]}`, requestData.passphrase);
-                await users.findOneAndUpdate({ _id: checkUserValidate.id }, { api_key: uuidSplit[0] });
+                await users.findOneAndUpdate({ _id: req.user.user }, { api_key: uuidSplit[0] });
                 await new apikey({
                     user: req.user.user,
                     user_id: req.user.user_id,
@@ -2448,6 +2447,26 @@ class User extends controller {
 
             j++;
         }
+    }
+
+    async tradeBalance(req, res) {
+        let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
+        
+        let i = 0, j = 0, sum = 0;
+        while (i < userTrade.sell.length) {
+            if (Object.keys(userTrade.sell[i]) == "normal") {
+                sum += userTrade.sell[i].normal.amount.btc
+            }
+            i++;
+        }
+        while (j < userTrade.buy.length) {
+            if (Object.keys(userTrade.buy[j]) == "normal") {
+                sum += userTrade.buy[j].normal.amount.btc
+            }
+            j++;
+        }
+        return res.status(200).send(this.successFormat({ total: sum }));
+
     }
 
 }

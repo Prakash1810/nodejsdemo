@@ -532,5 +532,16 @@ router.post('/move-balance', auth, info, async (req, res) => {
     }
 });
 
+router.get('/trade-balance',auth,info,async (req, res) => {
+    try {
+        await user.tradeBalance(req,res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+
+});
 
 module.exports = router;
