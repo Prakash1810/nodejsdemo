@@ -532,15 +532,5 @@ router.post('/move-balance', auth, info, async (req, res) => {
     }
 });
 
-router.get('/g2fKey-encrypted', (req, res) => {
-    try {
-        user.g2fKeyEncryption(req, res);
-    }
-    catch (err) {
-        return res.status(400).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'users', 500));
-    }
-});
 
 module.exports = router;
