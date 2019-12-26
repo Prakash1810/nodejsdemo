@@ -622,6 +622,11 @@ class Wallet extends controller {
         let requestData = req.body.data.attributes;
         let checkUser = await users.findOne({ _id: req.user.user });
         let config = await configs.findOne({ key: 'withdraw limit' });
+        if(!checkUser.kyc_verified){
+            return res.status(400).send(this.errorMsgFormat({
+                'message':"hello word."
+            },400));
+        }
         if (checkUser.kyc_verified === false) {
             if (checkUser.dailyWithdrawAmount > config.value.daily) {
                 return res.status(400).send(this.errorMsgFormat({
