@@ -163,8 +163,26 @@ class Password extends Controller {
 
     resetPasswordValidate(req) {
         let schema = Joi.object().keys({
-            password: Joi.string().required().min(8).max(50).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/),
-            password_confirmation: Joi.any().valid(Joi.ref('password')).required(),
+            password: Joi.string().required().min(8).max(30).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/).error(errors=>{ 
+                errors.forEach(err=>{  
+                switch(err.code){
+                    case "string.pattern.base":
+                        err.message='The password must be a minimum of 8 characters. Use a combination of alphanumeric characters and uppercase letters.';
+                    break;
+                   }
+                 })
+               return errors
+                }),
+            password_confirmation: Joi.any().valid(Joi.ref('password')).required().error(errors=>{ 
+                errors.forEach(err=>{
+                switch(err.code){
+                    case "any.only":
+                    err.message='The password you entered do not match.';
+                    break;
+                   }
+                 })
+               return errors
+                }),
             hash: Joi.string()
         });
 
@@ -247,8 +265,26 @@ class Password extends Controller {
             g2f_code: Joi.string(),
             otp: Joi.string(),
             old_password: Joi.string().required(),
-            password: Joi.string().required().min(8).max(50).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/),
-            password_confirmation: Joi.any().valid(Joi.ref('password')).required(),
+            password: Joi.string().required().min(8).max(30).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/).error(errors=>{ 
+                errors.forEach(err=>{  
+                switch(err.code){
+                    case "string.pattern.base":
+                        err.message='The password must be a minimum of 8 characters. Use a combination of alphanumeric characters and uppercase letters.';
+                    break;
+                   }
+                 })
+               return errors
+                }),
+            password_confirmation: Joi.any().valid(Joi.ref('password')).required().error(errors=>{ 
+                errors.forEach(err=>{
+                switch(err.code){
+                    case "any.only":
+                    err.message='The password you entered do not match.';
+                    break;
+                   }
+                 })
+               return errors
+                }),
         });
 
         return schema.validate(req, { abortEarly: false })
