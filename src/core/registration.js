@@ -32,8 +32,8 @@ class Registration extends Controller {
             .then(async result => {
 
                 let data = req.body.data.attributes;
-                data.password = await helpers.decrypt(data.password,res);
-                data.password_confirmation = await helpers.decrypt(data.password_confirmation,res);
+                data.password = await helpers.decrypt(data.password, res);
+                data.password_confirmation = await helpers.decrypt(data.password_confirmation, res);
                 if (data.password === '' || data.password_confirmation === '') {
                     return res.status(400).send(this.errorMsgFormat({
                         message: 'Your request was not encrypted.'
@@ -264,6 +264,10 @@ class Registration extends Controller {
                         }
 
                         else {
+                            let user = users.findOne({ email: user.email });
+                            if (user) {
+                                return res.status(400).send(this.errorMsgFormat({ 'message': `You've have been already verified. Please login to continue.` }));
+                            }
                             return res.status(400).send(this.errorMsgFormat({ 'message': 'The email address cannot be found. Please register to continue.' }));
                         }
                     });

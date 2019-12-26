@@ -176,7 +176,7 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
     }
 });
 
-router.patch('/settings',  auth, info,(req, res) => {
+router.patch('/settings', auth, info, (req, res) => {
     try {
         let { error } = user.settingsValidate(req.body.data.attributes);
         if (error) {
@@ -506,7 +506,7 @@ router.get('/script-second', async (req, res) => {
     }
 });
 
-router.get('/reward-balance', auth,info, async (req, res) => {
+router.get('/reward-balance', auth, info, async (req, res) => {
     try {
         await user.rewardUserBalance(req, res);
     }
@@ -517,7 +517,7 @@ router.get('/reward-balance', auth,info, async (req, res) => {
     }
 });
 
-router.post('/move-balance', auth,info, async (req, res) => {
+router.post('/move-balance', auth, info, async (req, res) => {
     try {
         let { error } = user.moveBalanceValidation(req.body.data.attributes);
         if (error) {

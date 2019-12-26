@@ -1300,7 +1300,7 @@ class User extends controller {
         }
         else {
             let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 16).toLowerCase();
-            let auth = authenticators.generateTotpUri(formattedKey, checkUser.email,process.env.G2F_HOST_NAME, 'SHA1', 6, 30);
+            let auth = authenticators.generateTotpUri(formattedKey, checkUser.email, process.env.G2F_HOST_NAME, 'SHA1', 6, 30);
             return res.status(200).send(this.successFormat({
                 'googleKey': formattedKey,
                 'googleQR': auth,
