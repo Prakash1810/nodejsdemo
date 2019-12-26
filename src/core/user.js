@@ -2451,7 +2451,6 @@ class User extends controller {
 
     async tradeBalance(req, res) {
         let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
-        console.log(userTrade);
         
         let i = 0, j = 0, sum = 0;
         while (i < userTrade.sell.length) {
