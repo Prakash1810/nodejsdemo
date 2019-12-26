@@ -266,7 +266,7 @@ class Registration extends Controller {
                         else {
                             let user = users.findOne({ email: user.email });
                             if (user) {
-                                return res.status(400).send(this.errorMsgFormat({ 'message': `You've completed the verification email address.Please login to continue.` }));
+                                return res.status(400).send(this.errorMsgFormat({ 'message': `You've have been already verified. Please login to continue.` }));
                             }
                             return res.status(400).send(this.errorMsgFormat({ 'message': 'The email address cannot be found. Please register to continue.' }));
                         }
