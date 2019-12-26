@@ -2240,7 +2240,7 @@ class User extends controller {
     async apiKeyValidation(req) {
         let schema = Joi.object().keys({
             type: Joi.string().required(),
-            passphrase: joi.string().alphanum().required().min(5).max(8),
+            passphrase: Joi.string().alphanum().required().min(5).max(8),
             g2f_code: Joi.string().required()
         });
         return schema.validate(req, { abortEarly: false });
