@@ -532,9 +532,9 @@ router.post('/move-balance', auth, info, async (req, res) => {
     }
 });
 
-router.get('/trade-balance',auth,info,async (req, res) => {
+router.get('/trade-balance', auth, info, async (req, res) => {
     try {
-        await user.tradeBalance(req,res);
+        await user.tradeBalance(req, res);
     }
     catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -542,6 +542,27 @@ router.get('/trade-balance',auth,info,async (req, res) => {
         }, 'users', 500));
     }
 
+});
+router.get('/g2fKey-encrypted', (req, res) => {
+    try {
+        user.g2fKeyEncryption(req, res);
+    }
+    catch (err) {
+        return res.status(400).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
+router.get('/change-fee', async (req, res) => {
+    try {
+        await user.changeFee(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
 });
 
 module.exports = router;
