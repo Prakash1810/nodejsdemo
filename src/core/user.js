@@ -2453,20 +2453,23 @@ class User extends controller {
         let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
 
         let i = 0, j = 0, sum = 0;
-        while (i < userTrade.sell.length) {
-            if (Object.keys(userTrade.sell[i]) == "normal") {
-                sum += userTrade.sell[i].normal.amount.btc
+        if (userTrade) {
+            while (i < userTrade.sell.length) {
+                if (Object.keys(userTrade.sell[i]) == "normal") {
+                    sum += userTrade.sell[i].normal.amount.btc
+                }
+                i++;
             }
-            i++;
-        }
-        while (j < userTrade.buy.length) {
-            if (Object.keys(userTrade.buy[j]) == "normal") {
-                sum += userTrade.buy[j].normal.amount.btc
+            while (j < userTrade.buy.length) {
+                if (Object.keys(userTrade.buy[j]) == "normal") {
+                    sum += userTrade.buy[j].normal.amount.btc
+                }
+                j++;
             }
-            j++;
+            return res.status(200).send(this.successFormat({ total: sum }));
         }
-        return res.status(200).send(this.successFormat({ total: sum }));
 
+        return res.status(200).send(this.successFormat({ total: 0 }));
     }
 
     async g2fKeyEncryption(req, res) {
