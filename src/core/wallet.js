@@ -624,7 +624,7 @@ class Wallet extends controller {
         let config = await configs.findOne({ key: 'withdraw limit' });
         if(!checkUser.kyc_verified){
             return res.status(400).send(this.errorMsgFormat({
-                'message':"hello word."
+                'message':"Please complete your KYC verification to make a withdrawal."
             },400));
         }
         if (checkUser.kyc_verified === false) {
