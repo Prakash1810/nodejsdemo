@@ -144,8 +144,8 @@ class Api extends Controller {
 
             let token = req.headers.info;
             const deviceInfo = await jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
-            const checkToken = await accesToken.findOne({ user: deviceInfo.info, is_deleted: true, info_token: token, type_for: "info-token" });
-            if (checkToken) {
+            const checkToken = await accesToken.findOne({ user: deviceInfo.info, info_token: token, type_for: "info-token" });
+            if (!checkToken || checkToken.is_deleted) {
                 throw error
             } else {
                 let checkDevice = await device.findOne({
@@ -194,9 +194,9 @@ class Api extends Controller {
             const dataUser = await jwt.verify(token, config.get('secrete.key'), verifyOptions);
             const data = JSON.parse(branca.decode(dataUser.token));
             const isChecked = await accesToken.findOne({
-                user: data.user, access_token: token, is_deleted: true, type_for: "token"
+                user: data.user, access_token: token, type_for: "token"
             })
-            if (isChecked) {
+            if (!isChecked || isChecked.is_deleted) {
                 throw error;
             }
             else {
