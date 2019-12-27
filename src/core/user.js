@@ -1979,11 +1979,11 @@ class User extends controller {
                 //     "detial": {}
                 // }
                 // await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                let checkReward = await rewardBalance.findOne({user:userId});
-                if(checkReward){
-                    checkReward.reward+=checkSetting.value.reward
+                let checkReward = await rewardBalance.findOne({ user: userId });
+                if (checkReward) {
+                    checkReward.reward += checkSetting.value.reward
                     checkReward.save();
-                }else{
+                } else {
                     await new rewardBalance({
                         user: userId,
                         reward_asset: checkSetting.value.reward_asset,
@@ -2357,7 +2357,7 @@ class User extends controller {
     }
 
     async moveReward(req, res) {
-        let sum;
+        let sum = 0;
         let data = req.body.data.attributes;
         let rewards = await rewardBalance.findOne({ user: req.user.user, reward: data.amount, reward_asset: data.asset })
         if (rewards) {
@@ -2365,7 +2365,9 @@ class User extends controller {
             let checkUser = await users.findOne({ _id: req.user.user, kyc_verified: true });
             let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
             if (!userTrade) {
-                sum = 0;
+                return res.status(400).send(this.errorMsgFormat({
+                    message: 'You should verifiy your kyc and Should have trade volume of 1 BTC to move the rewards to wallet balance'
+                }));
             } else {
                 while (i < userTrade.sell.length) {
                     if (Object.keys(userTrade.sell[i]) == "sixMonth") {
@@ -2389,17 +2391,17 @@ class User extends controller {
                         "detial": {}
                     }
                     await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                    return res.status(200).send(this.successFormat({
+                        'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
+                    }, 'reward'));
                 }
                 else {
                     return res.status(400).send(this.errorMsgFormat({
                         message: 'You should verifiy your kyc and Should have trade volume of 1 BTC to move the rewards to wallet balance'
                     }));
                 }
-            }
 
-            return res.status(200).send(this.successFormat({
-                'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
-            }, 'reward'));
+            }
         }
         else {
             return res.status(400).send(this.errorMsgFormat({

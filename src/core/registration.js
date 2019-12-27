@@ -282,7 +282,6 @@ class Registration extends Controller {
                         }
 
                         else {
-                            
                             return res.status(400).send(this.errorMsgFormat({ 'message': 'Your email has been verified. Please login to continue .' }));
                         }
                     });
