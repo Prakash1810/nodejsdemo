@@ -2354,7 +2354,7 @@ class User extends controller {
     async moveBalanceValidation(req) {
         let schema = Joi.object().keys({
             amount: Joi.number().required(),
-            asset: joi.string().required()
+            asset: Joi.string().required()
         });
         return schema.validate(req, { abortEarly: false });
     }
@@ -2377,7 +2377,7 @@ class User extends controller {
             let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
             if (!userTrade) {
                 return res.status(400).send(this.errorMsgFormat({
-                    message: 'You should verifiy your kyc and Should have trade volume of 1 BTC to move the rewards to wallet balance'
+                    message: 'You should have trade volume of 1 BTC to move the rewards to wallet balance'
                 }));
             } else {
                 while (i < userTrade.sell.length) {
@@ -2393,7 +2393,7 @@ class User extends controller {
                     j++;
                 }
                 if (checkUser && sum >= 1) {
-                    payloads = {
+                    let payloads = {
                         "user_id": checkUser.user_id,
                         "asset": rewards.reward_asset,
                         "business": "deposit",
@@ -2468,14 +2468,14 @@ class User extends controller {
         let i = 0, j = 0, sum = 0;
         if (userTrade) {
             while (i < userTrade.sell.length) {
-                if (Object.keys(userTrade.sell[i]) == "normal") {
-                    sum += userTrade.sell[i].normal.amount.btc
+                if (Object.keys(userTrade.sell[i]) == "sixMonth") {
+                    sum += userTrade.sell[i].sixMonth.amount.btc
                 }
                 i++;
             }
             while (j < userTrade.buy.length) {
-                if (Object.keys(userTrade.buy[j]) == "normal") {
-                    sum += userTrade.buy[j].normal.amount.btc
+                if (Object.keys(userTrade.buy[j]) == "sixMonth") {
+                    sum += userTrade.buy[j].sixMonth.amount.btc
                 }
                 j++;
             }
