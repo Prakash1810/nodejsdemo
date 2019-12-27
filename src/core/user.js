@@ -1405,11 +1405,22 @@ class User extends controller {
             }
             else {
                 returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code);
-                if (returnStatus) {
-                    returnStatus = returnStatus.delta == 0 ? true : false
-                } else {
-                    returnStatus = false;
+                if (google_secrete_key.length === 20) {
+                    if (returnStatus) {
+                        returnStatus = returnStatus.delta == 1 ? true : false
+                    } else {
+                        returnStatus = false;
+                    }
                 }
+                else {
+                    if (returnStatus) {
+                        returnStatus = returnStatus.delta == 0 ? true : false
+                    } else {
+                        returnStatus = false;
+                    }
+
+                }
+
             }
 
             if (returnStatus) {
