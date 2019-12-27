@@ -1396,7 +1396,6 @@ class User extends controller {
             } else {
                 user = await users.findOne({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } });
                 if (user) {
-                    console.log("length")
                     userG2fLength = user['google_secrete_key'].length;
                     console.log(userG2fLength)
                 }
@@ -1404,11 +1403,9 @@ class User extends controller {
             }
             console.log(user)
             if (userG2fLength === config.get('g2fOldLength.length')) {
-                console.log("old:verify")
                 returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
             }
             else {
-                console.log("new:verify")
                 returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code);
                 if (returnStatus) {
                     returnStatus = returnStatus.delta == 0 ? true : false
