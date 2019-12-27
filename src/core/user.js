@@ -2370,7 +2370,7 @@ class User extends controller {
     async moveReward(req, res) {
         let sum = 0;
         let data = req.body.data.attributes;
-        let rewards = await rewardBalance.findOne({ user: req.user.user, reward: data.amount, reward_asset: data.asset })
+        let rewards = await rewardBalance.findOne({ user: req.user.user, reward: data.amount, reward_asset: data.asset, is_deleted: false })
         if (rewards) {
             let i = 0, j = 0;
             let checkUser = await users.findOne({ _id: req.user.user, kyc_verified: true });
@@ -2402,6 +2402,7 @@ class User extends controller {
                         "detial": {}
                     }
                     await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                    await rewardBalance.findOneAndUpdate({ user: req.user.user }, { is_deleted: true })
                     return res.status(200).send(this.successFormat({
                         'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
                     }, 'reward'));

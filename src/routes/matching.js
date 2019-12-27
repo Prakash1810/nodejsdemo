@@ -71,6 +71,17 @@ router.post('/balance/query', info, auth, async (req, res) => {
     }
 })
 
+router.patch('/balance/update', async (req, res) => {
+    try {
+       //req.body.data.attributes.user_id = Number(req.user.user_id);
+         await matching.matchingEngineRequest('patch', 'balance/update', req.body, res);
+     } catch (err) {
+       return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+       }, 'order-matching', 500));
+    }
+})
+
 //ORDER
 
 router.post('/order/put-market', info, auth, async (req, res) => {
