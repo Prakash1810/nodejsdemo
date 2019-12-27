@@ -1400,7 +1400,7 @@ class User extends controller {
                 }
 
             }
-            if (userG2fLength === config.get('g2fOldLength.lenght')) {
+            if (userG2fLength === config.get('g2fOldLength.length')) {
                 returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
             }
             else {
