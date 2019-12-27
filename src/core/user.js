@@ -1397,11 +1397,9 @@ class User extends controller {
                 user = await users.findOne({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } });
                 if (user) {
                     userG2fLength = user['google_secrete_key'].length;
-                    console.log(userG2fLength)
                 }
 
             }
-            console.log(user)
             if (userG2fLength === config.get('g2fOldLength.length')) {
                 returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
             }
