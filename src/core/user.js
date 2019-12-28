@@ -1404,8 +1404,7 @@ class User extends controller {
                 returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
             }
             else {
-                returnStatus = await authenticators.verifyToken(google_secrete_key,data.g2f_code)
-                console.log(returnStatus)
+                returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code)
                 if (google_secrete_key.length === 20) {
                     if (returnStatus) {
                         returnStatus = returnStatus.delta == 1 ? true : false
@@ -2203,7 +2202,7 @@ class User extends controller {
 
     // }
 
-    
+
 
     async apiKeyValidation(req) {
         let schema = Joi.object().keys({
@@ -2235,9 +2234,9 @@ class User extends controller {
                 if (!checkApiKeyRemove) {
                     return res.status(400).send(this.errorMsgFormat({ message: 'Passphrase key cannot be found.Please create you Passphrase key.' }, 'user', 400));
                 }
-                    await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
-                    await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
-                    return res.status(200).send(this.successFormat({ message: 'Passphrase key deleted.' }, 'user', 200));
+                await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+                await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
+                return res.status(200).send(this.successFormat({ message: 'Passphrase key deleted.' }, 'user', 200));
 
             case 'create':
                 let checkUser = await apikey.findOne({ user: req.body.data.id, is_deleted: false });
