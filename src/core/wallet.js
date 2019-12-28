@@ -719,7 +719,6 @@ class Wallet extends controller {
                         }
                         if (withdraw.address !== undefined || withdraw.address != null) {
                             try {
-                                let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
                                 let data = {
                                     user: new mongoose.Types.ObjectId(req.user.user),
                                     user_id: req.user.user_id,
@@ -731,7 +730,7 @@ class Wallet extends controller {
                                     final_amount: requestData.amount,
                                     status: "0",
                                     is_deleted: false,
-                                    date: timeNow
+                                    date: moment().format('YYYY-MM-DD HH:mm:ss')
                                 };
                                 let returnId = await this.insertNotification(data, finalAmount, res);
                                 return res.status(200).json(this.successFormat({
@@ -826,7 +825,7 @@ class Wallet extends controller {
             asset_code: asset.asset_code,
             address: transaction.address,
             ip: data.ip,
-            time: data.created_date
+            time: data.date
 
         };
 

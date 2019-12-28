@@ -1404,7 +1404,8 @@ class User extends controller {
                 returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
             }
             else {
-                returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code);
+                returnStatus = await authenticators.verifyToken(google_secrete_key,data.g2f_code)
+                console.log(returnStatus)
                 if (google_secrete_key.length === 20) {
                     if (returnStatus) {
                         returnStatus = returnStatus.delta == 1 ? true : false
@@ -2251,7 +2252,7 @@ class User extends controller {
     async apiKeyValidation(req) {
         let schema = Joi.object().keys({
             type: Joi.string().required(),
-            passphrase: Joi.string().alphanum().required().min(5).max(8),
+            passphrase: Joi.string().alphanum().min(5).max(8),
             g2f_code: Joi.string().required()
         });
         return schema.validate(req, { abortEarly: false });
@@ -2278,16 +2279,10 @@ class User extends controller {
                 if (!checkApiKeyRemove) {
                     return res.status(400).send(this.errorMsgFormat({ message: 'Passphrase key cannot be found.Please create you Passphrase key.' }, 'user', 400));
                 }
-                let validateUuidSplit = checkApiKeyRemove.apikey.split('-');
-                const apiSecretRemove = await helpers.createSecret(`${validateUuidSplit[0]}-${validateUuidSplit[validateUuidSplit.length - 1]}`, requestData.passphrase);
-                if (checkApiKeyRemove.secretkey === apiSecretRemove) {
                     await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                     await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
                     return res.status(200).send(this.successFormat({ message: 'Passphrase key deleted.' }, 'user', 200));
-                }
-                else {
-                    return res.status(400).send(this.errorMsgFormat({ message: 'The Passphrase key entered is incorrect.' }, 'user', 400));
-                }
+
             case 'create':
                 let checkUser = await apikey.findOne({ user: req.body.data.id, is_deleted: false });
                 if (checkUser) {
@@ -2305,6 +2300,7 @@ class User extends controller {
                     type: requestData.type
                 }).save();
                 return res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your Passphrase key was created successfully.', }, 'user', 200));
+                
             case 'view':
                 let validateApiKey = await apikey.findOne({ user: req.body.data.id, is_deleted: false });
                 if (!validateApiKey) {
