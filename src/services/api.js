@@ -402,7 +402,7 @@ class Api extends Controller {
                         // if (response.result) {
                         //     response.order_id = `OX:${response.order_id}`
                         //     await this.addResponseInREDIS(response, "cancel");
-                            return res.status(200).send(controller.successFormat({ 'message': "Your order can be cancel" }));
+                            return res.status(200).send(controller.successFormat({ 'message': "Your order has been cancel" }));
                         // }
                         // else {
                         //     return res.status(500).send(controller.errorMsgFormat({
