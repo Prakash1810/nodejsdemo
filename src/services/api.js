@@ -241,8 +241,10 @@ class Api extends Controller {
 
             })
             let axiosResponse = await axios.get(
+
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`)
             const result = axiosResponse.data;
+            console.log(axiosResponse.data);
             let data = result.result.result;
             if (result.status) {
                 _.map(markets, function (noMarkets) {
@@ -258,6 +260,15 @@ class Api extends Controller {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
                             data[k].q = getMarket[j].q
+                            if (getMarket[j].q == true) {
+                                if (data[k].stock == "ETH") {
+                                    data[k].min_amount = "0.05"
+                                }
+                                if (data[k].stock == "BTC") {
+                                    data[k].min_amount = "0.001"
+                                }
+
+                            }
                         }
                     }
                 }
@@ -285,6 +296,15 @@ class Api extends Controller {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
                             data[k].q = getMarket[j].q
+                            if (getMarket[j].q == true) {
+                                if (data[k].stock == "ETH") {
+                                    data[k].min_amount = "0.05"
+                                }
+                                if (data[k].stock == "BTC") {
+                                    data[k].min_amount = "0.001"
+                                }
+
+                            }
                         }
                     }
                 }
