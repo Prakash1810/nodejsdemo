@@ -2311,7 +2311,7 @@ class User extends controller {
     }
 
     async rewardUserBalance(req, res) {
-        let checkBalance = await rewardBalance.findOne({ user: req.user.user }).select('reward reward_asset');
+        let checkBalance = await rewardBalance.findOne({ user: req.user.user, is_deleted: false }).select('reward reward_asset');
         if (checkBalance) {
             return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_asset]));
         }
@@ -2323,48 +2323,48 @@ class User extends controller {
         let data = req.body.data.attributes;
         let rewards = await rewardBalance.findOne({ user: req.user.user, reward: data.amount, reward_asset: data.asset, is_deleted: false })
         if (rewards) {
-            let i = 0, j = 0;
+            //let i = 0, j = 0;
             let checkUser = await users.findOne({ _id: req.user.user, kyc_verified: true });
-            let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
-            if (!userTrade) {
-                return res.status(400).send(this.errorMsgFormat({
-                    message: 'You should have trade volume of 1 BTC to move the rewards to wallet balance'
-                }));
-            } else {
-                while (i < userTrade.sell.length) {
-                    if (Object.keys(userTrade.sell[i]) == "sixMonth") {
-                        sum += userTrade.sell[i].sixMonth.amount.btc
-                    }
-                    i++;
+            // let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
+            // if (!userTrade) {
+            //     return res.status(400).send(this.errorMsgFormat({
+            //         message: 'You should have trade volume of 1 BTC to move the rewards to wallet balance'
+            //     }));
+            // } else {
+            //     while (i < userTrade.sell.length) {
+            //         if (Object.keys(userTrade.sell[i]) == "sixMonth") {
+            //             sum += userTrade.sell[i].sixMonth.amount.btc
+            //         }
+            //         i++;
+            //     }
+            //     while (j < userTrade.buy.length) {
+            //         if (Object.keys(userTrade.buy[j]) == "sixMonth") {
+            //             sum += userTrade.buy[j].sixMonth.amount.btc
+            //         }
+            //         j++;
+            //     }
+            if (checkUser) {
+                let payloads = {
+                    "user_id": checkUser.user_id,
+                    "asset": rewards.reward_asset,
+                    "business": "deposit",
+                    "business_id": new Date().valueOf(),
+                    "change": rewards.reward + '',
+                    "detial": {}
                 }
-                while (j < userTrade.buy.length) {
-                    if (Object.keys(userTrade.buy[j]) == "sixMonth") {
-                        sum += userTrade.buy[j].sixMonth.amount.btc
-                    }
-                    j++;
-                }
-                if (checkUser && sum >= 1) {
-                    let payloads = {
-                        "user_id": checkUser.user_id,
-                        "asset": rewards.reward_asset,
-                        "business": "deposit",
-                        "business_id": new Date().valueOf(),
-                        "change": rewards.reward + '',
-                        "detial": {}
-                    }
-                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                    await rewardBalance.findOneAndUpdate({ user: req.user.user }, { is_deleted: true })
-                    return res.status(200).send(this.successFormat({
-                        'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
-                    }, 'reward'));
-                }
-                else {
-                    return res.status(400).send(this.errorMsgFormat({
-                        message: 'You should verifiy your kyc and Should have trade volume of 1 BTC to move the rewards to wallet balance'
-                    }));
-                }
-
+                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                await rewardBalance.findOneAndUpdate({ user: req.user.user }, { is_deleted: true })
+                return res.status(200).send(this.successFormat({
+                    'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
+                }, 'reward'));
             }
+            else {
+                return res.status(400).send(this.errorMsgFormat({
+                    message: 'You should verifiy your kyc '
+                }));
+            }
+
+            //}
         }
         else {
             return res.status(400).send(this.errorMsgFormat({
@@ -2395,6 +2395,56 @@ class User extends controller {
         }
 
         return res.status(200).send(this.successFormat({ total: 0 }));
+    }
+    async script(req, res) {
+        let user = await users.find({});
+        let i = 0;
+        while (i < 3000) {
+            let checkUser = await rewardHistory.find({ user: user[i]._id });
+            let j = 0, sum = 0;
+            while (j < checkUser.length) {
+                sum += Number(checkUser[j].reward);
+                j++;
+            }
+            let checkTransaction = await transaction.findOne({ user: user[i]._id });
+            if (!checkTransaction) {
+                let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(
+                    {
+                        user_id: user[i].user_id,
+                        asset: ['BDX']
+                    })
+                    , res, 'data');
+                let available = apiResponse.data.attributes['BDX'].available;
+                if (Number(available) == sum && sum > 0) {
+                    let payloads = {
+                        "user_id": user[i].user_id,
+                        "asset": "BDX",
+                        "business": "withdraw",
+                        "business_id": new Date().valueOf(),
+                        "change": `-${sum}`,
+                        "detial": {}
+                    }
+                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                    let check = await rewardBalance.findOne({ user: user[i]._id })
+                    if (!check) {
+                        await new rewardBalance({
+                            user: user[i]._id,
+                            reward_asset: "BDX",
+                            reward: sum
+                        }).save()
+                    }
+
+
+                }
+
+            }
+
+
+
+            i++;
+        }
+
+        return res.status(200).send('Success')
     }
 
 
