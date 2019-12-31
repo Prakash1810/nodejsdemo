@@ -1992,7 +1992,7 @@ class User extends controller {
                 // await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                 let checkReward = await rewardBalance.findOne({ user: userId });
                 if (checkReward) {
-                    checkReward.reward += checkSetting.value.reward
+                    checkReward.reward += Number(checkSetting.value.reward)
                     checkReward.save();
                 } else {
                     await new rewardBalance({
@@ -2425,9 +2425,7 @@ class User extends controller {
 
         return res.status(200).send(this.successFormat({ total: 0 }));
     }
-    async script(req, res) {
-        let reward = await rewardBalance.find
-    }
+   
 
 
 }
