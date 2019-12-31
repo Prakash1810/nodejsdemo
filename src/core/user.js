@@ -1492,7 +1492,7 @@ class User extends controller {
 
             let requestedData = req.body.data.attributes;
             if (requestedData.g2f_code !== undefined) {
-                if (requestedData.google_secrete_key === undefined) {
+                if (requestedData.google_secrete_key === undefined && requestedData.google_secrete_key == null ) {
 
                     let result = await users.findById(req.body.data.id).exec();
                     result.google_secrete_key = await helpers.decrypt(result.google_secrete_key, res);
@@ -2326,21 +2326,21 @@ class User extends controller {
             //let i = 0, j = 0;
             let checkUser = await users.findOne({ _id: req.user.user, kyc_verified: true });
 
-            if (checkUser.google_auth) {
-                if (!data.g2f_code) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Google authentication code must be provided.'
-                    }, 'user', 400));
-                }
-                let check = await this.postVerifyG2F(req, res, 'boolean');
-                if (check.status == false) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'The google authentication code you entered is incorrect.'
-                    }, '2factor', 400));
-                }
+            // if (checkUser.google_auth) {
+            //     if (!data.g2f_code) {
+            //         return res.status(400).send(this.errorMsgFormat({
+            //             'message': 'Google authentication code must be provided.'
+            //         }, 'user', 400));
+            //     }
+            //     let check = await this.postVerifyG2F(req, res, 'boolean');
+            //     if (check.status == false) {
+            //         return res.status(400).send(this.errorMsgFormat({
+            //             'message': 'The google authentication code you entered is incorrect.'
+            //         }, '2factor', 400));
+            //     }
 
-            }
-            else {
+            // }
+            // else {
                 if (data.otp == null || undefined) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'OTP must be provided.'
@@ -2353,7 +2353,7 @@ class User extends controller {
                         'message': checkOtp.err
                     }, 'user', 400));
                 }
-            }
+            // }
             // let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
             // if (!userTrade) {
             //     return res.status(400).send(this.errorMsgFormat({
