@@ -2325,6 +2325,35 @@ class User extends controller {
         if (rewards) {
             //let i = 0, j = 0;
             let checkUser = await users.findOne({ _id: req.user.user, kyc_verified: true });
+
+            if (checkUser.google_auth) {
+                if (!data.g2f_code) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Google authentication code must be provided.'
+                    }, 'user', 400));
+                }
+                let check = await this.postVerifyG2F(req, res, 'boolean');
+                if (check.status == false) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'The google authentication code you entered is incorrect.'
+                    }, '2factor', 400));
+                }
+
+            }
+            else {
+                if (data.otp == null || undefined) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'OTP must be provided.'
+                    }, 'user', 400));
+                }
+                req.body.data['id'] = req.user.user;
+                let checkOtp = await this.validateOtpForEmail(req, res, "withdraw confirmation");
+                if (checkOtp.status == false) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': checkOtp.err
+                    }, 'user', 400));
+                }
+            }
             // let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
             // if (!userTrade) {
             //     return res.status(400).send(this.errorMsgFormat({
