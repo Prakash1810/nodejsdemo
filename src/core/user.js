@@ -2425,9 +2425,7 @@ class User extends controller {
 
         return res.status(200).send(this.successFormat({ total: 0 }));
     }
-    async script(req, res) {
-        let reward = await rewardBalance.find
-    }
+   
 
 
 }
