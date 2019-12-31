@@ -2347,7 +2347,7 @@ class User extends controller {
                     }, 'user', 400));
                 }
                 req.body.data['id'] = req.user.user;
-                let checkOtp = await this.validateOtpForEmail(req, res, "withdraw confirmation");
+                let checkOtp = await this.validateOtpForEmail(req, res, "move balance");
                 if (checkOtp.status == false) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': checkOtp.err
