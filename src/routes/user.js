@@ -495,7 +495,7 @@ router.get('/reward-balance', auth, info, async (req, res) => {
     }
 });
 
-router.post('/move-balance', auth, info, async (req, res) => {
+router.post('/move-balance', async (req, res) => {
     try {
         let { error } = user.moveBalanceValidation(req.body.data.attributes);
         if (error) {

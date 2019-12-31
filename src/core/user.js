@@ -1492,7 +1492,7 @@ class User extends controller {
 
             let requestedData = req.body.data.attributes;
             if (requestedData.g2f_code !== undefined) {
-                if (requestedData.google_secrete_key === undefined && requestedData.google_secrete_key == null ) {
+                if (requestedData.google_secrete_key === undefined && requestedData.google_secrete_key == null) {
 
                     let result = await users.findById(req.body.data.id).exec();
                     result.google_secrete_key = await helpers.decrypt(result.google_secrete_key, res);
@@ -2341,18 +2341,18 @@ class User extends controller {
 
             // }
             // else {
-                if (data.otp == null || undefined) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'OTP must be provided.'
-                    }, 'user', 400));
-                }
-                req.body.data['id'] = req.user.user;
-                let checkOtp = await this.validateOtpForEmail(req, res, "move balance");
-                if (checkOtp.status == false) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': checkOtp.err
-                    }, 'user', 400));
-                }
+            if (data.otp == null || undefined) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'OTP must be provided.'
+                }, 'user', 400));
+            }
+            req.body.data['id'] = req.user.user;
+            let checkOtp = await this.validateOtpForEmail(req, res, "move balance");
+            if (checkOtp.status == false) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': checkOtp.err
+                }, 'user', 400));
+            }
             // }
             // let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
             // if (!userTrade) {
@@ -2382,7 +2382,7 @@ class User extends controller {
                     "detial": {}
                 }
                 await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                await rewardBalance.findOneAndUpdate({ user: req.user.user }, { is_deleted: true })
+                await rewardBalance.findOneAndUpdate({ user: req.user.user, reward: rewards.reward, reward_asset: data.asset }, { is_deleted: true })
                 return res.status(200).send(this.successFormat({
                     'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
                 }, 'reward'));
@@ -2426,54 +2426,7 @@ class User extends controller {
         return res.status(200).send(this.successFormat({ total: 0 }));
     }
     async script(req, res) {
-        let user = await users.find({});
-        let i = 0;
-        while (i < 3000) {
-            let checkUser = await rewardHistory.find({ user: user[i]._id });
-            let j = 0, sum = 0;
-            while (j < checkUser.length) {
-                sum += Number(checkUser[j].reward);
-                j++;
-            }
-            let checkTransaction = await transaction.findOne({ user: user[i]._id });
-            if (!checkTransaction) {
-                let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(
-                    {
-                        user_id: user[i].user_id,
-                        asset: ['BDX']
-                    })
-                    , res, 'data');
-                let available = apiResponse.data.attributes['BDX'].available;
-                if (Number(available) == sum && sum > 0) {
-                    let payloads = {
-                        "user_id": user[i].user_id,
-                        "asset": "BDX",
-                        "business": "withdraw",
-                        "business_id": new Date().valueOf(),
-                        "change": `-${sum}`,
-                        "detial": {}
-                    }
-                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                    let check = await rewardBalance.findOne({ user: user[i]._id })
-                    if (!check) {
-                        await new rewardBalance({
-                            user: user[i]._id,
-                            reward_asset: "BDX",
-                            reward: sum
-                        }).save()
-                    }
-
-
-                }
-
-            }
-
-
-
-            i++;
-        }
-
-        return res.status(200).send('Success')
+        let reward = await rewardBalance.find
     }
 
 
