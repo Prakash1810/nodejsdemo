@@ -38,11 +38,9 @@ class Api extends Controller {
                     }))
             }
         }
-        console.log("Data:",data);
-
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
             .then((res) => {
-                console.log(res.data);
+               
             })
             .catch((err) => {
                 throw (err.message)
@@ -245,7 +243,6 @@ class Api extends Controller {
 
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`)
             const result = axiosResponse.data;
-            console.log(axiosResponse.data);
             let data = result.result.result;
             if (result.status) {
                 _.map(markets, function (noMarkets) {
@@ -346,7 +343,6 @@ class Api extends Controller {
             _.map(data, function (nofMarkets) {
                 market_name.push(nofMarkets.name);
             })
-            console.log("Market Name:", market_name);
             for (var i = 0; i < pairs.length; i++) {
                 let markets = [];
                 _.map(data, function (result) {
