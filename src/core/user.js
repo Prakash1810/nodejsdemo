@@ -2425,8 +2425,36 @@ class User extends controller {
 
         return res.status(200).send(this.successFormat({ total: 0 }));
     }
-   
 
+    async script(req, res) {
+        let reward = await rewardBalance.find({ is_deleted: true });
+        let response = [];
+        let i = 0;
+        while (i < 50) {
+            let checkUser = await users.findOne({ _id: reward[i].user })
+            let payloads = {
+                "user_id": checkUser.user_id,
+                asset: ["ETH", "BTC", "USDT", "BDX"]
+            }
+            let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
+            response.push({
+                user: checkUser._id,
+                user_id: checkUser.user_id,
+                email: checkUser.email,
+                rewardBalance: reward[i].reward,
+                balance: {
+                    "BTC": apiResponse.data.attributes["BTC"].available,
+                    "USDT": apiResponse.data.attributes["USDT"].available,
+                    "BDX": apiResponse.data.attributes["BDX"].available,
+                    "ETH": apiResponse.data.attributes["ETH"].available
+
+                }
+            })
+            console.log("i:", i);
+            i++;
+        }
+        return res.send(response).status(200);
+    }
 
 }
 

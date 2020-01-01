@@ -221,7 +221,6 @@ class Registration extends Controller {
             "subject": "Confirm Your Registration",
             "email_for": "registration"
         };
-        console.log("hash:", encryptedHash);
         //check how to many time click a resend button
         await apiServices.sendEmailNotification(serviceData);
         if (type == 'withoutResend') {

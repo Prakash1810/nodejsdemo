@@ -138,12 +138,11 @@ class Wallet extends controller {
             otp: Joi.string().optional()
         });
 
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
 
     async coinAddressValidate(address, asset) {
         let getAsset = await assets.findOne({ _id: asset });
-        console.log("Asset:", getAsset);
         let asset_code;
         if (getAsset) {
             if (getAsset.token != null && getAsset.token != undefined) {
@@ -153,7 +152,6 @@ class Wallet extends controller {
             else {
                 asset_code = getAsset.asset_code;
             }
-            console.log("Asset:", asset_code);
             // check if bdx
             if (asset_code.toLowerCase() === 'bdx') return true;
 
@@ -548,7 +546,7 @@ class Wallet extends controller {
             payment_id: Joi.string()
         });
 
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
 
     async withdrawValidate(req, res) {
@@ -622,10 +620,10 @@ class Wallet extends controller {
         let requestData = req.body.data.attributes;
         let checkUser = await users.findOne({ _id: req.user.user });
         let config = await configs.findOne({ key: 'withdraw limit' });
-        if(!checkUser.kyc_verified){
+        if (!checkUser.kyc_verified) {
             return res.status(400).send(this.errorMsgFormat({
-                'message':"Please complete your KYC verification to make a withdrawal."
-            },400));
+                'message': "Please complete your KYC verification to make a withdrawal."
+            }, 400));
         }
         if (checkUser.kyc_verified === false) {
             if (checkUser.dailyWithdrawAmount > config.value.daily) {
@@ -886,12 +884,12 @@ class Wallet extends controller {
             ip: Joi.string().required()
         });
 
-        return schema.validate(req, { abortEarly : false });
+        return schema.validate(req, { abortEarly: false });
     }
 
     async patchWithdrawConfirmation(req, res) {
         let requestData = req.body.data.attributes;
-        let code = JSON.parse(helpers.decrypt(req.query.code,res));
+        let code = JSON.parse(helpers.decrypt(req.query.code, res));
         if (code.code !== undefined && code.code !== null) {
             let notify = await beldexNotification.findOne({
                 _id: code.code,
@@ -904,43 +902,77 @@ class Wallet extends controller {
                 let duration = moment.duration(moment().diff(notify.created_date));
                 if (getSeconds > duration.asSeconds()) {
                     // update the details to matching engine and transactions
-                    // change the withdraw notificaiton status
-                    notify.status = 2;
-                    notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
-                    await notify.save();
-                    await transactions.findOneAndUpdate({
-                        _id: notify.notify_data.transactions,
-                        user: code.user,
-                        is_deleted: false
-                    }, {
-                        $set: {
-                            status: "1",
-                            updated_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                        }
-                    });
-                    return res.status(200).json(this.successFormat({
-                        "message": "Your withdrawal request has been confirmed."
-                    }, 'withdraw'));
+                    // change the withdraw notificaiton status;
+                    let response = await this.updateWithdrawRequest(notify, req, res);
 
+                    if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
+
+                        notify.status = 2;
+                        notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
+                        await notify.save();
+                        await transactions.findOneAndUpdate({
+                            _id: notify.notify_data.transactions,
+                            user: code.user,
+                            is_deleted: false
+                        }, {
+                            $set: {
+                                status: "1",
+                                updated_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                            }
+                        });
+                        return res.status(200).json(this.successFormat({
+                            "message": "Your withdrawal request has been confirmed."
+                        }, 'withdraw'));
+
+                    } else {
+                        return res.status(400).json(this.errorMsgFormat({
+                            "message": response.data.attributes.message
+                        }, 'withdraw'));
+                    }
                 }
                 else {
                     await beldexNotification.findOneAndUpdate({ _id: code.code, user: code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Your withdrawal request has been confirmed.'
-                    }));
+                    return res.status(400).json(this.errorMsgFormat({
+                        "message": "This link has expired."
+                    }, 'withdraw'));
                 }
-            }
-            else {
+
+
+            } else {
                 return res.status(400).json(this.errorMsgFormat({
-                    "message": "This link has expired."
+                    "message": "Invalid request"
                 }, 'withdraw'));
             }
-
-
-        } else {
+        }
+        else {
             return res.status(400).json(this.errorMsgFormat({
-                "message": "Invalid request"
+                "message": "Invalid Hash code"
             }, 'withdraw'));
+        }
+    }
+    async updateWithdrawRequest(withdraw, req, res) {
+        let code = JSON.parse(helpers.decrypt(req.query.code));
+        let requestData = req.body.data.attributes;
+        // update the transaction status
+        let transaction = await transactions.findOne({
+            _id: withdraw.notify_data.transactions,
+            user: code.user,
+            is_deleted: false
+        }).populate('asset');
+        if (transaction) {
+            let asset = transaction.asset;
+            let payloads = {
+                "user_id": code.user_id,
+                "asset": asset.asset_code,
+                "business": "withdraw",
+                "business_id": Math.floor(Math.random() * Math.floor(10000000)),
+                "change": `-${transaction.amount + transaction.fee}`,
+                "detial": {}
+            }
+            let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+            return response;
+        } else {
+            return false;
         }
     }
 
