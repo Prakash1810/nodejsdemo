@@ -1583,12 +1583,8 @@ class User extends controller {
                 logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
             });
             if (logout) {
-                await token.findOneAndUpdate({
-                    user: user.user, info_token: tokens.info, is_deleted: false, type_for: "info_token"
-                }, { is_deleted: true })
-                await token.findOneAndUpdate({
-                    user: user.user, access_token: tokens.authorization, is_deleted: false, type_for: "token"
-                }, { is_deleted: true })
+
+                await token.updateMany({ user: user.user, is_deleted: false }, { is_deleted: true })
                 return res.status(200).send(this.successFormat({
                     'message': 'You have successfully logged out.',
                 }))
