@@ -28,8 +28,7 @@ exports.connect = () => {
       useNewUrlParser: true,
       autoIndex: false,
       useFindAndModify: false,
-      useCreateIndex: true,
-      useUnifiedTopology: true
+      useCreateIndex: true
     });
   return mongoose.connection;
 };
