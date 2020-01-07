@@ -730,7 +730,7 @@ class Wallet extends controller {
                                     is_deleted: false,
                                     date: moment().format('YYYY-MM-DD HH:mm:ss')
                                 };
-                                let returnId = await this.insertNotification(data, finalAmount, res);
+                                let returnId = await this.insertNotification(data,validateWithdraw.matchingApiAmount, res);
                                 return res.status(200).json(this.successFormat({
                                     'message': 'Your request for withdrawal has been received. A confirmation email has been sent to your registered email address. Please confirm your request.'
                                 }, returnId, 'withdraw', 200));
