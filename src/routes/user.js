@@ -533,19 +533,5 @@ router.get('/script', async (req, res) => {
     }
 });
 
-router.get('/user-modified-date', async (req, res) => {
-    try {
-        await user.userModifiedDateInsert(req, res);
-    }
-    catch (err) {
-        return res.status(500).send(
-            controller.errorMsgFormat({
-                'message': err.message
-            }, 'users', 500)
-        );
-    }
-});
-
-
 
 module.exports = router;

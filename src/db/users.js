@@ -35,7 +35,7 @@ const usersSchema = mongoose.Schema({
     maker_fee: { type: String },
     withdraw: { type: Boolean, default: true },
     password_reset_time: { type: Date }, total_btc: { type: Number, default: 0 },
-    modified_date:{type:Date},
+    modified_date:{ type:Date },
     total_usdt: { type: Number, default: 0 },
     kyc_verified: { type: Boolean, default: false },
     kyc_verified_date: Date,
