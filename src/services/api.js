@@ -382,7 +382,7 @@ class Api extends Controller {
 
                 if (path == 'order/cancel') {
                     await new orderCancel(value).save();
-                    if (liquidity.q || source.startsWith("OX") || data.user_id > 0) {
+                    if (liquidity.q && source.startsWith("OX") ) {
                         let body
                         const timestamp = await utils.getTime();
                         const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
