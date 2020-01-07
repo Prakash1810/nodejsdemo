@@ -28,15 +28,14 @@ const usersSchema = mongoose.Schema({
     is_blocked: { type: Boolean, default: false },
     beldex_discount: { type: Boolean, default: false },
     level: Number,
-    created_date: { type: Date, default: Date.now },
     created_by: Number,
-    modified_date: Date,
     modified_by: Number,
     is_deleted: { type: Boolean, default: false },
     taker_fee: { type: String },
     maker_fee: { type: String },
     withdraw: { type: Boolean, default: true },
     password_reset_time: { type: Date }, total_btc: { type: Number, default: 0 },
+    modified_date:{type: Date, default: Date.now},
     total_usdt: { type: Number, default: 0 },
     kyc_verified: { type: Boolean, default: false },
     kyc_verified_date: Date,
@@ -49,6 +48,8 @@ const usersSchema = mongoose.Schema({
     monthWithdrawAmount: { type: Number },
     api_key: { type: String, default: null },
     currency_code: { type: String }
+},{
+    timestamps: { createdAt: 'created_date' }
 });
 
 // autoIncrement.initialize(mongooseConnect.connect());
