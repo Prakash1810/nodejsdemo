@@ -2441,6 +2441,21 @@ class User extends controller {
         return res.send(response).status(200);
     }
 
+    async userModifiedDateInsert(req, res) {
+        let user = await users.find({});
+        let i = 0, j = 0;
+        while (i < user.length) {
+            if (!user[i].modified_date) {
+                await users.findOneAndUpdate({ _id: user[i]._id }, { modified_date: user[i].created_date });
+                j++;
+            }
+            i++;
+        }
+        return res.status(200).send({ message: "success....", changedUsers: j })
+    }
+
+
+
 }
 
 module.exports = new User;
