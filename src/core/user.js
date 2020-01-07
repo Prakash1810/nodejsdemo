@@ -2442,11 +2442,6 @@ class User extends controller {
         return res.send('Success').status(200);
 
     }
-<<<<<<< Updated upstream
-
-
-=======
->>>>>>> Stashed changes
 }
 
 module.exports = new User;
