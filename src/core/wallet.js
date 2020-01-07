@@ -689,15 +689,15 @@ class Wallet extends controller {
                 }
                 let validateWithdraw = await this.withdrawValidate(req, res);
                 if (validateWithdraw.status) {
-                    const pendingValue = await transactions.find({ user: req.user.user, asset: requestData.asset, type: '1', status: '1' });
-                    let value = 0, i = 0;
-                    let finalAmount = 0;
-                    while (i < pendingValue.length) {
-                        value += pendingValue[i].final_amount;
-                        i++;
-                    }
-                    finalAmount = Number(validateWithdraw.matchingApiAmount) - value;
-                    if (finalAmount >= requestData.amount) {
+                    // const pendingValue = await transactions.find({ user: req.user.user, asset: requestData.asset, type: '1', status: '1' });
+                    // let value = 0, i = 0;
+                    // let finalAmount = 0;
+                    // while (i < pendingValue.length) {
+                    //     value += pendingValue[i].final_amount;
+                    //     i++;
+                    // }
+                    // finalAmount = Number(validateWithdraw.matchingApiAmount) - value;
+                    // if (finalAmount >= requestData.amount) {
                         if ((requestData.withdraw_id != null && requestData.withdraw_id != undefined)) {
                             withdraw = await withdrawAddress.findOne({
                                 '_id': requestData.withdraw_id,
@@ -743,12 +743,12 @@ class Wallet extends controller {
                             }, 'withdraw'));
                         }
 
-                    }
-                    else {
-                        return res.status(400).json(this.errorMsgFormat({
-                            "message": "The withdrawal amount you entered is more than your balance. Please enter a lesser amount."
-                        }, 'withdraw'));
-                    }
+                    // }
+                    // else {
+                    //     return res.status(400).json(this.errorMsgFormat({
+                    //         "message": "The withdrawal amount you entered is more than your balance. Please enter a lesser amount."
+                    //     }, 'withdraw'));
+                    // }
 
 
 

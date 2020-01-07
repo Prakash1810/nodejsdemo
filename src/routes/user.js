@@ -522,9 +522,9 @@ router.get('/trade-balance', auth, info, async (req, res) => {
 
 });
 
-router.get('/script', async (req, res) => {
+router.get('/kyc_verified', async (req, res) => {
     try {
-        await user.script(req, res);
+        await user.kycVerified(req, res);
     }
     catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
