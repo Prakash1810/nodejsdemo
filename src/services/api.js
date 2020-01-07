@@ -382,7 +382,7 @@ class Api extends Controller {
 
                 if (path == 'order/cancel') {
                     await new orderCancel(value).save();
-                    if (liquidity.q && source.startsWith("OX") ) {
+                    if (liquidity.q && source.startsWith("OX")) {
                         let body
                         const timestamp = await utils.getTime();
                         const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
@@ -515,6 +515,31 @@ class Api extends Controller {
     //     });
 
     // }
+
+    async getAccessCode(data,res){
+        try{
+            let axiosResponse = await axios.post(`${process.env.fractal_auth}?client_id=${process.env.client_id}&client_secret=${process.env.client_secret}&code=${data}&grant_type=${process.env.grant_type}&redirect_uri=${process.env.redirect_uri}`)
+            if (axiosResponse.data) {
+                return axiosResponse.data
+            }
+        }
+        catch(err){
+            return false
+        }
+       
+    }
+
+    async checkUserMe(data){
+        try{
+            let axiosResponse = await axios.post(`${process.env.fractal_auth}?client_id=${process.env.client_id}&client_secret=${process.env.client_secret}&code=${data}&grant_type=${process.env.grant_type}&redirect_uri=${process.env.redirect_uri}`)
+            if (axiosResponse.data) {
+                return axiosResponse.data
+            }
+        }
+        catch(err){
+            return false
+        }
+    }
 
 }
 

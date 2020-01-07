@@ -2422,26 +2422,31 @@ class User extends controller {
         return res.status(200).send(this.successFormat({ total: 0 }));
     }
 
-    async script(req, res) {
+    async kycVerified(req, res) {
+        let data = req.query.code;
+        if (!data) {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'Kyc code must be provide.'
+            }));
+        }
+        let checkAuth = await apiServices.getAccessCode(data, res);
+        if (!checkAuth) {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'The request failed for the given kyc code'
+            }));
+        }
+        await kycDetails.findOne({user:req.user.user},{code : checkAuth.access_token});
+         let checkUserMe = await apiServices.checkUserMe(data)
+        
 
-        // let user = await users.find({});
-        // let asset = await asset.find({});
-        // let i = 0;
-        // while (i < user.length) {
-        //     let balance = await balance.findOne({user:})
-        //     let j = 0;
-        //     while (j < asset.length) {
-        //         while()
-        //         j++;
-        //     }
-        //     i++
-        // }
+        return res.send('Success').status(200);
 
-
-        return res.send(response).status(200);
     }
+<<<<<<< Updated upstream
 
 
+=======
+>>>>>>> Stashed changes
 }
 
 module.exports = new User;
