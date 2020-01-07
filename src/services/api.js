@@ -40,7 +40,7 @@ class Api extends Controller {
         }
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
             .then((res) => {
-               
+
             })
             .catch((err) => {
                 throw (err.message)
@@ -363,17 +363,15 @@ class Api extends Controller {
     }
 
     async matchingEngineRequest(method, path, input, res, type = 'json', liquidity) {
-        let source, data = null
+        let source = " ";
+        let data = null;
         if (path == 'order/cancel') {
             data = input.data.attributes;
-            if (!data.source) {
-                return res.status(500).send(controller.errorMsgFormat({
-                    'message': "Source must be provide"
-                }, 'order-matching',500));
+            if (data.source) {
+                source = data.source
+                delete input.data.attributes.source
             }
 
-            source = data.source
-            delete input.data.attributes.source
         }
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, input)
@@ -384,7 +382,7 @@ class Api extends Controller {
 
                 if (path == 'order/cancel') {
                     await new orderCancel(value).save();
-                    if (liquidity.q) {
+                    if (liquidity.q || source.startsWith("OX") || data.user_id > 0) {
                         let body
                         const timestamp = await utils.getTime();
                         const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
