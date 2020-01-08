@@ -516,27 +516,32 @@ class Api extends Controller {
 
     // }
 
-    async getAccessCode(data,res){
-        try{
+    async getAccessCode(data, res) {
+        try {
             let axiosResponse = await axios.post(`${process.env.fractal_auth}?client_id=${process.env.client_id}&client_secret=${process.env.client_secret}&code=${data}&grant_type=${process.env.grant_type}&redirect_uri=${process.env.redirect_uri}`)
             if (axiosResponse.data) {
                 return axiosResponse.data
             }
         }
-        catch(err){
+        catch (err) {
             return false
         }
-       
+
     }
 
-    async checkUserMe(data){
-        try{
-            let axiosResponse = await axios.post(`${process.env.fractal_auth}?client_id=${process.env.client_id}&client_secret=${process.env.client_secret}&code=${data}&grant_type=${process.env.grant_type}&redirect_uri=${process.env.redirect_uri}`)
+    async checkUserMe(data) {
+        try {
+            let axiosResponse = await axios.post(`${process.env.fractal_user}`, {
+                headers: {
+                    Authorization: 'Bearer ' + data
+                }
+            })
+
             if (axiosResponse.data) {
                 return axiosResponse.data
             }
         }
-        catch(err){
+        catch (err) {
             return false
         }
     }

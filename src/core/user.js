@@ -243,7 +243,7 @@ class User extends controller {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = req.body.data.attributes;
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
-        data.password = await helpers.decrypt(data.password, res);
+        //data.password = await helpers.decrypt(data.password, res);
         if (data.password === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
@@ -1830,111 +1830,128 @@ class User extends controller {
     async kycUpdate(req, res) {
 
         let data = req.body;
-        if (data.topic == 'resource_update') {
-            let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
-            let checkUser = await users.findOne({ _id: checkSessionId.user });
-            if (!checkUser) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'User cannot be found.'
-                }, 'user', 400));
-            }
-            if (checkUser.kyc_statistics == null) {
-                checkUser.kyc_statistics = "PENDING"
-                checkUser.save();
-            }
+        if (data.type == 'verification_approved') {
 
+            let check = await kycDetails.findOne({ uid: data.data.user_id });
+            if (!check) {
+                return
+            }
+            let updateUser = await users.findOneAndUpdate({ _id: check.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
+            await this.updateBalance(updateUser.user_id, updateUser._id, res, 'kyc verification');
+            let serviceData = {
+                "subject": `Your KYC verification was successful.`,
+                "email_for": "kyc-success",
+                "user_id": updateUser._id
 
+            };
+            await apiServices.sendEmailNotification(serviceData, res);
         }
-        if (data.topic == 'check_completion') {
-            let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
-            let checkUser = await users.findOne({ _id: checkSessionId.user });
-            if (!checkUser) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'User cannot be found.'
-                }, 'user', 400));
-            }
-            // let date = new Date();
-            // let timestamp = date.valueOf();
-            // console.log("Timestamp:", timestamp);
-            // let uuid = uuidv4();
-            // let url = `https://api.yoti.com/idverify/v1/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`;
-            // let text = `GET&/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`
-            // let contents = await fs.readFileSync(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem');
-            // let key = new NodeRSA(contents, "pkcs1", { encryptionScheme: 'pkcs1' });
-            // //key.importKey(contents, "pkcs1");
-            // let encrypted = key.encrypt(text, 'base64');
-            // console.log("Encrypted:", encrypted)
-            // // let response = await axios.get(url, {
-            // //     headers: {
-            // //         'X-Yoti-Auth-Digest': encrypted,
-            // //         'X-Yoti-Auth-Id': `${process.env.CLIENT_SDK_ID}`
-            // //     }
-            // // })
 
-            if ([null, "PENDING"].indexOf(checkUser.kyc_statistics) > -1) {
-                let request = new RequestBuilder()
-                    .withBaseUrl(process.env.YOTI_BASE_URL)
-                    .withPemFilePath(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem')
-                    .withEndpoint(`/sessions/${data.session_id}`)
-                    .withMethod('GET')
-                    .withQueryParam('sdkId', process.env.CLIENT_SDK_ID)
-                    .build();
-                let response = await request.execute()
-                let attributes = response.parsedResponse.checks[0].report.recommendation;
-                if (attributes.value == 'APPROVE') {
-                    checkUser.kyc_verified = true;
-                    checkUser.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
-                    checkUser.kyc_statistics = "APPROVE"
-                    checkUser.save();
-                    await this.updateBalance(checkUser.user_id, checkUser._id, res, 'kyc verification');
-                    // let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
-                    // if (checkReferrerCode) {
-                    //     let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referral reward-kyc');
-                    //     if (amount == null) {
-                    //         return;
-                    //     }
-                    //     await new referralHistory({
-                    //         user: checkUser._id,
-                    //         referrer_code: checkUser.referrer_code,
-                    //         email: checkUser.email,
-                    //         type: "referral code",
-                    //         amount: amount,
-                    //         created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                    //     }).save()
-                    // }
-                    let serviceData = {
-                        "subject": `Your KYC verification was successful.`,
-                        "email_for": "kyc-success",
-                        "user_id": checkUser._id
+        // if (data.topic == 'resource_update') {
+        //     let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
+        //     let checkUser = await users.findOne({ _id: checkSessionId.user });
+        //     if (!checkUser) {
+        //         return res.status(400).send(this.errorMsgFormat({
+        //             'message': 'User cannot be found.'
+        //         }, 'user', 400));
+        //     }
+        //     if (checkUser.kyc_statistics == null) {
+        //         checkUser.kyc_statistics = "PENDING"
+        //         checkUser.save();
+        //     }
 
-                    };
-                    await apiServices.sendEmailNotification(serviceData, res);
-                }
-                if (attributes.value == 'REJECT') {
-                    checkUser.kyc_statistics = "REJECT"
-                    checkUser.save();
-                    let serviceData = {
-                        "subject": `Your KYC verification could not be processed.`,
-                        "email_for": "kyc-failure",
-                        "user_id": checkUser._id
 
-                    };
-                    await apiServices.sendEmailNotification(serviceData, res);
-                }
-                if (attributes.value == 'NOT_AVAILABLE') {
-                    checkUser.kyc_statistics = "NOT_AVAILABLE"
-                    checkUser.save();
-                    let serviceData = {
-                        "subject": `Your KYC verification could not be processed.`,
-                        "email_for": "kyc-failure",
-                        "user_id": checkUser._id
+        // }
+        // if (data.topic == 'check_completion') {
+        //     let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
+        //     let checkUser = await users.findOne({ _id: checkSessionId.user });
+        //     if (!checkUser) {
+        //         return res.status(400).send(this.errorMsgFormat({
+        //             'message': 'User cannot be found.'
+        //         }, 'user', 400));
+        //     }
+        //     // let date = new Date();
+        //     // let timestamp = date.valueOf();
+        //     // console.log("Timestamp:", timestamp);
+        //     // let uuid = uuidv4();
+        //     // let url = `https://api.yoti.com/idverify/v1/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`;
+        //     // let text = `GET&/sessions/${data.session_id}?sdkId=${process.env.CLIENT_SDK_ID}&nonce=${uuid}&timestamp=${timestamp}`
+        //     // let contents = await fs.readFileSync(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem');
+        //     // let key = new NodeRSA(contents, "pkcs1", { encryptionScheme: 'pkcs1' });
+        //     // //key.importKey(contents, "pkcs1");
+        //     // let encrypted = key.encrypt(text, 'base64');
+        //     // console.log("Encrypted:", encrypted)
+        //     // // let response = await axios.get(url, {
+        //     // //     headers: {
+        //     // //         'X-Yoti-Auth-Digest': encrypted,
+        //     // //         'X-Yoti-Auth-Id': `${process.env.CLIENT_SDK_ID}`
+        //     // //     }
+        //     // // })
 
-                    };
-                    await apiServices.sendEmailNotification(serviceData, res);
-                }
-            }
+        //     if ([null, "PENDING"].indexOf(checkUser.kyc_statistics) > -1) {
+        //         let request = new RequestBuilder()
+        //             .withBaseUrl(process.env.YOTI_BASE_URL)
+        //             .withPemFilePath(__dirname + '/yoti-key/keys/Beldex-KYC-access-security.pem')
+        //             .withEndpoint(`/sessions/${data.session_id}`)
+        //             .withMethod('GET')
+        //             .withQueryParam('sdkId', process.env.CLIENT_SDK_ID)
+        //             .build();
+        //         let response = await request.execute()
+        //         let attributes = response.parsedResponse.checks[0].report.recommendation;
+        //         if (attributes.value == 'APPROVE') {
+        //             checkUser.kyc_verified = true;
+        //             checkUser.kyc_verified_date = moment().format('YYYY-MM-DD HH:mm:ss');
+        //             checkUser.kyc_statistics = "APPROVE"
+        //             checkUser.save();
+        //            
+        //             // let checkReferrerCode = await users.findOne({ referral_code: checkUser.referrer_code });
+        //             // if (checkReferrerCode) {
+        //             //     let amount = await this.updateBalance(checkReferrerCode.user_id, checkReferrerCode._id, res, 'referral reward-kyc');
+        //             //     if (amount == null) {
+        //             //         return;
+        //             //     }
+        //             //     await new referralHistory({
+        //             //         user: checkUser._id,
+        //             //         referrer_code: checkUser.referrer_code,
+        //             //         email: checkUser.email,
+        //             //         type: "referral code",
+        //             //         amount: amount,
+        //             //         created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+        //             //     }).save()
+        //             // }
+        //             let serviceData = {
+        //                 "subject": `Your KYC verification was successful.`,
+        //                 "email_for": "kyc-success",
+        //                 "user_id": checkUser._id
 
-        }
+        //             };
+        //             await apiServices.sendEmailNotification(serviceData, res);
+        //         }
+        //         if (attributes.value == 'REJECT') {
+        //             checkUser.kyc_statistics = "REJECT"
+        //             checkUser.save();
+        //             let serviceData = {
+        //                 "subject": `Your KYC verification could not be processed.`,
+        //                 "email_for": "kyc-failure",
+        //                 "user_id": checkUser._id
+
+        //             };
+        //             await apiServices.sendEmailNotification(serviceData, res);
+        //         }
+        //         if (attributes.value == 'NOT_AVAILABLE') {
+        //             checkUser.kyc_statistics = "NOT_AVAILABLE"
+        //             checkUser.save();
+        //             let serviceData = {
+        //                 "subject": `Your KYC verification could not be processed.`,
+        //                 "email_for": "kyc-failure",
+        //                 "user_id": checkUser._id
+
+        //             };
+        //             await apiServices.sendEmailNotification(serviceData, res);
+        //         }
+        //     }
+
+        // }
         return
     }
 
@@ -2047,7 +2064,6 @@ class User extends controller {
 
     async kycDetails(req, res) {
         let data = req.body.data.attributes;
-        let sessionResponse;
         data.user = req.user.user;
         let checkUser = await users.findOne({ _id: data.user })
         if (!checkUser) {
@@ -2068,33 +2084,33 @@ class User extends controller {
             }, 'user', 400));
         }
 
-        let response = await this.kycSession(req, res, 'details');
-        if (response.status) {
-            sessionResponse = response.result.parsedResponse;
-            data.session_id = sessionResponse.session_id;
-            data.client_session_token = sessionResponse.client_session_token;
-            checkUser.kyc_statistics = 'PENDING';
-            checkUser.save();
-            let check = await kycDetails.findOne({ user: data.user })
+        // let response = await this.kycSession(req, res, 'details');
+        // if (response.status) {
+        //     sessionResponse = response.result.parsedResponse;
+        //     data.session_id = sessionResponse.session_id;
+        //     data.client_session_token = sessionResponse.client_session_token;
+        //     checkUser.kyc_statistics = 'PENDING';
+        //     checkUser.save();
+        // let check = await kycDetails.findOne({ user: data.user })
 
-            if (check) {
-                check.session_id = sessionResponse.session_id,
-                    check.client_session_token = sessionResponse.client_session_token;
-                check.save();
-            } else {
-                await new kycDetails(data).save();
-            }
-            let getData = {
-                session_id: sessionResponse.session_id,
-                client_session_token: sessionResponse.client_session_token
-            }
-            return res.status(200).send(this.successFormat(getData, null, 'user', 200))
-        }
-        else {
-            return res.status(400).send(this.errorMsgFormat({
-                'message': response.error
-            }, 'user', 400));
-        }
+        // if (check) {
+        //     check.session_id = sessionResponse.session_id,
+        //         check.client_session_token = sessionResponse.client_session_token;
+        //     check.save();
+        // } else {
+        await new kycDetails(data).save();
+        // }
+        // let getData = {
+        //     session_id: sessionResponse.session_id,
+        //     client_session_token: sessionResponse.client_session_token
+        // }
+        return res.status(200).send(this.successFormat("Kyc details added Successfully", null, 'user', 200))
+        // }
+        // else {
+        //     return res.status(400).send(this.errorMsgFormat({
+        //         'message': response.error
+        //     }, 'user', 400));
+        // }
 
     }
 
@@ -2341,6 +2357,7 @@ class User extends controller {
 
     async kycVerified(req, res) {
         let data = req.query.code;
+        let user = await users.findOne({ _id: req.user.user })
         if (!data) {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Kyc code must be provide.'
@@ -2352,12 +2369,24 @@ class User extends controller {
                 message: 'The request failed for the given kyc code'
             }));
         }
-        await kycDetails.findOne({user:req.user.user},{code : checkAuth.access_token});
-         let checkUserMe = await apiServices.checkUserMe(data)
-        
-
-        return res.send('Success').status(200);
-
+        await kycDetails.findOne({ user: req.user.user }, { code: checkAuth.access_token });
+        let checkUserMe = await apiServices.checkUserMe(data);
+        if (!checkUserMe) {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'Unauthorized'
+            }));
+        }
+        if (user.email != checkUserMe.email[0].address) {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'KYC verification failed since the email address you provided did not match your Beldex registered email address'
+            }));
+        }
+        await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid, country: checkUserMe.identification_document_country, type_of_documentation: checkUserMe.identification_document_type, documentation_id: checkUserMe.identification_document_number })
+        if (checkUserMe.verifications.length == 0) {
+            return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing." }));
+        }
+        await users.findOneAndUpdate({ _id: req.user.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
+        return res.status(200).send(this.successFormat({ "message": "The KYC documents you uploaded were received and successfully verified. " }));
     }
 }
 
