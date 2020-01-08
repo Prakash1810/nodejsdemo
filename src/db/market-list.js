@@ -8,6 +8,9 @@ const schema = new mongoose.Schema({
     market_pair: {
         type: String, required: true
     },
+    minimum_price:{
+        type:Number
+    },
     q: { type: Boolean, default: false },
     
     q_kline: { type: Boolean, default: true },

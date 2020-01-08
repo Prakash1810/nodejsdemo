@@ -131,40 +131,45 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
         // if (markets.minimum_amount <= Number(data.amount)) {
         //     return res.status(400).send(controller.errorMsgFormat({ message: `The request amount is greater than your minimum amount.` }));
         // }
-        let checkUser = await users.findOne({ _id: req.user.user });
-        if (!checkUser.trade) {
-            return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
-        }
-        if (check.active == false || check.disable_trade == true) {
-            return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
-        }
-        req.body.data.attributes.takerFeeRate = checkUser.taker_fee
-        req.body.data.attributes.makerFeeRate = checkUser.maker_fee
-        if (check.q) {
-            side = data.side == 2 ? "buy" : "sell";
-            let pair = data.market;
-            let body;
-            if (pair.substr(pair.length - 4) == 'USDT') {
-                body = pair.slice(0, pair.length - 4) + '-' + pair.slice(pair.length - 4);
+        if (check.minimum_price <= data.price) {
+            let checkUser = await users.findOne({ _id: req.user.user });
+            if (!checkUser.trade) {
+                return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
             }
-            else {
-                body = pair.slice(0, pair.length - 3) + '-' + pair.slice(pair.length - 3);
+            if (check.active == false || check.disable_trade == true) {
+                return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
             }
-            let fee = checkUser.taker_fee.replace('.', 'D')
-            let input =
-            {
-                'type': 'limit',
-                'side': side,
-                'instrument_id': body,
-                'size': Number(data.amount),
-                'client_oid': `BDXU${req.body.data.attributes.user_id}F${fee}`,
-                'price': data.pride,
-                'order_type': '0'
+            req.body.data.attributes.takerFeeRate = checkUser.taker_fee
+            req.body.data.attributes.makerFeeRate = checkUser.maker_fee
+            if (check.q) {
+                side = data.side == 2 ? "buy" : "sell";
+                let pair = data.market;
+                let body;
+                if (pair.substr(pair.length - 4) == 'USDT') {
+                    body = pair.slice(0, pair.length - 4) + '-' + pair.slice(pair.length - 4);
+                }
+                else {
+                    body = pair.slice(0, pair.length - 3) + '-' + pair.slice(pair.length - 3);
+                }
+                let fee = checkUser.taker_fee.replace('.', 'D')
+                let input =
+                {
+                    'type': 'limit',
+                    'side': side,
+                    'instrument_id': body,
+                    'size': Number(data.amount),
+                    'client_oid': `BDXU${req.body.data.attributes.user_id}F${fee}`,
+                    'price': data.pride,
+                    'order_type': '0'
+                }
+                await matching.OkexHttp(input, req.body, res);
+            } else {
+                await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
             }
-            await matching.OkexHttp(input, req.body, res);
-        } else {
-            await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
-        }
+        }else{
+            return res.status(400).send({message:'The order you have placed is lesser than the minimum price'
+        },'order-matching',400)};
+
 
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
