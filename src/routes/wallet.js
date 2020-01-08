@@ -103,6 +103,7 @@ router.get('/transactions/:type',info, auth, (req, res) => {
 
 router.post('/withdraw',info,auth, (req, res) => {
     try {
+        console.log(req.body.data)
         let { error } = wallet.postWithdrawValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
