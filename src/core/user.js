@@ -243,7 +243,7 @@ class User extends controller {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = req.body.data.attributes;
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
-        //data.password = await helpers.decrypt(data.password, res);
+        data.password = await helpers.decrypt(data.password, res);
         if (data.password === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
