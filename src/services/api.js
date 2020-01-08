@@ -531,7 +531,6 @@ class Api extends Controller {
 
     async checkUserMe(data) {
         try {
-            console.log('data:',data);
             let axiosResponse = await axios.get(`${process.env.fractal_user}`, {
                 headers: {
                     Authorization: 'Bearer ' + data
