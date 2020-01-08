@@ -2370,7 +2370,7 @@ class User extends controller {
             }));
         }
         await kycDetails.findOne({ user: req.user.user }, { code: checkAuth.access_token });
-        let checkUserMe = await apiServices.checkUserMe(data);
+        let checkUserMe = await apiServices.checkUserMe(checkAuth.access_token);
         if (!checkUserMe) {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Unauthorized'
