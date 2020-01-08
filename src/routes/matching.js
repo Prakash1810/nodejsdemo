@@ -131,7 +131,7 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
         // if (markets.minimum_amount <= Number(data.amount)) {
         //     return res.status(400).send(controller.errorMsgFormat({ message: `The request amount is greater than your minimum amount.` }));
         // }
-        if (check.minimum_price <= data.price) {
+        if (check.minimum_price <= data.pride) {
             let checkUser = await users.findOne({ _id: req.user.user });
             if (!checkUser.trade) {
                 return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));

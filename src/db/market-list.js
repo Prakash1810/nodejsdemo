@@ -9,7 +9,7 @@ const schema = new mongoose.Schema({
         type: String, required: true
     },
     minimum_price:{
-        type:Number
+        type:Number,default:0
     },
     q: { type: Boolean, default: false },
     
