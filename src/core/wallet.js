@@ -621,11 +621,6 @@ class Wallet extends controller {
         let checkUser = await users.findOne({ _id: req.user.user });
         let config = await configs.findOne({ key: 'withdraw limit' });
         if (!checkUser.kyc_verified) {
-            return res.status(400).send(this.errorMsgFormat({
-                'message': "Please complete your KYC verification to make a withdrawal."
-            }, 400));
-        }
-        if (checkUser.kyc_verified === false) {
             if (checkUser.dailyWithdrawAmount > config.value.daily) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': `Since you have not verified your KYC, you can only withdraw crypto equivalent of ${config.value.daily} USDT/day. Please verify your KYC to unlock unlimited withdrawals.`,
