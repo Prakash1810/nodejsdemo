@@ -522,7 +522,7 @@ router.get('/trade-balance', auth, info, async (req, res) => {
 
 });
 
-router.get('/kyc_verified', async (req, res) => {
+router.get('/kyc_verified',auth,info,async (req, res) => {
     try {
         await user.kycVerified(req, res);
     }
