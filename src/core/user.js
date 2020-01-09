@@ -2370,20 +2370,20 @@ class User extends controller {
             }));
         }
         await kycDetails.findOne({ user: req.user.user }, { code: checkAuth.access_token });
-        let checkUserMe = await apiServices.checkUserMe(data);
+        let checkUserMe = await apiServices.checkUserMe(checkAuth.access_token);
         if (!checkUserMe) {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Unauthorized'
             }));
         }
-        if (user.email != checkUserMe.email[0].address) {
+        if (user.email != checkUserMe.emails[0].address) {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'KYC verification failed since the email address you provided did not match your Beldex registered email address'
             }));
         }
-        await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid, country: checkUserMe.identification_document_country, type_of_documentation: checkUserMe.identification_document_type, documentation_id: checkUserMe.identification_document_number })
+        await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid, country: checkUserMe.person.identification_document_country, type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number })
         if (checkUserMe.verifications.length == 0) {
-            return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing." }));
+            return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
         }
         await users.findOneAndUpdate({ _id: req.user.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
         return res.status(200).send(this.successFormat({ "message": "The KYC documents you uploaded were received and successfully verified. " }));
