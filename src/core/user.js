@@ -1837,7 +1837,7 @@ class User extends controller {
                 return
             }
             let updateUser = await users.findOneAndUpdate({ _id: check.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
-            await this.updateBalance(updateUser.user_id, updateUser._id, res, 'kyc verification');
+            //await this.updateBalance(updateUser.user_id, updateUser._id, res, 'kyc verification');
             let serviceData = {
                 "subject": `Your KYC verification was successful.`,
                 "email_for": "kyc-success",
