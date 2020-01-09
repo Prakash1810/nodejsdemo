@@ -522,9 +522,20 @@ router.get('/trade-balance', auth, info, async (req, res) => {
 
 });
 
-router.get('/kyc_verified',auth,info,async (req, res) => {
+router.get('/kyc_verified', auth, info, async (req, res) => {
     try {
         await user.kycVerified(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
+router.get('/show-reward-balance', auth, info, async (req, res) => {
+    try {
+        await user.showMovedBalance(req, res);
     }
     catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
