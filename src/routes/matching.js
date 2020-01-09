@@ -128,9 +128,6 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
         let data = req.body.data.attributes;
         req.body.data.attributes.user_id = Number(req.user.user_id);
         let check = await markets.findOne({ market_name: data.market });
-        // if (markets.minimum_amount <= Number(data.amount)) {
-        //     return res.status(400).send(controller.errorMsgFormat({ message: `The request amount is greater than your minimum amount.` }));
-        // }
         if (check.minimum_price <= data.pride) {
             let checkUser = await users.findOne({ _id: req.user.user });
             if (!checkUser.trade) {
