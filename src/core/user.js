@@ -2388,6 +2388,14 @@ class User extends controller {
         await users.findOneAndUpdate({ _id: req.user.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
         return res.status(200).send(this.successFormat({ "message": "The KYC documents you uploaded were received and successfully verified. " }));
     }
+
+    async showMovedBalance(req, res) {
+        let checkRewarBalance = await rewardBalance.findOne({ user: req.user.user, is_deleted: true}, {'_id': 0 }).select('reward modified_date reward_asset')
+        if (checkRewarBalance) {
+            return res.status(200).send(this.successFormat({ data: checkRewarBalance }));
+        }
+        return res.status(200).send(this.successFormat({ data: null }));
+    }
 }
 
 module.exports = new User;
