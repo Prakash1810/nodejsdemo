@@ -39,6 +39,8 @@ const apikey = require('../db/api-keys');
 const { RequestBuilder, Payload } = require('yoti');
 const authenticators = require('authenticator')
 const changeCurrency = require('../db/currency-list');
+const balance = require('../db/balance');
+
 
 class User extends controller {
 
@@ -2369,7 +2371,7 @@ class User extends controller {
                 message: 'The request failed for the given kyc code'
             }));
         }
-        await kycDetails.findOne({ user: req.user.user }, { code: checkAuth.access_token });
+        await kycDetails.findOneAndUpdate({ user: req.user.user }, { code: checkAuth.access_token });
         let checkUserMe = await apiServices.checkUserMe(checkAuth.access_token);
         if (!checkUserMe) {
             return res.status(400).send(this.errorMsgFormat({
@@ -2390,11 +2392,46 @@ class User extends controller {
     }
 
     async showMovedBalance(req, res) {
-        let checkRewarBalance = await rewardBalance.findOne({ user: req.user.user, is_deleted: true}, {'_id': 0 }).select('reward modified_date reward_asset')
+        let checkRewarBalance = await rewardBalance.findOne({ user: req.user.user, is_deleted: true }, { '_id': 0 }).select('reward modified_date reward_asset')
         if (checkRewarBalance) {
             return res.status(200).send(this.successFormat({ data: checkRewarBalance }));
         }
         return res.status(200).send(this.successFormat({ data: null }));
+    }
+
+
+    async script(req, res) {
+        let user = await users.find({});
+        let i = 0;
+        while (i < 1) {
+            let data = await balance.findOne({ user: user[i]._id }).sort({ _id: -1 })
+            let k = 0;
+            let userBalanace = data.balance;
+            while (k < userBalanace.length) {
+                let amount = 0;
+                if (Number(userBalanace[k].freeze) != 0) {
+                    amount = Number(userBalanace[k].available) + Number(userBalanace[k].freeze);
+                } else {
+                    amount = Number(userBalanace[k].available)
+                }
+
+                console.log("Amount:", amount)
+                let payloads = {
+                    "user_id": user[i].user_id,
+                    "asset": userBalanace[k].asset_code,
+                    "business": "deposit",
+                    "business_id": new Date().valueOf(),
+                    "change": amount.toString(),
+                    "detial": {}
+                }
+                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                k++;
+            }
+
+            i++;
+        }
+
+        return res.send('Success').status(200);
     }
 }
 
