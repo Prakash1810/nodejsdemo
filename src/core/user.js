@@ -2230,7 +2230,7 @@ class User extends controller {
         let currencyPrice = await apiServices.marketPrice('bitcoin', currency.code.toLowerCase());
         let price = currencyPrice.data.bitcoin[currency.code.toLowerCase()];
         await users.findOneAndUpdate({ _id: req.user.user }, { currency_code: currency.code })
-        new logs(currency, null, price)
+        new logs(currency, req.user.user, price)
         return res.status(200).send(this.successFormat({
             'currencyPrice': price
         }, 'currecy'));
