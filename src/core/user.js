@@ -2431,9 +2431,9 @@ class User extends controller {
                         "detial": {}
                     }
                     await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                    k++;
+                   
                 }
-
+                k++;
             }
             console.log("I:",i);
             i++;
