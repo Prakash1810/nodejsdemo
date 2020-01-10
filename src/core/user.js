@@ -2386,7 +2386,7 @@ class User extends controller {
                 message: 'KYC verification failed since the email address you provided did not match your Beldex registered email address'
             }));
         }
-        let checkKycDetails = await kycDetails.findOne({ user: req.user.user, country: checkUserMe.person.identification_document_country, type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number, date_of_birth: checkUserMe.date_of_birth })
+        let checkKycDetails = await kycDetails.findOne({ user: req.user.user,type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number, date_of_birth: checkUserMe.date_of_birth })
         if (checkKycDetails) {
 
         }
