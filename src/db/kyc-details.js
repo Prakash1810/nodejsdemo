@@ -14,6 +14,8 @@ const kycSchema = mongoose.Schema({
     country: { type: String },
     code: { type: String },
     uid: { type: String }
+},{
+    timestamps: { createdAt: 'created_date', updatedAt: 'modified_date_time' }
 });
 
 
