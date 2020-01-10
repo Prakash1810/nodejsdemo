@@ -1,4 +1,5 @@
 const moment = require('moment');
+const logs = require('../services/logs');
 const assets = require('../db/assets');
 const userAddress = require('../db/user-address');
 const users = require('../db/users');
@@ -2119,6 +2120,7 @@ class User extends controller {
     async kycStatistics(req, res) {
         let checkUser = await users.findOne({ _id: req.user.user });
         if (checkUser) {
+            new logs(req.headers, req.user.user, checkUser.kyc_statistics)
             return res.status(200).send(this.successFormat({
                 'kyc_statistics': checkUser.kyc_statistics
             }, null, 'user', 200));
@@ -2228,6 +2230,7 @@ class User extends controller {
         let currencyPrice = await apiServices.marketPrice('bitcoin', currency.code.toLowerCase());
         let price = currencyPrice.data.bitcoin[currency.code.toLowerCase()];
         await users.findOneAndUpdate({ _id: req.user.user }, { currency_code: currency.code })
+        new logs(currency, null, price)
         return res.status(200).send(this.successFormat({
             'currencyPrice': price
         }, 'currecy'));
@@ -2383,7 +2386,11 @@ class User extends controller {
                 message: 'KYC verification failed since the email address you provided did not match your Beldex registered email address'
             }));
         }
-        await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid, country: checkUserMe.person.identification_document_country, type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number })
+        let checkKycDetails = await kycDetails.findOne({ user: req.user.user, country: checkUserMe.person.identification_document_country, type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number, date_of_birth: checkUserMe.date_of_birth })
+        if (checkKycDetails) {
+
+        }
+        await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid, country: checkUserMe.person.identification_document_country, type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number, date_of_birth: checkUserMe.date_of_birth })
         if (checkUserMe.verifications.length == 0) {
             return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
         }
@@ -2403,7 +2410,7 @@ class User extends controller {
     async script(req, res) {
         let user = await users.find({});
         let i = 0;
-        while (i < 1) {
+        while (i < user.length) {
             let data = await balance.findOne({ user: user[i]._id }).sort({ _id: -1 })
             let k = 0;
             let userBalanace = data.balance;
@@ -2414,18 +2421,19 @@ class User extends controller {
                 } else {
                     amount = Number(userBalanace[k].available)
                 }
-
-                console.log("Amount:", amount)
-                let payloads = {
-                    "user_id": user[i].user_id,
-                    "asset": userBalanace[k].asset_code,
-                    "business": "deposit",
-                    "business_id": new Date().valueOf(),
-                    "change": amount.toString(),
-                    "detial": {}
+                if (amount > 0) {
+                    let payloads = {
+                        "user_id": user[i].user_id,
+                        "asset": userBalanace[k].asset_code,
+                        "business": "deposit",
+                        "business_id": new Date().valueOf(),
+                        "change": amount.toString(),
+                        "detial": {}
+                    }
+                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                    k++;
                 }
-                await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                k++;
+
             }
 
             i++;
