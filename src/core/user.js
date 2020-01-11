@@ -2420,9 +2420,7 @@ class User extends controller {
         }
         else {
             await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid })
-            if (checkUserMe.verifications.length == 0) {
-                return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
-            }
+            return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
         }
         await users.findOneAndUpdate({ _id: req.user.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
         return res.status(200).send(this.successFormat({ "message": "The KYC documents you uploaded were received and successfully verified. " }));
