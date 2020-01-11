@@ -24,7 +24,7 @@ const utils = new Utils();
 class Api extends Controller {
 
     async sendEmailNotification(data, res) {
-        if (data.email_for !== 'registration' && data.email_for !== 'welcome') {
+        if (data.email_for !== 'registration' && data.email_for !== 'welcome' && data.email_for != 'kyc-verificationfail') {
 
             if (!data.user_id) {
                 return res.status(400).send(controller.errorMsgFormat({ "message": "User could not be found." }, 'users', 400));

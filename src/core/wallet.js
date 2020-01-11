@@ -30,6 +30,7 @@ class Wallet extends controller {
         let query = {}
 
         if (pageNo < 0 || pageNo === 0) {
+            new logs(req.headers, req.user.user, [], 'asset')
             return res.status(400).json(this.errorMsgFormat({
                 "message": "Invalid page number. The page number should start with 1."
             }))
@@ -43,7 +44,7 @@ class Wallet extends controller {
             is_suspend: false
         }, async (err, totalCount) => {
             if (err) {
-                new logs(req.headers,req.user.user,[])
+                new logs(req.headers, req.user.user, [], 'asset')
                 return res.status(200).json(this.successFormat({
                     "data": [],
                     "pages": 0,
@@ -54,7 +55,7 @@ class Wallet extends controller {
                     is_suspend: false
                 }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id', query, async (err, data) => {
                     if (err || !data.length) {
-                        new logs(req.headers,req.user.user,[])
+                        new logs(req.headers, req.user.user, [], 'asset')
                         return res.status(200).json(this.successFormat({
                             "data": [],
                             "pages": 0,
@@ -72,11 +73,11 @@ class Wallet extends controller {
                         }
 
                         var totalPages = Math.ceil(totalCount / size);
-                        new logs(req.headers,req.user.user,{
+                        new logs(req.headers, req.user.user, {
                             "data": data,
                             "pages": totalPages,
                             "totalCount": totalCount
-                        })
+                        }, 'asset')
                         return res.status(200).json(this.successFormat({
                             "data": data,
                             "pages": totalPages,
@@ -92,12 +93,18 @@ class Wallet extends controller {
         let asset = req.body.data.attributes.asset;
         let isCheckDelist = await this.assetDelist(asset);
         if (isCheckDelist.status == false) {
+            new logs(req.body.data.attributes, req.user.user, {
+                'message': isCheckDelist.err
+            }, 'asset-address')
             return res.status(400).send(this.errorMsgFormat({
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
         }
         let isChecked = await assets.findOne({ _id: asset });
         if (!isChecked.deposit) {
+            new logs(req.body.data.attributes, req.user.user, {
+                'message': 'Deposits have been disabled for this asset.'
+            }, 'asset-address')
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Deposits have been disabled for this asset.'
             }, 'asset-balance', 400));
@@ -118,7 +125,7 @@ class Wallet extends controller {
                     asset: asset
                 }
                 await apiServices.axiosAPI(data);
-                new logs(req.body.data.attributes, req.user.user, data.coin)
+                new logs(req.body.data.attributes, req.user.user, data.coin, 'asset-address')
                 return res.status(200).json(this.successFormat({
                     "message": `Address has been created for ${data.coin}.`
                 }, asset, 'address'));
@@ -127,13 +134,16 @@ class Wallet extends controller {
                 new logs(req.body.data.attributes, req.user.user, {
                     'asset_code': getAddress.asset_code,
                     'address': getAddress.address
-                })
+                }, 'asset-address')
                 return res.status(200).json(this.successFormat({
                     'asset_code': getAddress.asset_code,
                     'address': getAddress.address
                 }, asset, 'address'));
             }
         } else {
+            new logs(req.body.data.attributes, req.user.user, {
+                'message': 'Invalid request'
+            }, 'asset-address')
             return res.status(400).json(this.errorMsgFormat({
                 "message": "Invalid request"
             }, 'assets', 400));
@@ -322,6 +332,9 @@ class Wallet extends controller {
         };
 
         if (pageNo < 0 || pageNo === 0) {
+            new logs(req.headers, req.user.user, {
+                "message": "Invalid page number. The page number should start with 1."
+            }, 'withdraw address')
             return res.status(400).json(this.errorMsgFormat({
                 "message": "Invalid page number. The page number should start with 1."
             }))
@@ -333,7 +346,7 @@ class Wallet extends controller {
         // Find some documents
         withdrawAddress.countDocuments(payloads, (err, totalCount) => {
             if (err) {
-                new logs(req.headers,req.user.user,[])
+                new logs(req.headers, req.user.user, [], 'withdraw address')
                 return res.status(200).json(this.successFormat({
                     "data": [],
                     "pages": 0,
@@ -353,7 +366,7 @@ class Wallet extends controller {
                     .exec()
                     .then((data) => {
                         if (!data.length) {
-                            new logs(req.headers,req.user.user,[])
+                            new logs(req.headers, req.user.user, [], 'withdraw address')
                             return res.status(200).json(this.successFormat({
                                 "data": [],
                                 "pages": 0,
@@ -361,11 +374,11 @@ class Wallet extends controller {
                             }, null, 'withdrawAddress', 200));
                         } else {
                             var totalPages = Math.ceil(totalCount / size);
-                            new logs(req.headers,req.user.user,{
+                            new logs(req.headers, req.user.user, {
                                 "data": data,
                                 "pages": totalPages,
                                 "totalCount": totalCount
-                            })
+                            }, 'withdraw address')
                             return res.status(200).json(this.successFormat({
                                 "data": data,
                                 "pages": totalPages,
@@ -429,6 +442,7 @@ class Wallet extends controller {
                 collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
             }
             else {
+                new logs(req.headers, req.user.user, { 'message': 'Asset could not be found.' }, 'balance')
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Asset could not be found.'
                 }, 'asset-balance', 400));
@@ -451,7 +465,7 @@ class Wallet extends controller {
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
-        new logs(req.headers, req.user.user, { formatedResponse, sum })
+        new logs(req.headers, req.user.user, { formatedResponse, sum }, 'balance')
         return res.status(200).json(this.successFormat({
             "data": formatedResponse, sum
         }, null, 'asset-balance', 200));
@@ -492,6 +506,9 @@ class Wallet extends controller {
             };
 
             if (pageNo < 0 || pageNo === 0) {
+                new logs(req.headers, req.user.user, {
+                    "message": "Invalid page number. The page number should start with 1."
+                }, 'transaction')
                 return res.status(400).json(this.errorMsgFormat({
                     "message": "Invalid page number. The page number should start with 1."
                 }))
@@ -503,7 +520,7 @@ class Wallet extends controller {
             // Find some documents
             transactions.countDocuments(payloads, (err, totalCount) => {
                 if (err) {
-                    new logs(req.headers,req.user.user,[])
+                    new logs(req.headers, req.user.user, [], 'transaction')
                     return res.status(200).json(this.successFormat({
                         "data": [],
                         "pages": 0,
@@ -522,7 +539,7 @@ class Wallet extends controller {
                         .exec()
                         .then((data) => {
                             if (!data.length) {
-                                new logs(req.headers,req.user.user,[])
+                                new logs(req.headers, req.user.user, [], 'transaction')
                                 return res.status(200).json(this.successFormat({
                                     "data": [],
                                     "pages": 0,
@@ -540,11 +557,11 @@ class Wallet extends controller {
                                     }
 
                                 }
-                                new logs(req.headers,req.user.user,{
+                                new logs(req.headers, req.user.user, {
                                     "data": data,
                                     "pages": totalPages,
                                     "totalCount": totalCount
-                                })
+                                }, 'transaction')
                                 return res.status(200).json(this.successFormat({
                                     "data": data,
                                     "pages": totalPages,
@@ -555,11 +572,11 @@ class Wallet extends controller {
                 }
             });
         } else {
-            new logs(req.headers,req.user.user,{
+            new logs(req.headers, req.user.user, {
                 "data": {
                     'type': type
                 }
-            })
+            }, 'transaction')
             return res.status(200).json(this.successFormat({
                 "data": {
                     'type': type

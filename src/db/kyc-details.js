@@ -13,7 +13,8 @@ const kycSchema = mongoose.Schema({
     documentation_id: { type: String },
     country: { type: String },
     code: { type: String },
-    uid: { type: String }
+    uid: { type: String },
+    fractal_username:{type:String}
 },{
     timestamps: { createdAt: 'created_date', updatedAt: 'modified_date_time' }
 });
