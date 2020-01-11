@@ -2397,7 +2397,7 @@ class User extends controller {
                 message: 'KYC verification failed since the email address you provided did not match your Beldex registered email address'
             }));
         }
-        if (checkUserMe.person) {
+        if (Object.keys(checkUserMe.person).length > 0) {
             let name = checkUserMe.person.full_name.replace(/ /g, '').toLowerCase()
             let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name })
             if (checkKycDetails) {
@@ -2414,7 +2414,13 @@ class User extends controller {
                 }));
             }
             await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid, country: checkUserMe.person.identification_document_country, type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number, date_of_birth: checkUserMe.date_of_birth, fractal_username: name })
-            if (checkUserMe.verifications.length == 0 ) {
+            if (checkUserMe.verifications.length == 0) {
+                return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
+            }
+        }
+        else {
+            await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid })
+            if (checkUserMe.verifications.length == 0) {
                 return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
             }
         }
