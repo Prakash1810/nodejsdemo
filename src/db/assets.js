@@ -4,10 +4,10 @@ const assetsSchema = new mongoose.Schema({
     asset_name: { type: String, unique: true, index: true },
     asset_code: { type: String, unique: true, index: true },
     unit: String,
-    logo_url: { type: mongoose.SchemaTypes.Url, required: true },
-    url: { type: mongoose.SchemaTypes.Url, required: true },
-    address_url: { type: mongoose.SchemaTypes.Url, required: true },
-    block_url: { type: mongoose.SchemaTypes.Url, required: true },
+    logo_url: { type: mongoose.SchemaTypes.Url, required: true, index: true },
+    url: { type: mongoose.SchemaTypes.Url, required: true, index: true },
+    address_url: { type: mongoose.SchemaTypes.Url, required: true, index: true },
+    block_url: { type: mongoose.SchemaTypes.Url, required: true, index: true },
     confirm_times: Number,
     parent_code: String,
     exchange_confirmations: Number,
@@ -27,9 +27,9 @@ const assetsSchema = new mongoose.Schema({
     modified_date: Date,
     modified_by: Number,
     is_deleted: Boolean,
-    withdrawal_fee: Number,
-    minimum_withdrawal: Number,
-    minimum_deposit: Number,
+    withdrawal_fee: { type: Number, index: true },
+    minimum_withdrawal: { type: Number, index: true },
+    minimum_deposit: { type: Number, index: true },
     delist: { type: Boolean, default: false },
     deposit: { type: Boolean, default: true },
     withdraw: { type: Boolean, default: true },
@@ -37,9 +37,11 @@ const assetsSchema = new mongoose.Schema({
     status: { type: Number, default: 2 },  // 1 => Pending   2 => list 
     reason_for_deposit: { type: String, default: null },
     reason_for_withdraw: { type: String, default: null },
-    markets:mongoose.Schema.Types.Mixed,
-    payment_id:{type:Boolean,default:false}
+    markets: mongoose.Schema.Types.Mixed,
+    payment_id: { type: Boolean, default: false }
 
 });
 
-module.exports = mongoose.model('assets', assetsSchema);
+let assets = mongoose.model('assets', assetsSchema);
+assets.createIndexes()
+module.exports = assets;

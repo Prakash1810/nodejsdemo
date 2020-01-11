@@ -3,10 +3,10 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
 const userTempSchema = new mongoose.Schema({
-    email: { type: String, lowercase: true },
+    email: { type: String, lowercase: true, index: true },
     password: String,
     referrer_code: { type: String, default: null },
-    created_date: { type: Date},
+    created_date: { type: Date },
     modified_date: { type: Date, default: null },
     is_deleted: { type: Boolean, default: false },
 });
@@ -31,6 +31,7 @@ userTempSchema.pre('save', function (next) {
 
 
 const UserTemp = module.exports = mongoose.model('user-temps', userTempSchema);
+userTemp.createIndexes()
 
 module.exports.removeUserTemp = async (id) => {
     return await UserTemp.deleteOne({ _id: id })
