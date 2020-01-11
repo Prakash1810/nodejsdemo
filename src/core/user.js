@@ -2400,7 +2400,7 @@ class User extends controller {
         if (Object.keys(checkUserMe.person).length > 0) {
             let name = checkUserMe.person.full_name.replace(/ /g, '').toLowerCase()
             let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name })
-            if (checkKycDetails) {
+            if (checkKycDetails._id.toString() != req.user.user.toString()) {
                 let serviceData = {
                     "subject": `Your KYC verification could not be processed.`,
                     "email_for": "kyc-verificationfail",
