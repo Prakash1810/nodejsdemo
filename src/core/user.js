@@ -2120,12 +2120,15 @@ class User extends controller {
     async kycStatistics(req, res) {
         let checkUser = await users.findOne({ _id: req.user.user });
         if (checkUser) {
-            new logs(req.headers, req.user.user, checkUser.kyc_statistics)
+            new logs(req.headers, req.user.user, checkUser.kyc_statistics, 'kyc_statistics')
             return res.status(200).send(this.successFormat({
                 'kyc_statistics': checkUser.kyc_statistics
             }, null, 'user', 200));
         }
         else {
+            new logs(req.headers, req.user.user, {
+                'message': 'User cannot be found'
+            }, 'kyc_statistics')
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'User cannot be found'
             }, 'user', 400));
@@ -2217,12 +2220,18 @@ class User extends controller {
     async changeCurrency(req, res) {
         let currency = req.body.data.attributes;
         if (!currency.code) {
+            new logs(currency, req.user.user, {
+                message: 'Currency code must be provide.'
+            }, 'currency convert')
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Currency code must be provide.'
             }));
         }
         let change = await changeCurrency.findOne({ code: currency.code });
         if (!change) {
+            new logs(currency, req.user.user, {
+                message: 'Currency cannot be found.'
+            }, 'currency convert')
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Currency cannot be found.'
             }));
@@ -2230,7 +2239,7 @@ class User extends controller {
         let currencyPrice = await apiServices.marketPrice('bitcoin', currency.code.toLowerCase());
         let price = currencyPrice.data.bitcoin[currency.code.toLowerCase()];
         await users.findOneAndUpdate({ _id: req.user.user }, { currency_code: currency.code })
-        new logs(currency, req.user.user, price)
+        new logs(currency, req.user.user, price, 'currency convert')
         return res.status(200).send(this.successFormat({
             'currencyPrice': price
         }, 'currecy'));
@@ -2247,8 +2256,10 @@ class User extends controller {
     async rewardUserBalance(req, res) {
         let checkBalance = await rewardBalance.findOne({ user: req.user.user, is_deleted: false }).select('reward reward_asset');
         if (checkBalance) {
+            new logs(req.headers, req.user.user, [checkBalance.reward, checkBalance.reward_asset], 'reward balance')
             return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_asset]));
         }
+        new logs(req.headers, req.user.user, [], 'reward balance')
         return res.status(200).send(this.successFormat([]));
     }
 
@@ -2386,13 +2397,26 @@ class User extends controller {
                 message: 'KYC verification failed since the email address you provided did not match your Beldex registered email address'
             }));
         }
-        let checkKycDetails = await kycDetails.findOne({ user: req.user.user,type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number, date_of_birth: checkUserMe.date_of_birth })
-        if (checkKycDetails) {
+        if (checkUserMe.person) {
+            let name = checkUserMe.person.full_name.replace(/ /g, '').toLowerCase()
+            let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name })
+            if (checkKycDetails) {
+                let serviceData = {
+                    "subject": `Your KYC verification could not be processed.`,
+                    "email_for": "kyc-verificationfail",
+                    "user_id": user._id,
+                    "to_email": user.email,
 
-        }
-        await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid, country: checkUserMe.person.identification_document_country, type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number, date_of_birth: checkUserMe.date_of_birth })
-        if (checkUserMe.verifications.length == 0) {
-            return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
+                };
+                await apiServices.sendEmailNotification(serviceData, res);
+                return res.status(400).send(this.errorMsgFormat({
+                    message: 'Your KYC verification has been failed due to duplicate KYC entry, please check your email for more details.'
+                }));
+            }
+            await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid, country: checkUserMe.person.identification_document_country, type_of_documentation: checkUserMe.person.identification_document_type, documentation_id: checkUserMe.person.identification_document_number, date_of_birth: checkUserMe.date_of_birth, fractal_username: name })
+            if (checkUserMe.verifications.length == 0 ) {
+                return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
+            }
         }
         await users.findOneAndUpdate({ _id: req.user.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
         return res.status(200).send(this.successFormat({ "message": "The KYC documents you uploaded were received and successfully verified. " }));
@@ -2431,11 +2455,11 @@ class User extends controller {
                         "detial": {}
                     }
                     await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
-                   
+
                 }
                 k++;
             }
-            console.log("I:",i);
+            console.log("I:", i);
             i++;
         }
 
