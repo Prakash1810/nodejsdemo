@@ -28,10 +28,10 @@ userTempSchema.pre('save', function (next) {
         });
     });
 });
+const UserTemp = mongoose.model('user-temps', userTempSchema);
+UserTemp.createIndexes();
+module.exports = UserTemp;
 
-
-const UserTemp = module.exports = mongoose.model('user-temps', userTempSchema);
-userTemp.createIndexes()
 
 module.exports.removeUserTemp = async (id) => {
     return await UserTemp.deleteOne({ _id: id })

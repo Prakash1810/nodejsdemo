@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const schema = new mongoose.Schema({
     asset: { type: mongoose.Schema.Types.ObjectId, ref: 'assets', index: true },
     market_name: {
-        type: String, required: true, index: true, unique: true, index: true
+        type: String, required: true, index: true, unique: true
     },
     market_pair: {
         type: String, required: true, index: true
