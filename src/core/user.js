@@ -2081,11 +2081,11 @@ class User extends controller {
             }, 'user', 400));
         }
         let checkOtp = await this.validateOtpForEmail(req, res, "kyc details");
-        if (checkOtp.status == false) {
-            return res.status(400).send(this.errorMsgFormat({
-                'message': checkOtp.err
-            }, 'user', 400));
-        }
+        // if (checkOtp.status == false) {
+        //     return res.status(400).send(this.errorMsgFormat({
+        //         'message': checkOtp.err
+        //     }, 'user', 400));
+        // }
 
         // let response = await this.kycSession(req, res, 'details');
         // if (response.status) {
@@ -2107,7 +2107,9 @@ class User extends controller {
         //     session_id: sessionResponse.session_id,
         //     client_session_token: sessionResponse.client_session_token
         // }
-        return res.status(200).send(this.successFormat("Kyc details added Successfully", null, 'user', 200))
+
+        await users.findOneAndUpdate({ _id: data.user }, {kyc_statistics: "PENDING"});
+        return res.status(200).send(this.successFormat("Kyc details submitted Successfully", null, 'user', 200))
         // }
         // else {
         //     return res.status(400).send(this.errorMsgFormat({
