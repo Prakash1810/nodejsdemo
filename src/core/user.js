@@ -2402,14 +2402,13 @@ class User extends controller {
         }
         if (Object.keys(checkUserMe.person).length > 0) {
             let name = checkUserMe.person.full_name.replace(/ /g, '').toLowerCase()
-            let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name })
-            if (checkKycDetails._id.toString() != req.user.user.toString()) {
+            let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name, user: {$ne:req.user.user}})
+            if (checkKycDetails) {
                 let serviceData = {
                     "subject": `Your KYC verification could not be processed.`,
                     "email_for": "kyc-verificationfail",
                     "user_id": user._id,
-                    "to_email": user.email,
-
+                    "to_email": user.email
                 };
                 await apiServices.sendEmailNotification(serviceData, res);
                 await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "REJECT" });
