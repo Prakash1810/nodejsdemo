@@ -2107,7 +2107,9 @@ class User extends controller {
         //     session_id: sessionResponse.session_id,
         //     client_session_token: sessionResponse.client_session_token
         // }
-        return res.status(200).send(this.successFormat("Kyc details added Successfully", null, 'user', 200))
+
+        await users.findOneAndUpdate({ _id: data.user }, {kyc_statistics: "PENDING"});
+        return res.status(200).send(this.successFormat("Kyc details submitted Successfully", null, 'user', 200))
         // }
         // else {
         //     return res.status(400).send(this.errorMsgFormat({
