@@ -24,6 +24,13 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: beldex123
 
+  redis:
+    container_name: redis
+    image: "redis:alpine"  
+    restart: always
+    ports:
+      - 6379:6379
+
   app:
     container_name: core-api
     restart: always
