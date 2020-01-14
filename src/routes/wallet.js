@@ -4,7 +4,6 @@ const wallet = require('../core/wallet');
 const info = require('../middlewares/info');
 const auth = require("../middlewares/authentication");
 const router = express.Router();
-const logs = require('../services/logs');
 const controller = new Controller;
 
 router.get('/assets', auth, info, (req, res) => {

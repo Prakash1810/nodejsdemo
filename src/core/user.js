@@ -1,5 +1,4 @@
 const moment = require('moment');
-const logs = require('../services/logs');
 const assets = require('../db/assets');
 const userAddress = require('../db/user-address');
 const users = require('../db/users');
@@ -2135,15 +2134,11 @@ class User extends controller {
     async kycStatistics(req, res) {
         let checkUser = await users.findOne({ _id: req.user.user });
         if (checkUser) {
-            new logs(req.headers, req.user.user, checkUser.kyc_statistics, 'kyc_statistics')
             return res.status(200).send(this.successFormat({
                 'kyc_statistics': checkUser.kyc_statistics
             }, null, 'user', 200));
         }
         else {
-            new logs(req.headers, req.user.user, {
-                'message': 'User cannot be found'
-            }, 'kyc_statistics')
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'User cannot be found'
             }, 'user', 400));
@@ -2237,18 +2232,12 @@ class User extends controller {
     async changeCurrency(req, res) {
         let currency = req.body.data.attributes;
         if (!currency.code) {
-            new logs(currency, req.user.user, {
-                message: 'Currency code must be provide.'
-            }, 'currency convert')
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Currency code must be provide.'
             }));
         }
         let change = await changeCurrency.findOne({ code: currency.code });
         if (!change) {
-            new logs(currency, req.user.user, {
-                message: 'Currency cannot be found.'
-            }, 'currency convert')
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Currency cannot be found.'
             }));
@@ -2256,7 +2245,6 @@ class User extends controller {
         let currencyPrice = await apiServices.marketPrice('bitcoin', currency.code.toLowerCase());
         let price = currencyPrice.data.bitcoin[currency.code.toLowerCase()];
         await users.findOneAndUpdate({ _id: req.user.user }, { currency_code: currency.code })
-        new logs(currency, req.user.user, price, 'currency convert')
         return res.status(200).send(this.successFormat({
             'currencyPrice': price
         }, 'currecy'));
@@ -2273,10 +2261,8 @@ class User extends controller {
     async rewardUserBalance(req, res) {
         let checkBalance = await rewardBalance.findOne({ user: req.user.user, is_deleted: false }).select('reward reward_asset');
         if (checkBalance) {
-            new logs(req.headers, req.user.user, [checkBalance.reward, checkBalance.reward_asset], 'reward balance')
             return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_asset]));
         }
-        new logs(req.headers, req.user.user, [], 'reward balance')
         return res.status(200).send(this.successFormat([]));
     }
 
