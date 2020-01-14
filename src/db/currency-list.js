@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 let schema = new mongoose.Schema({
-    code: { type: String },
-    currency_name: { type: String }
+    code: { type: String, index: true },
+    currency_name: { type: String, index: true }
 });
-module.exports = mongoose.model('currency-list',schema);
+
+currencyLists = mongoose.model('currency-list', schema);
+currencyLists.createIndexes()
+module.exports = currencyLists;
+
+
