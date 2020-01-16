@@ -1126,7 +1126,6 @@ class User extends controller {
             anti_spoofing_code: Joi.string().optional(),
             white_list_address: Joi.boolean().optional(),
             g2f_code: Joi.string(),
-            white_list_address: Joi.boolean().optional(),
             otp: Joi.string().optional(),
             type: Joi.string().optional()
         });
@@ -1221,10 +1220,10 @@ class User extends controller {
                     if (type == 'withCallPatchSetting' || type == 'disable') {
                         return { status: true }
                     }
-                    if (requestData.white_list_address) {
+                    if (requestData.hasOwnProperty('white_list_address')) {
                         await apiServices.publishNotification(update.user_id, { 'device_white_list': requestData.white_list_address, 'logout': false });
                     }
-                    if (requestData.anti_spoofing) {
+                    if (requestData.hasOwnProperty('anti_spoofing')) {
                         await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'logout': false });
                     }
                     return res.status(202).send(this.successFormat({
@@ -1272,7 +1271,7 @@ class User extends controller {
                 else {
                     let checked = await this.patchSettings(req, res, 'disable');
                     if (checked.status) {
-                        await apiServices.publishNotification(checkActive.user_id, {'disable':true,'logout':true });
+                        await apiServices.publishNotification(checkActive.user_id, { 'disable': true, 'logout': true });
                         return res.status(202).send(this.successFormat({
                             'message': 'You have disabled your account. If you need assistance, please contact our support team.'
                         }, null, 'users', 202));
@@ -1352,6 +1351,7 @@ class User extends controller {
 
             let checked = await this.updateG2F(req, res);
             if (checked.status) {
+                await apiServices.publishNotification(result.user_id, { 'google_auth':requestedData.google_auth, 'logout': true });
                 return res.status(202).send(this.successFormat({
                     'message': `${requestedData.google_auth == true ? 'You have successfully enable google two factor authentication.' : 'You have successfully disable google two factor authentication.'}`
                 }, null, 'users', 202));
@@ -1632,7 +1632,7 @@ class User extends controller {
             });
 
             if (deleteWhiteLists.nModified != 0) {
-                await apiServices.publishNotification(data.user_id, {'deleted_device':`${data.os}-${data.browser}-${data.browser_version}`,'logout':true });
+                await apiServices.publishNotification(data.user_id, { 'deleted_device': `${data.os}-${data.browser}-${data.browser_version}`, 'logout': true });
                 return res.status(200).send(this.successFormat({
                     'message': 'The device has been successfully deleted.',
                 }));
@@ -1733,7 +1733,6 @@ class User extends controller {
     }
     async addFavouriteUser(req, res) {
         let data = req.body.data.attributes;
-        console.log(req.user.user_id,data.market)
         let isChecked = await addMarket.findOne({ market_name: data.market.toUpperCase() });
         if (!isChecked) {
             return res.status(404).send(this.errorMsgFormat({
@@ -1746,7 +1745,7 @@ class User extends controller {
             let id = isCheckUser.market;
             id.push(isChecked._id);
             await favourite.findOneAndUpdate({ _id: isCheckUser._id }, { market: id })
-            await apiServices.publishNotification(req.user.user_id, {'favourite_market':data.market.toUpperCase() ,'logout':false });
+            await apiServices.publishNotification(req.user.user_id, { 'favourite_market': data.market.toUpperCase(), 'logout': false });
             return res.status(200).send(this.successFormat({
                 'message': 'The market has been added to your favourites.',
             }));
@@ -1781,7 +1780,7 @@ class User extends controller {
             fav.splice(index, 1);
         }
         await favourite.findOneAndUpdate({ user: req.user.user }, { market: fav });
-        await apiServices.publishNotification(req.user.user_id, {'favourite_market':data.toUpperCase(),'logout':false });
+        await apiServices.publishNotification(req.user.user_id, { 'favourite_market': data.toUpperCase(), 'logout': false });
         return res.status(200).send(this.successFormat({
             'message': 'The market has been deleted from your favourites.',
         }));
@@ -1850,7 +1849,7 @@ class User extends controller {
                 return
             }
             let updateUser = await users.findOneAndUpdate({ _id: check.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
-            await apiServices.publishNotification(req.user.user_id, {'kyc_statistics':'APPROVE','logout':false });
+            await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'APPROVE', 'logout': false });
             //await this.updateBalance(updateUser.user_id, updateUser._id, res, 'kyc verification');
             let serviceData = {
                 "subject": `Your KYC verification was successful.`,
@@ -2120,7 +2119,7 @@ class User extends controller {
         // }
 
         await users.findOneAndUpdate({ _id: data.user }, { kyc_statistics: "PENDING" });
-        await apiServices.publishNotification(req.user.user_id, {'kyc_statistics':'APPROVE','logout':false });
+        await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'PENDING', 'logout': false });
         return res.status(200).send(this.successFormat("Kyc details submitted Successfully", null, 'user', 200))
         // }
         // else {
@@ -2182,7 +2181,7 @@ class User extends controller {
                 }
                 await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
-                await apiServices.publishNotification(req.user.user_id, {'apikey':'remove','logout':false });
+                await apiServices.publishNotification(req.user.user_id, { 'apikey': 'remove', 'logout': false });
                 return res.status(200).send(this.successFormat({ message: 'Passphrase key deleted.' }, 'user', 200));
 
             case 'create':
@@ -2201,7 +2200,7 @@ class User extends controller {
                     secretkey: apiSecret,
                     type: requestData.type
                 }).save();
-                await apiServices.publishNotification(req.user.user_id, {'apikey':'create','logout':false });
+                await apiServices.publishNotification(req.user.user_id, { 'apikey': 'create', 'logout': false });
                 return res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your Passphrase key was created successfully.', }, 'user', 200));
 
             case 'view':
@@ -2331,7 +2330,7 @@ class User extends controller {
                 }
                 await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                 await rewardBalance.findOneAndUpdate({ user: req.user.user, reward: rewards.reward, reward_asset: data.asset }, { is_deleted: true })
-                await apiServices.publishNotification(checkUser.user_id, {'move_reward_balance':rewards.reward_asset,'logout':false });
+                await apiServices.publishNotification(checkUser.user_id, { 'move_reward_balance': rewards.reward_asset, 'logout': false });
                 return res.status(200).send(this.successFormat({
                     'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
                 }, 'reward'));
@@ -2398,14 +2397,14 @@ class User extends controller {
         }
         if (user.email != checkUserMe.emails[0].address) {
             await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "REJECT" });
-            await apiServices.publishNotification(checkUser.user_id, {'kyc_statistics':'REJECT',logout:false});
+            await apiServices.publishNotification(checkUser.user_id, { 'kyc_statistics': 'REJECT', logout: false });
             return res.status(400).send(this.errorMsgFormat({
                 message: 'KYC verification failed since the email address you provided did not match your Beldex registered email address'
             }));
         }
         if (Object.keys(checkUserMe.person).length > 0) {
             let name = checkUserMe.person.full_name.replace(/ /g, '').toLowerCase()
-            let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name, user: {$ne:req.user.user}})
+            let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name, user: { $ne: req.user.user } })
             if (checkKycDetails) {
                 let serviceData = {
                     "subject": `Your KYC verification could not be processed.`,
@@ -2415,7 +2414,7 @@ class User extends controller {
                 };
                 await apiServices.sendEmailNotification(serviceData, res);
                 await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "REJECT" });
-                await apiServices.publishNotification(checkUser.user_id, {'kyc_statistics':'REJECT',logout:false});
+                await apiServices.publishNotification(checkUser.user_id, { 'kyc_statistics': 'REJECT', logout: false });
                 return res.status(400).send(this.errorMsgFormat({
                     message: 'Your KYC verification has been failed due to duplicate KYC entry, please check your email for more details.'
                 }));
@@ -2430,6 +2429,7 @@ class User extends controller {
             return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
         }
         await users.findOneAndUpdate({ _id: req.user.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
+        await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "APPROVE" });
         return res.status(200).send(this.successFormat({ "message": "The KYC documents you uploaded were received and successfully verified. " }));
     }
 
