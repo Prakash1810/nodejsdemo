@@ -251,7 +251,7 @@ class Password extends Controller {
                             user_id: user._id
                         }
                         await apiServices.sendEmailNotification(serviceData, res);
-                        await apiServices.publishNotification(user.user_id,{'reset_password':true,'logout':true});
+                        await apiServices.publishNotification(user.user_id,{'reset_password':true,'logout': true});
                         return res.status(202).send(this.successFormat({
                             'message': 'Your password has been reset successfully.'
                         }, user._id, 'users', 202));
