@@ -1221,7 +1221,7 @@ class User extends controller {
                         return { status: true }
                     }
                     if (requestData.hasOwnProperty('white_list_address')) {
-                        await apiServices.publishNotification(update.user_id, { 'device_white_list': requestData.white_list_address, 'logout': false });
+                        await apiServices.publishNotification(update.user_id, { 'white_list_address': requestData.white_list_address, 'logout': false });
                     }
                     if (requestData.hasOwnProperty('anti_spoofing')) {
                         await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'logout': false });
