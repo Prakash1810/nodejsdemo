@@ -41,6 +41,8 @@ services:
     ports:
       - "3000:3000"
     links:
-      - database  
+      - database 
+      - redis 
     depends_on:
-      - database    
+      - database 
+      - redis   
