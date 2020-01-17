@@ -1224,7 +1224,7 @@ class User extends controller {
                         await apiServices.publishNotification(update.user_id, { 'white_list_address': requestData.white_list_address, 'logout': false });
                     }
                     if (requestData.hasOwnProperty('anti_spoofing')) {
-                        await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'logout': false });
+                        await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'anti_spoofing_code':`${(requestData.anti_spoofing_code) ? requestData.anti_spoofing_code : null}`, 'logout': false });
                     }
                     return res.status(202).send(this.successFormat({
                         'message': 'The changes you made were saved successfully.'
@@ -1351,7 +1351,7 @@ class User extends controller {
 
             let checked = await this.updateG2F(req, res);
             if (checked.status) {
-                await apiServices.publishNotification(result.user_id, { 'google_auth':requestedData.google_auth, 'logout': true });
+                await apiServices.publishNotification(result.user_id, { 'g2fEnabled': requestedData.google_auth, 'logout': false });
                 return res.status(202).send(this.successFormat({
                     'message': `${requestedData.google_auth == true ? 'You have successfully enable google two factor authentication.' : 'You have successfully disable google two factor authentication.'}`
                 }, null, 'users', 202));
@@ -1632,7 +1632,7 @@ class User extends controller {
             });
 
             if (deleteWhiteLists.nModified != 0) {
-                await apiServices.publishNotification(data.user_id, { 'deleted_device': `${data.os}-${data.browser}-${data.browser_version}`, 'logout': true });
+                await apiServices.publishNotification(data.user_id, { 'current_device': `${data.os}-${data.browser}-${data.browser_version}`, 'logout': false });
                 return res.status(200).send(this.successFormat({
                     'message': 'The device has been successfully deleted.',
                 }));
@@ -1745,7 +1745,6 @@ class User extends controller {
             let id = isCheckUser.market;
             id.push(isChecked._id);
             await favourite.findOneAndUpdate({ _id: isCheckUser._id }, { market: id })
-            await apiServices.publishNotification(req.user.user_id, { 'favourite_market': data.market.toUpperCase(), 'logout': false });
             return res.status(200).send(this.successFormat({
                 'message': 'The market has been added to your favourites.',
             }));
@@ -1780,7 +1779,6 @@ class User extends controller {
             fav.splice(index, 1);
         }
         await favourite.findOneAndUpdate({ user: req.user.user }, { market: fav });
-        await apiServices.publishNotification(req.user.user_id, { 'favourite_market': data.toUpperCase(), 'logout': false });
         return res.status(200).send(this.successFormat({
             'message': 'The market has been deleted from your favourites.',
         }));
@@ -2181,7 +2179,7 @@ class User extends controller {
                 }
                 await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
-                await apiServices.publishNotification(req.user.user_id, { 'apikey': 'remove', 'logout': false });
+                await apiServices.publishNotification(req.user.user_id, { 'apikey':null,'secretkey':null, 'logout': false });
                 return res.status(200).send(this.successFormat({ message: 'Passphrase key deleted.' }, 'user', 200));
 
             case 'create':
@@ -2200,7 +2198,7 @@ class User extends controller {
                     secretkey: apiSecret,
                     type: requestData.type
                 }).save();
-                await apiServices.publishNotification(req.user.user_id, { 'apikey': 'create', 'logout': false });
+                await apiServices.publishNotification(req.user.user_id, { 'apikey':apiKey,'secretkey':apiSecret, 'logout': false });
                 return res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your Passphrase key was created successfully.', }, 'user', 200));
 
             case 'view':
@@ -2243,7 +2241,8 @@ class User extends controller {
         }
         let currencyPrice = await apiServices.marketPrice('bitcoin', currency.code.toLowerCase());
         let price = currencyPrice.data.bitcoin[currency.code.toLowerCase()];
-        await users.findOneAndUpdate({ _id: req.user.user }, { currency_code: currency.code })
+        await users.findOneAndUpdate({ _id: req.user.user }, { currency_code: currency.code });
+        await apiServices.publishNotification(req.user.user_id, { 'currency_code': currency.code, 'logout': false });
         return res.status(200).send(this.successFormat({
             'currencyPrice': price
         }, 'currecy'));
@@ -2330,7 +2329,7 @@ class User extends controller {
                 }
                 await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                 await rewardBalance.findOneAndUpdate({ user: req.user.user, reward: rewards.reward, reward_asset: data.asset }, { is_deleted: true })
-                await apiServices.publishNotification(checkUser.user_id, { 'move_reward_balance': rewards.reward_asset, 'logout': false });
+                await apiServices.publishNotification(checkUser.user_id, { 'move_reward_balance': true, 'asset': rewards.reward_asset, 'reward': rewards.reward + '', 'logout': false });
                 return res.status(200).send(this.successFormat({
                     'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
                 }, 'reward'));

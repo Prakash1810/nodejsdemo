@@ -57,6 +57,11 @@ class Helpers extends Controller {
             port: process.env.REDIS_PORT,
             host: process.env.REDIS_HOST
         }]);
+
+        // return new Redis({
+        //     port: process.env.REDIS_PORT,
+        //     host: process.env.REDIS_HOST
+        // });
     }
 
 }
