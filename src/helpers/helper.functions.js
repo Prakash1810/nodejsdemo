@@ -53,10 +53,10 @@ class Helpers extends Controller {
     }
 
     redisConnection() {
-        return new Redis({
+        return new Redis.Cluster([{
             port: process.env.REDIS_PORT,
             host: process.env.REDIS_HOST
-        });
+        }]);
     }
 
 }
