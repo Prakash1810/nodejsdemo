@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
 
 const schema = new mongoose.Schema({
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
-    market: { type: Array, required: true }
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'users', index: true },
+    market: { type: Array, required: true, index: true }
 })
 
-module.exports = mongoose.model('favourite-user-market', schema);
+let favMarket = mongoose.model('favourite-user-market', schema);
+favMarket.createIndexes()
+module.exports = favMarket;

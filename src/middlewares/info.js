@@ -70,6 +70,7 @@ module.exports = async (req, res, next) => {
 
             }
             else {
+                req.info = deviceInfo;
                 next();
             }
 

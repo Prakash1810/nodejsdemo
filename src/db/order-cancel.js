@@ -6,7 +6,7 @@ const schema = new mongoose.Schema({
     market: { type: String },
     source: { type: String },
     price: { type: String },
-    user: { type: Number },
+    user: { type: Number, index: true },
     left: { type: String },
     type: { type: Number },
     ctime: { type: Number },
@@ -18,6 +18,11 @@ const schema = new mongoose.Schema({
     deal_money: { type: String },
     deal_fee: { type: String },
 
-},{timestamps: { createdAt: 'created_date', updatedAt: 'modified_date' }})
+},
+    {
+        timestamps: { createdAt: 'created_date', updatedAt: 'modified_date' }
+    })
 
-module.exports = mongoose.model('order-cancel', schema);
+let orderCancel = mongoose.model('order-cancel', schema);
+orderCancel.createIndexes()
+module.exports = orderCancel;
