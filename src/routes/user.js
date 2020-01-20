@@ -8,6 +8,7 @@ const registration = require('../core/registration');
 const slide = require('../core/geetest-captcha');
 const router = express.Router();
 const info = require('../middlewares/info');
+const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValidation, resetPasswordValidation, changePasswordValidation, settingsValidation, g2fSettingValidation, favouriteValidation, kycDetailsValidation, apiKeyValidation , moveBalanceValidation} = require('../validation/user.validations');
 const controller = new Controller;
 
 router.get('/activation/:hash', (req, res) => {
@@ -23,7 +24,7 @@ router.get('/activation/:hash', (req, res) => {
 router.post('/login', async (req, res) => {
     try {
 
-        let { error } = await user.validate(req.body.data.attributes);
+        let { error } = await loginValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -38,7 +39,7 @@ router.post('/login', async (req, res) => {
 
 router.post('/validate/otp', async (req, res) => {
     try {
-        let { error } = await user.validateOtp(req.body.data.attributes);
+        let { error } = await otpValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -50,9 +51,9 @@ router.post('/validate/otp', async (req, res) => {
         }, 'users', 500));
     }
 });
-router.post('/resend/otp/', async (req, res) => {
+router.post('/resend/otp', async (req, res) => {
     try {
-        let { error } = await user.resendOtpValidation(req.body.data.attributes);
+        let { error } = await resendOtpValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -73,7 +74,7 @@ router.delete('/', (req, res) => {
 
 router.post('/forget-password', (req, res) => {
     try {
-        let { error } = password.validate(req.body.data.attributes);
+        let { error } = forgetPasswordValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -99,7 +100,7 @@ router.get('/reset-password/:hash', (req, res) => {
 
 router.patch('/reset-password', (req, res) => {
     try {
-        let { error } = password.resetPasswordValidate(req.body.data.attributes);
+        let { error } = resetPasswordValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -114,7 +115,7 @@ router.patch('/reset-password', (req, res) => {
 
 router.patch('/change-password', auth, info, (req, res) => {
     try {
-        let { error } = password.changePasswordValidate(req.body.data.attributes);
+        let { error } = changePasswordValidation(req.body.data.attributes);
 
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
@@ -178,7 +179,7 @@ router.patch('/whitelist-ip/:hash', (req, res) => {
 
 router.patch('/settings', auth, info, (req, res) => {
     try {
-        let { error } = user.settingsValidate(req.body.data.attributes);
+        let { error } = settingsValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -243,7 +244,7 @@ router.get('/g2f-create', info, auth, (req, res) => {
 
 router.patch('/g2f-settings', info, auth, (req, res) => {
     try {
-        let { error } = user.g2fSettingValidate(req.body.data.attributes);
+        let { error } = g2fSettingValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -268,7 +269,6 @@ router.post('/g2f-verify', (req, res) => {
 
 router.post('/token', info, refresh_auth, async (req, res) => {
     try {
-
         await user.refreshToken(req, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -322,7 +322,7 @@ router.get('/market/list', async (req, res) => {
 
 router.post('/favourite', info, auth, async (req, res) => {
     try {
-        let { error } = user.favouriteValidation(req.body.data.attributes);
+        let { error } = favouriteValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         }
@@ -356,7 +356,6 @@ router.post('/generate/otp', info, auth, async (req, res) => {
                 'message': "Type is required"
             }, 'users', 400));
         }
-
     }
     catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -421,7 +420,7 @@ router.get('/reward-history', info, auth, async (req, res) => {
 
 router.post('/kyc-details', info, auth, async (req, res) => {
     try {
-        let { error } = user.kycDetailsValidation(req.body.data.attributes);
+        let { error } = kycDetailsValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         }
@@ -436,7 +435,6 @@ router.post('/kyc-details', info, auth, async (req, res) => {
 
 router.get('/kyc_statistics', info, auth, async (req, res) => {
     try {
-
         await user.kycStatistics(req, res);
     }
     catch (err) {
@@ -447,13 +445,12 @@ router.get('/kyc_statistics', info, auth, async (req, res) => {
 });
 router.post('/apikey', info, auth, async (req, res) => {
     try {
-        let { error } = user.apiKeyValidation(req.body.data.attributes);
+        let { error } = apiKeyValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         }
         await user.checkApikey(req, res);
     }
-
     catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -498,7 +495,7 @@ router.get('/reward-balance', auth, info, async (req, res) => {
 
 router.post('/move-balance', auth, info, async (req, res) => {
     try {
-        let { error } = user.moveBalanceValidation(req.body.data.attributes);
+        let { error } = moveBalanceValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         }
