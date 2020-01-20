@@ -547,7 +547,8 @@ class User extends controller {
             "trade": result.trade,
             "expiresIn": 300000,
             "referral_code": result.referral_code,
-            "currency_code": result.currency_code
+            "currency_code": result.currency_code,
+            "current_device":`${take.os}-${take.browser}-${take.browser_version}`
         }, result._id));
     }
 
