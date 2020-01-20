@@ -1753,16 +1753,16 @@ class User extends controller {
             let updateUser = await users.findOneAndUpdate({ _id: check.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
             await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'APPROVE', 'logout': false });
             //await this.updateBalance(updateUser.user_id, updateUser._id, res, 'kyc verification');
-            if(updateUser){
-            let serviceData = {
-                "subject": `Your KYC verification was successful.`,
-                "email_for": "kyc-success",
-                "user_id": updateUser._id
+            if (updateUser) {
+                let serviceData = {
+                    "subject": `Your KYC verification was successful.`,
+                    "email_for": "kyc-success",
+                    "user_id": updateUser._id
 
-            };
-            await apiServices.sendEmailNotification(serviceData, res);
+                };
+                await apiServices.sendEmailNotification(serviceData, res);
+            }
         }
-    }
 
         // if (data.topic == 'resource_update') {
         //     let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
@@ -2099,6 +2099,9 @@ class User extends controller {
     }
 
     async listCurrencies(req, res) {
+        let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+        console.log('IP detect',ip)
         let currencyList = await changeCurrency.find({});
         let currency = [], i = 0;
         while (i < currencyList.length) {
@@ -2316,12 +2319,16 @@ class User extends controller {
 
 
     async script(req, res) {
-        let user = await users.find({});
+
         let i = 0;
-        while (i < user.length) {
-            let data = await balance.findOne({ user: user[i]._id }).sort({ _id: -1 })
+        let user = await balance.find().populate({
+            path: 'user',
+            select: ('user_id')
+        });
+        let self = this;
+        function interval() {
             let k = 0;
-            let userBalanace = data.balance;
+            let userBalanace = user[i].balance;
             while (k < userBalanace.length) {
                 let amount = 0;
                 if (Number(userBalanace[k].freeze) != 0) {
@@ -2330,22 +2337,29 @@ class User extends controller {
                     amount = Number(userBalanace[k].available)
                 }
                 if (amount > 0) {
-                    let payloads = {
-                        "user_id": user[i].user_id,
+                    let payloads = Object.assign({}, {
+                        "user_id": user[i].user.user_id,
                         "asset": userBalanace[k].asset_code,
                         "business": "deposit",
                         "business_id": new Date().valueOf(),
                         "change": amount.toString(),
                         "detial": {}
-                    }
-                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                    });
+                     apiServices.matchingEngineRequest('patch', 'balance/update', self.requestDataFormat(payloads), res, 'data');
 
                 }
                 k++;
             }
-            console.log("I:", i);
             i++;
-        }
+            console.log("I:", i);
+
+            if (i == user.length - 1) {
+                console.log('in clear interval')
+                clearInterval(this);
+            }
+        };
+
+        setInterval(interval, 10);
 
         return res.send('Success').status(200);
     }
