@@ -1850,6 +1850,7 @@ class User extends controller {
             let updateUser = await users.findOneAndUpdate({ _id: check.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
             await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'APPROVE', 'logout': false });
             //await this.updateBalance(updateUser.user_id, updateUser._id, res, 'kyc verification');
+            if(updateUser){
             let serviceData = {
                 "subject": `Your KYC verification was successful.`,
                 "email_for": "kyc-success",
@@ -1858,6 +1859,7 @@ class User extends controller {
             };
             await apiServices.sendEmailNotification(serviceData, res);
         }
+    }
 
         // if (data.topic == 'resource_update') {
         //     let checkSessionId = await kycDetails.findOne({ session_id: data.session_id });
