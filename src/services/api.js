@@ -15,12 +15,12 @@ const orderCancel = require('../db/order-cancel');
 const fs = require('fs');
 const moment = require('moment');
 const _ = require('lodash');
-const Redis = require('ioredis');
 const device = require('../db/device-management');
 const branca = require("branca")(config.get('encryption.realKey'));
 const { AuthenticatedClient } = require("../helpers/AuthenticatedClient");
 const Utils = require('../helpers/utils');
 const utils = new Utils();
+const redis = helpers.redisConnection();
 class Api extends Controller {
 
     async sendEmailNotification(data, res) {
@@ -421,28 +421,32 @@ class Api extends Controller {
         return await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${assetsName}&vs_currencies=${convertTo}`);
     }
 
+    async publishNotification(user, data) {
+        console.log('user_id:', user,data)
+        return await redis.publish(`NOTIFICATIONS:${user}`, JSON.stringify(data));
+    }
     async addResponseInREDIS(response, type = 'nonCancel') {
-        // var client = redis.createClient('6379','127.0.0.1');
+    // var client = redis.createClient('6379','127.0.0.1');
 
-        // client.on('connect', function () {
-        //     console.log("...........Redis Connected..............")
-        //     client.set(response.order_id, response, redis.print);
-        //     // return { status:true, result:'Add data Redis' };
-        //     let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
-        //     fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
-        //         if (err)
-        //             console.log("Error:", err);
-        //     });
-        // }); 
+    // client.on('connect', function () {
+    //     console.log("...........Redis Connected..............")
+    //     client.set(response.order_id, response, redis.print);
+    //     // return { status:true, result:'Add data Redis' };
+    //     let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
+    //     fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
+    //         if (err)
+    //             console.log("Error:", err);
+    //     });
+    // }); 
 
-        // client.on('error', function (err) {
-        //     let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${response.orderId} :${response.user_id} : ${err}`
-        //     fs.appendFile('redisError.txt', `\n${fileConent} `, function (err) {
-        //         if (err)
-        //             console.log("Error:", err);
-        //     });
-        //     //return { status:false, error:'Something went wrong' };
-        // });
+    // client.on('error', function (err) {
+    //     let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${response.orderId} :${response.user_id} : ${err}`
+    //     fs.appendFile('redisError.txt', `\n${fileConent} `, function (err) {
+    //         if (err)
+    //             console.log("Error:", err);
+    //     });
+    //     //return { status:false, error:'Something went wrong' };
+    // });
 
         const redis = new Redis.Cluster([
             {
@@ -460,8 +464,8 @@ class Api extends Controller {
             if (err)
                 console.log("Error:", err);
         });
-
-
+    
+    
     }
 
     async DisposableEmailAPI(data) {

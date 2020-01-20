@@ -292,6 +292,7 @@ router.delete('/whitelist', info, auth, async (req, res) => {
     try {
         let data = req.body.data.attributes;
         data.user = req.user.user;
+        data.user_id =req.user.user_id
         await user.deleteWhiteList(data, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({

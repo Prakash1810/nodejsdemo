@@ -1,11 +1,11 @@
-
-
 const mongoose = require('mongoose');
 
 const balanceSchema = mongoose.Schema({
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
-    balance:mongoose.Schema.Types.Mixed,
-    create_date:Date
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', index: true },
+    balance: { type: mongoose.Schema.Types.Mixed, index: true },
+    create_date: Date
 });
 
-module.exports =  mongoose.model('user-balance', balanceSchema);
+let userBalance = mongoose.model('user-balance', balanceSchema);
+userBalance.createIndexes()
+module.exports = userBalance;

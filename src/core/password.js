@@ -195,7 +195,8 @@ class Password extends Controller {
                                 user_id: data.user_id
                             }
                             await apiServices.sendEmailNotification(serviceData, res);
-                            await Users.findOneAndUpdate({ _id: req.body.data.id }, { withdraw: false, password_reset_time: moment().format('YYYY-MM-DD HH:mm:ss') })
+                            await Users.findOneAndUpdate({ _id: req.body.data.id }, { withdraw: false, password_reset_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+                            await apiServices.publishNotification(user.user_id,{'change_password':true,'logout':true});
                             return res.status(202).send(this.successFormat({
                                 'message': 'Your password has been changed successfully.'
                             }, user._id, 'users', 202));
@@ -211,7 +212,7 @@ class Password extends Controller {
                             user_id: user._id
                         }
                         await apiServices.sendEmailNotification(serviceData, res);
-
+                        await apiServices.publishNotification(user.user_id,{'reset_password':true,'logout':true});
                         return res.status(202).send(this.successFormat({
                             'message': 'Your password has been reset successfully.'
                         }, user._id, 'users', 202));
