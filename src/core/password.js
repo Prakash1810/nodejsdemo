@@ -1,4 +1,3 @@
-const Joi = require('@hapi/joi');
 const Users = require('../db/users');
 const apiServices = require('../services/api');
 const Controller = require('../core/controller');
@@ -11,15 +10,6 @@ const user = require('../core/user');
 let checkHash = null;
 class Password extends Controller {
 
-    validate(req) {
-        let schema = Joi.object().keys({
-            email: Joi.string().required().email(),
-            ip: Joi.string().allow('').optional()
-        });
-
-        return schema.validate(req, { abortEarly: false });
-    }
-
     encryptHash(email, user) {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = JSON.stringify({
@@ -31,7 +21,6 @@ class Password extends Controller {
 
         return helpers.encrypt(data);
     }
-
 
     sendResetLink(req, res) {
 
@@ -103,7 +92,7 @@ class Password extends Controller {
     async checkResetLink(req, res) {
 
 
-        let userHash = JSON.parse(helpers.decrypt(req.params.hash,res));
+        let userHash = JSON.parse(helpers.decrypt(req.params.hash, res));
         let checkHash = await mangHash.findOne({ email: userHash.email, hash: req.params.hash });
         if (checkHash) {
             if (checkHash.is_active) {
@@ -161,34 +150,6 @@ class Password extends Controller {
         return false;
     }
 
-    resetPasswordValidate(req) {
-        let schema = Joi.object().keys({
-            password: Joi.string().required().min(8).max(30).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/).error(errors=>{ 
-                errors.forEach(err=>{  
-                switch(err.code){
-                    case "string.pattern.base":
-                        err.message='The password must be a minimum of 8 characters. Use a combination of alphanumeric characters and uppercase letters.';
-                    break;
-                   }
-                 })
-               return errors
-                }),
-            password_confirmation: Joi.any().valid(Joi.ref('password')).required().error(errors=>{ 
-                errors.forEach(err=>{
-                switch(err.code){
-                    case "any.only":
-                    err.message='The password you entered do not match.';
-                    break;
-                   }
-                 })
-               return errors
-                }),
-            hash: Joi.string()
-        });
-
-        return schema.validate(req, { abortEarly: false })
-    }
-
     async resetPassword(req, res, type = 'reset') {
 
         if (type == 'hash') {
@@ -196,8 +157,8 @@ class Password extends Controller {
             return;
         }
         let data = req.body.data.attributes;
-        data.password = await helpers.decrypt(data.password,res);
-        data.password_confirmation = await helpers.decrypt(data.password_confirmation,res);
+        data.password = await helpers.decrypt(data.password, res);
+        data.password_confirmation = await helpers.decrypt(data.password_confirmation, res);
         if (data.password === '' || data.password_confirmation === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
@@ -260,39 +221,9 @@ class Password extends Controller {
         });
     }
 
-    changePasswordValidate(req) {
-        let schema = Joi.object().keys({
-            g2f_code: Joi.string(),
-            otp: Joi.string(),
-            old_password: Joi.string().required(),
-            password: Joi.string().required().min(8).max(30).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/).error(errors=>{ 
-                errors.forEach(err=>{  
-                switch(err.code){
-                    case "string.pattern.base":
-                        err.message='The password must be a minimum of 8 characters. Use a combination of alphanumeric characters and uppercase letters.';
-                    break;
-                   }
-                 })
-               return errors
-                }),
-            password_confirmation: Joi.any().valid(Joi.ref('password')).required().error(errors=>{ 
-                errors.forEach(err=>{
-                switch(err.code){
-                    case "any.only":
-                    err.message='The password you entered do not match.';
-                    break;
-                   }
-                 })
-               return errors
-                }),
-        });
-
-        return schema.validate(req, { abortEarly: false })
-    }
-
     async changePassword(req, res) {
         let requestData = req.body.data.attributes;
-        requestData.old_password = await helpers.decrypt(requestData.old_password,res);
+        requestData.old_password = await helpers.decrypt(requestData.old_password, res);
         if (requestData.old_password === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'

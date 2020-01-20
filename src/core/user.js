@@ -11,7 +11,6 @@ const userTemp = require('../db/user-temp');
 const helpers = require('../helpers/helper.functions');
 const config = require('config');
 const jwt = require('jsonwebtoken');
-const Joi = require('@hapi/joi');
 const bcrypt = require('bcrypt');
 const controller = require('../core/controller');
 const g2fa = require('2fa');
@@ -40,6 +39,7 @@ const { RequestBuilder, Payload } = require('yoti');
 const authenticators = require('authenticator')
 const changeCurrency = require('../db/currency-list');
 const balance = require('../db/balance');
+const { deviceValidation } = require('../validation/user.validations');
 
 
 class User extends controller {
@@ -359,59 +359,6 @@ class User extends controller {
             });
     }
 
-    validate(req) {
-        let schema = Joi.object().keys({
-            email: Joi.string().required().email(),
-            password: Joi.string().required(),
-            is_browser: Joi.boolean().required(),
-            is_mobile: Joi.boolean().required(),
-            ip: Joi.string().required(),
-            country: Joi.string().required(),
-            os: Joi.string().allow('').optional(),
-            os_byte: Joi.string().allow('').optional(),
-            browser: Joi.string().allow('').optional(),
-            browser_version: Joi.string().allow('').optional(),
-            city: Joi.string().allow('').optional(),
-            region: Joi.string().allow('').optional(),
-        });
-
-        return schema.validate(req, { abortEarly: false })
-    }
-    validateOtp(req) {
-        let schema = Joi.object().keys({
-            is_browser: Joi.boolean().required(),
-            is_mobile: Joi.boolean().required(),
-            ip: Joi.string().required(),
-            country: Joi.string().required(),
-            os: Joi.string().allow('').optional(),
-            os_byte: Joi.string().allow('').optional(),
-            browser: Joi.string().allow('').optional(),
-            browser_version: Joi.string().allow('').optional(),
-            city: Joi.string().allow('').optional(),
-            region: Joi.string().allow('').optional(),
-            otp: Joi.string().required(),
-            is_app: Joi.boolean().optional()
-        });
-
-        return schema.validate(req, { abortEarly: false });
-    }
-
-    deviceValidate(data) {
-        let schema = Joi.object().keys({
-            is_browser: Joi.boolean().required(),
-            is_mobile: Joi.boolean().required(),
-            is_app: Joi.boolean().optional(),
-            ip: Joi.string().required(),
-            country: Joi.string().required(),
-            os: Joi.string().allow('').optional(),
-            os_byte: Joi.string().allow('').optional(),
-            browser: Joi.string().allow('').optional(),
-            browser_version: Joi.string().allow('').optional(),
-            city: Joi.string().allow('').optional(),
-            region: Joi.string().allow('').optional(),
-        })
-        return schema.validate(data, { abortEarly: false });
-    }
     removeUser(email, res) {
         users.deleteOne({
             email: email
@@ -796,14 +743,6 @@ class User extends controller {
 
     }
 
-    async resendOtpValidation(req) {
-        let schema = Joi.object().keys({
-            user_id: Joi.string().required(),
-            type: Joi.string().required(),
-        });
-
-        return schema.validate(req, { abortEarly: false });
-    }
     async resendOtpForEmail(req, res, typeFor) {
         let data = req.body.data.attributes;
         const isChecked = await otpHistory.findOne({ user_id: data.user_id, is_active: false, type_for: typeFor });
@@ -871,7 +810,7 @@ class User extends controller {
 
     async insertDevice(req, res, userID, verify = false, type = 'withoutValidation') {
         if (type != 'withoutValidation') {
-            let { error } = await this.deviceValidate(req.body.data.attributes);
+            let { error } = await deviceValidation(req.body.data.attributes);
             if (error) {
                 return res.status(400).send(this.errorFormat(error, 'users', 400));
             }
@@ -1114,37 +1053,6 @@ class User extends controller {
         });
     }
 
-    settingsValidate(req) {
-        let schema = Joi.object().keys({
-            sms_auth: Joi.boolean().optional(),
-            password: Joi.string().optional(),
-            google_auth: Joi.boolean().optional(),
-            google_secrete_key: Joi.string().optional(),
-            mobile: Joi.number().optional(),
-            mobile_code: Joi.number().optional(),
-            anti_spoofing: Joi.boolean().optional(),
-            anti_spoofing_code: Joi.string().optional(),
-            white_list_address: Joi.boolean().optional(),
-            g2f_code: Joi.string(),
-            white_list_address: Joi.boolean().optional(),
-            otp: Joi.string().optional(),
-            type: Joi.string().optional()
-        });
-
-        return schema.validate(req, { abortEarly: false });
-    }
-
-    g2fSettingValidate(req) {
-        let schema = Joi.object().keys({
-            password: Joi.string().required(),
-            google_auth: Joi.boolean().required().allow(true, false),
-            google_secrete_key: Joi.string(),
-            g2f_code: Joi.string().required()
-        });
-
-        return schema.validate(req, { abortEarly: false });
-    }
-
     async patchSettings(req, res, type = 'withoutCallPatchSetting') {
         try {
             let requestData = req.body.data.attributes;
@@ -1346,7 +1254,7 @@ class User extends controller {
             let checked = await this.updateG2F(req, res);
             if (checked.status) {
                 return res.status(202).send(this.successFormat({
-                    'message': `${requestedData.google_auth == true ? 'You have successfully enable google two factor authentication.' : 'You have successfully disable google two factor authentication.'}`
+                    'message': `${(requestedData.google_auth) ? 'You have successfully enable google two factor authentication.' : 'You have successfully disable google two factor authentication.'}`
                 }, null, 'users', 202));
             }
             else {
@@ -1717,12 +1625,6 @@ class User extends controller {
         }
     }
 
-    favouriteValidation(data) {
-        let schema = Joi.object().keys({
-            market: Joi.string().required()
-        });
-        return schema.validate(data, { abortEarly: false });
-    }
     async addFavouriteUser(req, res) {
         let data = req.body.data.attributes;
         let isChecked = await addMarket.findOne({ market_name: data.market.toUpperCase() });
@@ -2052,20 +1954,6 @@ class User extends controller {
 
     }
 
-    async kycDetailsValidation(req) {
-        let schema = Joi.object().keys({
-            first_name: Joi.string().required(),
-            middle_name: Joi.string().optional().allow(''),
-            surname: Joi.string().required(),
-            date_of_birth: Joi.string().required(),
-            address: Joi.string().required().max(100),
-            g2f_code: Joi.string(),
-            otp: Joi.string(),
-        });
-
-        return schema.validate(req, { abortEarly: false });
-    }
-
     async kycDetails(req, res) {
         let data = req.body.data.attributes;
         data.user = req.user.user;
@@ -2138,16 +2026,6 @@ class User extends controller {
         let removeUnderScore = str.replace(/_/g, " ").toLowerCase();
         return removeUnderScore;
     }
-
-    async apiKeyValidation(req) {
-        let schema = Joi.object().keys({
-            type: Joi.string().required(),
-            passphrase: Joi.string().alphanum().min(5).max(8),
-            g2f_code: Joi.string().required()
-        });
-        return schema.validate(req, { abortEarly: false });
-    }
-
 
     async checkApikey(req, res) {
         req.body.data['id'] = req.user.user;
@@ -2235,14 +2113,6 @@ class User extends controller {
         return res.status(200).send(this.successFormat({
             'currencyPrice': price
         }, 'currecy'));
-    }
-
-    async moveBalanceValidation(req) {
-        let schema = Joi.object().keys({
-            amount: Joi.number().required(),
-            asset: Joi.string().required()
-        });
-        return schema.validate(req, { abortEarly: false });
     }
 
     async rewardUserBalance(req, res) {
@@ -2390,7 +2260,7 @@ class User extends controller {
         }
         if (Object.keys(checkUserMe.person).length > 0) {
             let name = checkUserMe.person.full_name.replace(/ /g, '').toLowerCase()
-            let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name, user: {$ne:req.user.user}})
+            let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name, user: { $ne: req.user.user } })
             if (checkKycDetails) {
                 let serviceData = {
                     "subject": `Your KYC verification could not be processed.`,

@@ -3,7 +3,6 @@ const controller = require('../core/controller');
 const assets = require('../db/assets');
 const userAddress = require('../db/user-address');
 const withdrawAddress = require('../db/withdrawal-addresses');
-const Joi = require('@hapi/joi');
 const users = require('../db/users');
 const coinAddressValidator = require('wallet-address-validator');
 const apiServices = require('../services/api');
@@ -125,20 +124,6 @@ class Wallet extends controller {
                 "message": "Invalid request"
             }, 'assets', 400));
         }
-    }
-
-    postWithdrawAddressValidation(req) {
-        let schema = Joi.object().keys({
-            asset: Joi.string().required(),
-            address: Joi.string().required(),
-            label: Joi.string().required(),
-            coin: Joi.string().required(),
-            is_whitelist: Joi.boolean().optional(),
-            g2f_code: Joi.string(),
-            otp: Joi.string().optional()
-        });
-
-        return schema.validate(req, { abortEarly: false });
     }
 
     async coinAddressValidate(address, asset) {
@@ -535,21 +520,6 @@ class Wallet extends controller {
         }
     }
 
-    postWithdrawValidation(req) {
-        let schema = Joi.object().keys({
-            asset: Joi.string().required(),
-            amount: Joi.number().positive().required(),
-            ip: Joi.string().required(),
-            g2f_code: Joi.string(),
-            otp: Joi.string(),
-            address: Joi.string(),
-            withdraw_id: Joi.string(),
-            payment_id: Joi.string()
-        });
-
-        return schema.validate(req, { abortEarly: false });
-    }
-
     async withdrawValidate(req, res) {
         let requestData = req.body.data.attributes;
         let getAsset = await assets.findById(requestData.asset);
@@ -872,15 +842,6 @@ class Wallet extends controller {
                 "message": "Invalid request."
             }, 'withdraw'));
         }
-    }
-
-    patchWithdrawConfirmationValidation(req) {
-        let schema = Joi.object().keys({
-            accept: Joi.boolean().required(),
-            ip: Joi.string().required()
-        });
-
-        return schema.validate(req, { abortEarly: false });
     }
 
     async patchWithdrawConfirmation(req, res) {

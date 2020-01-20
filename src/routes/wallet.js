@@ -3,6 +3,7 @@ const Controller = require('../core/controller');
 const wallet = require('../core/wallet');
 const info = require('../middlewares/info');
 const auth = require("../middlewares/authentication");
+const { postWithdrawAddressValidation , postWithdrawValidation , patchWithdrawConfirmationValidation} = require('../validation/wallet.validation');
 const router = express.Router();
 const controller = new Controller;
 
@@ -28,7 +29,7 @@ router.post('/asset-address', info, auth, (req, res) => {
 
 router.post('/withdraw-address', info, auth, (req, res) => {
     try {
-        let { error } = wallet.postWithdrawAddressValidation(req.body.data.attributes);
+        let { error } = postWithdrawAddressValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -103,7 +104,7 @@ router.get('/transactions/:type', info, auth, (req, res) => {
 
 router.post('/withdraw', info, auth, (req, res) => {
     try {
-        let { error } = wallet.postWithdrawValidation(req.body.data.attributes);
+        let { error } = postWithdrawValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
@@ -118,7 +119,7 @@ router.post('/withdraw', info, auth, (req, res) => {
 
 router.patch('/withdraw', (req, res) => {
     try {
-        let { error } = wallet.patchWithdrawConfirmationValidation(req.body.data.attributes);
+        let { error } = patchWithdrawConfirmationValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {

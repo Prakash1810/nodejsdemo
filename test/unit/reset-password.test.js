@@ -1,37 +1,38 @@
 'use strict';
 
-const { expect }    = require('chai');
-const password      = require('../../src/core/password');
-const moment        = require('moment');
-var isValidRequest  = { 'id': '5c7e662bba7fe90ebe523256' , 'password' : '1234567S', 'password_confirmation' : '1234567S' };
+const { expect } = require('chai');
+const password = require('../../src/core/password');
+const { resetPasswordValidation } = require('../../src/validation/user.validations');
+const moment = require('moment');
+var isValidRequest = { 'id': '5c7e662bba7fe90ebe523256', 'password': '1234567S', 'password_confirmation': '1234567S' };
 
 describe('Reset password link module unit test case:-', () => {
-    it ('Should be check return encrypted hash', (done) => {
+    it('Should be check return encrypted hash', (done) => {
         let encryptHash = password.encryptHash('satz@mail.com');
         expect(encryptHash).to.be.a('string');
         done()
     });
 
-    it ('should check reset token time is expired', (done) => {
+    it('should check reset token time is expired', (done) => {
         var time = moment().subtract(7300, 'seconds').format('YYYY-MM-DD HH:mm:ss');
         let checkExired = password.checkTimeExpired(moment(time).format('YYYY-MM-DD HH:mm:ss'));
         expect(checkExired).to.equal(false);
-        done()   
+        done()
     });
 
-    it ('should check reset token time is not expired', (done) => {
+    it('should check reset token time is not expired', (done) => {
         var time = moment().subtract(7199, 'seconds').format('YYYY-MM-DD HH:mm:ss');
         let checkExired = password.checkTimeExpired(moment(time).format('YYYY-MM-DD HH:mm:ss'));
         expect(checkExired).to.equal(true);
-        done()  
+        done()
     });
 });
 
 describe('Reset password module unit test :-', () => {
-    it ('Should validate all the fields', (done) => {
-        var errors    = {};
-       
-        let { error } = password.resetPasswordValidate({});
+    it('Should validate all the fields', (done) => {
+        var errors = {};
+
+        let { error } = resetPasswordValidation({});
         error.details.forEach((detail) => {
             errors[detail.path] = detail.message;
         });
@@ -44,16 +45,16 @@ describe('Reset password module unit test :-', () => {
         done()
     });
 
-    it ('Should enter all the fields', (done) => {
-        let { error } = password.resetPasswordValidate(isValidRequest);
+    it('Should enter all the fields', (done) => {
+        let { error } = resetPasswordValidation(isValidRequest);
         expect(error).to.equal(null);
         done()
     });
 
-    it ('should check password minimum length', (done) => {
-        var errors    = {};
+    it('should check password minimum length', (done) => {
+        var errors = {};
         isValidRequest.password = '123456';
-        let { error } = password.resetPasswordValidate(isValidRequest);
+        let { error } = resetPasswordValidation(isValidRequest);
         error.details.forEach((detail) => {
             errors[detail.path] = detail.message;
         });
@@ -64,10 +65,10 @@ describe('Reset password module unit test :-', () => {
         done()
     });
 
-    it ('should check password strength', (done) => {
-        var errors    = {};
+    it('should check password strength', (done) => {
+        var errors = {};
         isValidRequest.password = '12345678';
-        let { error } = password.resetPasswordValidate(isValidRequest);
+        let { error } = resetPasswordValidation(isValidRequest);
         error.details.forEach((detail) => {
             errors[detail.path] = detail.message;
         });
@@ -78,10 +79,10 @@ describe('Reset password module unit test :-', () => {
         done()
     });
 
-    it ('should match the password and confirm password', (done) => {
-        var errors    = {};
-        isValidRequest.password  = '1234567SS';
-        let { error } = password.resetPasswordValidate(JSON.stringify(isValidRequest));
+    it('should match the password and confirm password', (done) => {
+        var errors = {};
+        isValidRequest.password = '1234567SS';
+        let { error } = resetPasswordValidation(JSON.stringify(isValidRequest));
         error.details.forEach((detail) => {
             errors[detail.path] = detail.message;
         });
