@@ -9,8 +9,8 @@ const config = require('config');
 const controller = new Controller;
 const market = require('../db/market-list');
 const favourite = require('../db/favourite-user-market');
-const Binance = require('binance-api-node').default;
-const kafka = require('kafka-node');
+// const Binance = require('binance-api-node').default;
+// const kafka = require('kafka-node');
 const orderCancel = require('../db/order-cancel');
 const fs = require('fs');
 const moment = require('moment');
@@ -422,38 +422,10 @@ class Api extends Controller {
     }
 
     async publishNotification(user, data) {
-        console.log('user_id:', user,data)
         return await redis.publish(`NOTIFICATIONS:${user}`, JSON.stringify(data));
     }
+
     async addResponseInREDIS(response, type = 'nonCancel') {
-    // var client = redis.createClient('6379','127.0.0.1');
-
-    // client.on('connect', function () {
-    //     console.log("...........Redis Connected..............")
-    //     client.set(response.order_id, response, redis.print);
-    //     // return { status:true, result:'Add data Redis' };
-    //     let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${response.orderId} : ${response.user_id} : ${JSON.stringify(response)}`
-    //     fs.appendFile('redisSuccess.txt', `\n${fileConent} `, function (err) {
-    //         if (err)
-    //             console.log("Error:", err);
-    //     });
-    // }); 
-
-    // client.on('error', function (err) {
-    //     let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${response.orderId} :${response.user_id} : ${err}`
-    //     fs.appendFile('redisError.txt', `\n${fileConent} `, function (err) {
-    //         if (err)
-    //             console.log("Error:", err);
-    //     });
-    //     //return { status:false, error:'Something went wrong' };
-    // });
-
-        const redis = new Redis.Cluster([
-            {
-                port: process.env.REDIS_PORT,
-                host: process.env.REDIS_HOST
-            }
-        ]);
         redis.rpush(response.order_id, JSON.stringify(response));
         redis.rpush(response.order_id, type == 'cancel' ? JSON.stringify({ cancel: true }) : JSON.stringify({ cancel: false }));
         redis.on('error', (err) => {
@@ -475,50 +447,6 @@ class Api extends Controller {
             return axiosResponse.data
         }
     }
-
-    // async addResponseInKAFKA(jsonData, market) {
-    //     let Producer = kafka.Producer,
-    //         Client = new kafka.KafkaClient({
-    //             kafkaHost: process.env.KAFKA
-    //         }),
-    //         producer = new Producer(Client, {
-    //             requireAcks: 1
-    //         });
-
-    //     producer.on('ready', async function () {
-    //         let response = await producer.send([{
-    //             topic: `${config.get('liquidity.topic')}${market}`,
-    //             messages: JSON.stringify(jsonData),
-    //         }]);
-    //         if (response) {
-
-    //             let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : success : ${jsonData.order_id} : ${jsonData.user_id} : ${JSON.stringify(jsonData)}`
-    //             fs.appendFile('kafaSuccess.txt', `\n${fileConent} `, function (err) {
-    //                 if (err)
-    //                     console.log("Error:", err);
-    //             });
-    //             //return { status :true }
-    //         }
-    //         else {
-    //             let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.order_id} :${jsonData.user_id} : ${JSON.stringify(jsonData)}`
-    //             fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
-    //                 if (err)
-    //                     console.log("Error:", err);
-    //             });
-    //             //return { status : false , error : response.message }
-    //         }
-    //     });
-
-    //     producer.on('error', function (err) {
-    //         let fileConent = `(${moment().format('YYYY-MM-DD HH:mm:ss')}) : error : ${jsonData.order_id} :${jsonData.user_id} : ${err}`
-    //         fs.appendFile('kafkaError.txt', `\n${fileConent} `, function (err) {
-    //             if (err)
-    //                 console.log("Error:", err);
-    //         });
-    //         //return { status : false , error : response.message }
-    //     });
-
-    // }
 
     async getAccessCode(data, res) {
         try {

@@ -209,10 +209,6 @@ class User extends controller {
         });
         let tokenUser = branca.encode(tokenRefresh);
         return await jwt.sign({ tokenUser }, config.get('secrete.refreshKey'), options);
-
-
-
-
     }
 
     async storeToken(user, loginHistory, infoToken, mobileDevice) {
