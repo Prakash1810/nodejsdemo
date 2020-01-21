@@ -52,7 +52,7 @@ exports.deviceValidation = (req) => {
         city: Joi.string().allow('').optional(),
         region: Joi.string().allow('').optional(),
     })
-    return schema.validate(data, { abortEarly: false });
+    return schema.validate(req, { abortEarly: false });
 
 }
 
