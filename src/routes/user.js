@@ -23,7 +23,6 @@ router.get('/activation/:hash', (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
-
         let { error } = await loginValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));

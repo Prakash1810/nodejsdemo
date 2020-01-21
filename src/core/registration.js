@@ -185,12 +185,12 @@ class Registration extends Controller {
         );
 
         // send email notification to the registered user
-        let serviceData = {
+        let serviceData = Object.assign({}, {
             'hash': encryptedHash,
             "to_email": user.email,
             "subject": "Confirm Your Registration",
             "email_for": "registration"
-        };
+        });
         //check how to many time click a resend button
         await apiServices.sendEmailNotification(serviceData);
         if (type == 'withoutResend') {

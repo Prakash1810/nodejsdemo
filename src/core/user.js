@@ -124,7 +124,7 @@ class User extends controller {
             var getChar = str.substring(sub, 0);
             let twoChar = getChar.substring(sub, getChar.length - 2)
             let code = `${subString}${randomNumber}${await this.getRandomString()}${twoChar}`;
-            let user = await users.create({
+            let userCreate = Object.assign({}, {
                 email: result.email,
                 password: result.password,
                 referral_code: code,
@@ -134,6 +134,8 @@ class User extends controller {
                 taker_fee: (await fee.findOne({ config: 'takerFeeRate' })).value,
                 maker_fee: (await fee.findOne({ config: 'makerFeeRate' })).value
             });
+            let user = await users.create(userCreate);
+            console.log("create:", user)
 
             if (userTemp.removeUserTemp(result.id)) {
 
@@ -141,12 +143,12 @@ class User extends controller {
                 await accountActive.deleteOne({ email: result.email, type_for: 'register' })
                 await apiServices.initAddressCreation(user);
                 //welcome mail
-                let serviceData = {
+                let serviceData = Object.assign({}, {
                     subject: "Welcome to Beldex",
                     email_for: "welcome",
                     to_email: user.email,
                     link: `${process.env.LINKURL}${code}`
-                }
+                });
                 await apiServices.sendEmailNotification(serviceData, res);
                 //await this.updateBalance(inc.login_seq, user._id, res, 'email verification');
                 return res.status(200).send(this.successFormat({
@@ -164,50 +166,45 @@ class User extends controller {
     }
 
     async infoToken(deviceInfo) {
-        let tokenOption = {
+        let tokenOption = Object.assign({}, {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.infoToken')
-        };
-
+        });
         return await jwt.sign(deviceInfo, config.get('secrete.infokey'), tokenOption);
     };
 
     async createToken(user, id, device_id) {
-
-        let jwtOptions = {
+        let jwtOptions = Object.assign({}, {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
             expiresIn: `${(device_id) ? config.get('secrete.mobileExpiry') : config.get('secrete.expiry')}`
-        };
-
-        let tokenAccess = JSON.stringify({
+        });
+        let tokenAccess = Object.assign({}, {
             user: user._id,
             login_id: id,
             user_id: user.user_id
         });
-
-        let token = branca.encode(tokenAccess);
+        let token = branca.encode(JSON.stringify(tokenAccess));
         return await jwt.sign({ token }, config.get('secrete.key'), jwtOptions);
     };
 
     async createRefreshToken(user, id) {
-
-        let options = {
+        let options = Object.assign({}, {
             issuer: config.get('secrete.issuer'),
             subject: 'Authentication',
             audience: config.get('secrete.domain'),
             expiresIn: config.get('secrete.refreshTokenExpiry')
 
-        };
-        const tokenRefresh = JSON.stringify({
+        });
+        const tokenRefresh = Object.assign({}, {
             user: user._id,
             login_id: id,
             user_id: user.user_id,
         });
-        let tokenUser = branca.encode(tokenRefresh);
+        let tokenUser = branca.encode(JSON.stringify(tokenRefresh));
         return await jwt.sign({ tokenUser }, config.get('secrete.refreshKey'), options);
     }
 
@@ -226,13 +223,13 @@ class User extends controller {
         if (mobileDevice == null) {
             refreshToken = await this.createRefreshToken(user, loginHistory);
         }
-        let data = {
+        let data = Object.assign({}, {
             user: user._id,
             type_for: "token",
             access_token: accessToken,
             refresh_token: refreshToken,
             created_date: Date.now()
-        }
+        });
         await new token(data).save();
         return { accessToken: accessToken, refreshToken: refreshToken, infoToken: info }
     }
@@ -407,24 +404,22 @@ class User extends controller {
             const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
             const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false, type_for: typeFor }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
             if (!isChecked) {
-                let data =
-                {
+                let data = Object.assign({}, {
                     otp_type: getOtpType._id,
                     user_id: user,
                     otp: otp,
                     create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'),
                     type_for: typeFor
-                }
+                });
 
                 await new otpHistory(data).save();
             }
-            let serviceData =
-            {
+            let serviceData = Object.assign({}, {
                 subject: `Beldex ${typeFor == 'login' ? 'login' : typeFor} verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')} ( ${config.get('settings.timeZone')} )`,
                 email_for: "otp-login",
                 otp: Math.floor(rand),
                 user_id: user
-            }
+            });
             await apiServices.sendEmailNotification(serviceData, res);
             if (typeFor == "login") {
                 return { status: true }
@@ -452,28 +447,29 @@ class User extends controller {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let isCheckedDevice = await deviceMangement.find({ user: result._id, region: attributes.region, city: attributes.city, ip: attributes.ip });
         if (isCheckedDevice.length == 0) {
-            this.sendNotification({
+            let sendNotificationData = Object.assign({}, {
                 'ip': attributes.ip,
                 'time': timeNow,
                 'browser': attributes.browser,
                 'browser_version': attributes.browser_version,
                 'os': attributes.os,
                 'user_id': result._id
-            }, res);
+            });
+            this.sendNotification(sendNotificationData, res);
         }
         const device = await this.insertDevice(req, res, result._id, true, 'withValidation');
-        let data = {
+        let data = Object.assign({}, {
             user: result._id,
             device: device._id,
             auth_type: type,
             login_date_time: timeNow
-        }
+        });
         let loginHistory = await this.insertLoginHistory(data);
         let take = req.body.data.attributes;
         take['info'] = req.body.data.id;
         let tokens = await this.storeToken(result, loginHistory._id, take, mobileId);
-        await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') })
-        return res.status(200).send(this.successFormat({
+        await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+        let responseData = Object.assign({}, {
             "apiKey": result.api_key,
             "info": tokens.infoToken,
             "token": tokens.accessToken,
@@ -491,19 +487,21 @@ class User extends controller {
             "expiresIn": 300000,
             "referral_code": result.referral_code,
             "currency_code": result.currency_code,
-            "current_device":`${take.os}-${take.browser}-${take.browser_version}`
-        }, result._id));
+            "current_device": `${take.os}-${take.browser}-${take.browser_version}`
+        });
+        return res.status(200).send(this.successFormat(responseData, result._id));
     }
 
     async addWhitelist(data, userID, verify = false) {
-        return await new deviceWhitelist({
+        let addDeviceList = Object.assign({}, {
             user: userID,
             browser: data.browser,
             region: data.region,
             city: data.city,
             os: data.os,
-            verified: verify,
-        }).save();
+            verified: verify
+        });
+        return await new deviceWhitelist(addDeviceList);
 
     }
 
@@ -516,13 +514,13 @@ class User extends controller {
         if (assetCheck.length !== userAddressCheck.length) {
             nonAddressCreatedUser = assetCheck.filter(userAssets => userAddressCheck.every((userAddress) => JSON.stringify(userAddress.asset) !== JSON.stringify(userAssets._id)));
             while (i < nonAddressCreatedUser.length) {
-                let data = {
+                let userAddressGen = Object.assign({}, {
                     "coin": nonAddressCreatedUser[i].asset_code,
                     "user_id": user.user_id,
                     "user": user._id,
                     "asset": nonAddressCreatedUser[i]._id
-                }
-                await apiServices.axiosAPI(data);
+                });
+                await apiServices.axiosAPI(userAddressGen);
                 i++;
             }
         };
@@ -554,13 +552,14 @@ class User extends controller {
                 const isChecked = await this.generatorOtpforEmail(userID, "login", res);
                 if (isChecked.status) {
                     await this.addWhitelist(data, userID, true);
-                    res.status(200).send(this.successFormat({
+                    let resData = Object.assign({}, {
                         'message': "An OTP has been sent to your registered email address.",
                         'otp': true,
                         "region": data.region,
                         "city": data.city,
                         "ip": data.ip
-                    }, userID))
+                    });
+                    res.status(200).send(this.successFormat(resData, userID))
                 }
                 else {
                     return res.status(500).send(this.errorMsgFormat({
@@ -581,16 +580,17 @@ class User extends controller {
             if (!result) {
                 // insert new device records
                 await this.insertDevice(req, res, userID);
-                let urlHash = this.encryptHash({
+                let hashEncryption = Object.assign({}, {
                     "user_id": userID,
                     "email": data.email,
                     "ip": data.ip,
                     "browser": data.browser,
                     "verified": true
                 });
+                let urlHash = this.encryptHash(hashEncryption);
 
                 // send email notification
-                this.sendNotificationForAuthorize({
+                let deviceAuthNotification = Object.assign({}, {
                     "subject": `Authorize New Device/Location ${data.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
                     "email_for": "user-authorize",
                     "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
@@ -598,7 +598,8 @@ class User extends controller {
                     "ip": data.ip,
                     "hash": urlHash,
                     "user_id": userID
-                }, res)
+                });
+                this.sendNotificationForAuthorize(deviceAuthNotification, res)
                 let check = await mangHash.findOne({ email: data.email, type_for: 'new_authorize_device', is_active: false });
                 if (check) {
                     await mangHash.findOneAndUpdate({ email: data.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
@@ -618,7 +619,7 @@ class User extends controller {
                     city: data.city,
                     os: data.os,
                     verified: false,
-                })
+                });
                 if (!checkWhiteList) {
                     await this.addWhitelist(data, userID, false);
                 }
@@ -650,12 +651,13 @@ class User extends controller {
                 else {
                     const isChecked = await this.generatorOtpforEmail(userID, "login", res);
                     if (isChecked.status) {
-                        res.status(200).send(this.successFormat({
+                        let responseData = Object.assign({}, {
                             'message': "An OTP has been sent to your registered email address.",
                             "region": data.region,
                             "city": data.city,
                             "ip": data.ip
-                        }, userID))
+                        });
+                        res.status(200).send(this.successFormat(responseData, userID))
                     }
                     else {
                         return res.status(500).send(this.errorMsgFormat({
@@ -704,7 +706,6 @@ class User extends controller {
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                         return { status: true }
                     }
-
                 }
                 else {
                     await otpHistory.findOneAndUpdate({ user_id: id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
@@ -749,13 +750,12 @@ class User extends controller {
                 let inCount = ++count;
                 const rand = Math.random() * (999999 - 100000) + 100000
                 const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
-                let serviceData =
-                {
+                let serviceData = Object.assign({}, {
                     subject: `Beldex ${typeFor == "login" ? "login" : typeFor} verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')} ( ${config.get('settings.timeZone')} )`,
                     email_for: "otp-login",
                     otp: Math.floor(rand),
                     user_id: data.user_id
-                }
+                });
                 await apiServices.sendEmailNotification(serviceData, res);
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false, type_for: typeFor }, { count: inCount, otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
 
@@ -793,14 +793,14 @@ class User extends controller {
 
     // send email notification to the registered user
     sendNotification(data, res) {
-        let serviceData = {
+        let serviceData = Object.assign({}, {
             "subject": `Successful Login From IP ${data.ip} - ${data.time} ( ${config.get('settings.timeZone')} )`,
             "email_for": "user-login",
             "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
             "time": data.time,
             "ip": data.ip,
             "user_id": data.user_id
-        };
+        });
 
         return apiServices.sendEmailNotification(serviceData, res);
     }
@@ -813,7 +813,7 @@ class User extends controller {
             }
         }
         let attributes = req.body.data.attributes;
-        let data = {
+        let data = Object.assign({}, {
             user: userID,
             is_browser: attributes.is_browser,
             is_mobile: attributes.is_mobile,
@@ -828,19 +828,18 @@ class User extends controller {
             region: attributes.region,
             country: attributes.country,
             verified: verify
-        };
+        });
 
         return new deviceMangement(data).save();
     }
 
     async insertLoginHistory(data) {
-
-        let attributes = {
+        let attributes = Object.assign({}, {
             user: data.user,
             device: data.device,
             auth_type: data.auth_type,
             login_date_time: data.login_date_time
-        }
+        });
         return new loginHistory(attributes).save();
     }
 
@@ -1130,7 +1129,7 @@ class User extends controller {
                         await apiServices.publishNotification(update.user_id, { 'white_list_address': requestData.white_list_address, 'logout': false });
                     }
                     if (requestData.hasOwnProperty('anti_spoofing')) {
-                        await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'anti_spoofing_code':`${(requestData.anti_spoofing_code) ? requestData.anti_spoofing_code : null}`, 'logout': false });
+                        await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'anti_spoofing_code': `${(requestData.anti_spoofing_code) ? requestData.anti_spoofing_code : null}`, 'logout': false });
                     }
                     return res.status(202).send(this.successFormat({
                         'message': 'The changes you made were saved successfully.'
@@ -1296,12 +1295,12 @@ class User extends controller {
         try {
             let data = req.body.data.attributes;
             let userG2fLength = 0;;
-            let opts = {
+            let opts = Object.assign({}, {
                 beforeDrift: 2,
                 afterDrift: 2,
                 drift: 4,
                 step: 30
-            };
+            });
             let counter = Math.floor(Date.now() / 1000 / opts.step);
 
             let returnStatus, user = null;
@@ -1455,7 +1454,7 @@ class User extends controller {
                 await token.findOneAndUpdate({ user: user._id, refresh_token: req.headers.authorization, is_deleted: false, type_for: 'token' }, { is_deleted: true, modified_date: Date.now() });
 
                 let tokens = await this.storeToken(user, req.user.login_id, null, null);
-                let result = {
+                let result = Object.assign({}, {
                     "apiKey": user.api_key,
                     "token": tokens.accessToken,
                     "refreshToken": tokens.refreshToken,
@@ -1468,7 +1467,7 @@ class User extends controller {
                     "kyc_verified": user.kyc_verified,
                     "expiresIn": 300000,
                     "trade": user.trade,
-                };
+                });
                 return res.status(200).send(this.successFormat(result, tokens.id))
             } else {
                 return res.status(404).send(this.errorMsgFormat({
@@ -1593,11 +1592,11 @@ class User extends controller {
                             if (asset[i].asset_code != market[j]) {
                                 let checkMarket = await addMarket.findOne({ market_name: `${asset[i].asset_code}${market[j]}` });
                                 if (!checkMarket) {
-                                    let request = {
+                                    let request = Object.assign({}, {
                                         asset: asset[i]._id,
                                         market_name: `${asset[i].asset_code}${market[j]}`,
                                         market_pair: market[j]
-                                    }
+                                    });
                                     await new addMarket(request).save();
                                 }
                             }
@@ -1750,12 +1749,12 @@ class User extends controller {
             await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'APPROVE', 'logout': false });
             //await this.updateBalance(updateUser.user_id, updateUser._id, res, 'kyc verification');
             if (updateUser) {
-                let serviceData = {
+                let serviceData = Object.assign({}, {
                     "subject": `Your KYC verification was successful.`,
                     "email_for": "kyc-success",
                     "user_id": updateUser._id
 
-                };
+                });
                 await apiServices.sendEmailNotification(serviceData, res);
             }
         }
@@ -1927,7 +1926,7 @@ class User extends controller {
                         reward: Number(checkSetting.value.reward)
                     }).save()
                 }
-                await new rewardHistory({
+                let addRewardHistory = Object.assign({}, {
                     user: userId,
                     user_id: user,
                     type: type,
@@ -1935,16 +1934,17 @@ class User extends controller {
                     reward_asset: checkSetting.value.reward_asset,
                     is_referral: type == 'referral reward-kyc' ? true : false,
                     created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                }).save()
+                });
+                await new rewardHistory(addRewardHistory).save();
 
-                let serviceData = {
+                let serviceData = Object.assign({}, {
                     "subject": ` ${checkSetting.value.reward_asset} - Deposit Confirmation`,
                     "email_for": "deposit-notification",
                     "amt": checkSetting.value.reward,
                     "coin": checkSetting.value.reward_asset,
                     "user_id": userId
 
-                };
+                });
                 await apiServices.sendEmailNotification(serviceData, res);
                 return checkSetting.value.reward;
             } else {
@@ -2057,7 +2057,7 @@ class User extends controller {
                 }
                 await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
-                await apiServices.publishNotification(req.user.user_id, { 'apikey':null,'secretkey':null, 'logout': false });
+                await apiServices.publishNotification(req.user.user_id, { 'apikey': null, 'secretkey': null, 'logout': false });
                 return res.status(200).send(this.successFormat({ message: 'Passphrase key deleted.' }, 'user', 200));
 
             case 'create':
@@ -2069,14 +2069,15 @@ class User extends controller {
                 let uuidSplit = apiKey.split('-');
                 const apiSecret = await helpers.createSecret(`${uuidSplit[0]}-${uuidSplit[uuidSplit.length - 1]}`, requestData.passphrase);
                 await users.findOneAndUpdate({ _id: req.user.user }, { api_key: uuidSplit[0] });
-                await new apikey({
+                let addApiKey = Object.assign({}, {
                     user: req.user.user,
                     user_id: req.user.user_id,
                     apikey: apiKey,
                     secretkey: apiSecret,
                     type: requestData.type
-                }).save();
-                await apiServices.publishNotification(req.user.user_id, { 'apikey':apiKey,'secretkey':apiSecret, 'logout': false });
+                });
+                await new apikey(addApiKey).save();
+                await apiServices.publishNotification(req.user.user_id, { 'apikey': apiKey, 'secretkey': apiSecret, 'logout': false });
                 return res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your Passphrase key was created successfully.', }, 'user', 200));
 
             case 'view':
@@ -2101,7 +2102,10 @@ class User extends controller {
         let currencyList = await changeCurrency.find({});
         let currency = [], i = 0;
         while (i < currencyList.length) {
-            currency.push({ code: currencyList[i].code, currencyName: currencyList[i].currency_name });
+            let listAllCurrency = Object.assign({}, {
+                code: currencyList[i].code, currencyName: currencyList[i].currency_name
+            });
+            currency.push(listAllCurrency);
             i++;
         }
         return res.status(200).send(this.successFormat(currency, 'currency', 200));
@@ -2192,14 +2196,14 @@ class User extends controller {
             //         j++;
             //     }
             if (checkUser) {
-                let payloads = {
+                let payloads = Object.assign({}, {
                     "user_id": checkUser.user_id,
                     "asset": rewards.reward_asset,
                     "business": "deposit",
                     "business_id": new Date().valueOf(),
                     "change": rewards.reward + '',
                     "detial": {}
-                }
+                });
                 await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                 await rewardBalance.findOneAndUpdate({ user: req.user.user, reward: rewards.reward, reward_asset: data.asset }, { is_deleted: true })
                 await apiServices.publishNotification(checkUser.user_id, { 'move_reward_balance': true, 'asset': rewards.reward_asset, 'reward': rewards.reward + '', 'logout': false });
@@ -2278,12 +2282,12 @@ class User extends controller {
             let name = checkUserMe.person.full_name.replace(/ /g, '').toLowerCase()
             let checkKycDetails = await kycDetails.findOne({ country: checkUserMe.person.identification_document_country, date_of_birth: checkUserMe.date_of_birth, fractal_username: name, user: { $ne: req.user.user } })
             if (checkKycDetails) {
-                let serviceData = {
+                let serviceData = Object.assign({}, {
                     "subject": `Your KYC verification could not be processed.`,
                     "email_for": "kyc-verificationfail",
                     "user_id": user._id,
                     "to_email": user.email
-                };
+                });
                 await apiServices.sendEmailNotification(serviceData, res);
                 await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "REJECT" });
                 await apiServices.publishNotification(checkUser.user_id, { 'kyc_statistics': 'REJECT', logout: false });
@@ -2334,7 +2338,7 @@ class User extends controller {
                 }
                 if (amount > 0) {
                     let payloads = Object.assign({}, {
-                        "user_id": user[i].user.user_id,
+                        "user_id": user[i].user_id,
                         "asset": userBalanace[k].asset_code,
                         "business": "deposit",
                         "business_id": new Date().valueOf(),
