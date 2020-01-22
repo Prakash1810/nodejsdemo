@@ -477,7 +477,7 @@ class User extends controller {
             "google_auth": result.google_auth,
             "sms_auth": result.sms_auth,
             "anti_spoofing": result.anti_spoofing,
-            "anti_spoofing_code": result.anti_spoofing_code,
+            "anti_spoofing_code": result.anti_spoofing ? result.anti_spoofing_code : null,
             'white_list_address': result.white_list_address,
             "withdraw": result.withdraw,
             "taker_fee": Number(result.taker_fee) * 100,
@@ -1129,7 +1129,7 @@ class User extends controller {
                         await apiServices.publishNotification(update.user_id, { 'white_list_address': requestData.white_list_address, 'logout': false });
                     }
                     if (requestData.hasOwnProperty('anti_spoofing')) {
-                        await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'anti_spoofing_code': `${(requestData.anti_spoofing_code) ? requestData.anti_spoofing_code : null}`, 'logout': false });
+                        await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'anti_spoofing_code': requestData.anti_spoofing_code ? requestData.anti_spoofing_code : null, 'logout': false });
                     }
                     return res.status(202).send(this.successFormat({
                         'message': 'The changes you made were saved successfully.'
@@ -2057,7 +2057,7 @@ class User extends controller {
                 }
                 await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
-                await apiServices.publishNotification(req.user.user_id, { 'apikey': null, 'secretkey': null, 'logout': false });
+                await apiServices.publishNotification(req.user.user_id, { 'apiKey': null, 'logout': false });
                 return res.status(200).send(this.successFormat({ message: 'Passphrase key deleted.' }, 'user', 200));
 
             case 'create':
@@ -2088,7 +2088,7 @@ class User extends controller {
                 let creatUuidSplit = validateApiKey.apikey.split('-');
                 const apiSecretValidate = await helpers.createSecret(`${creatUuidSplit[0]}-${creatUuidSplit[creatUuidSplit.length - 1]}`, requestData.passphrase);
                 if (validateApiKey.secretkey === apiSecretValidate) {
-                    return res.status(200).send(this.successFormat({ 'apikey': validateApiKey.apikey, 'secretkey': apiSecretValidate, message: 'Your Passphrase key was successfully validated.' }, 'user', 200));
+                    return res.status(200).send(this.successFormat({ 'apiKey': validateApiKey.apikey, message: 'Your Passphrase key was successfully validated.' }, 'user', 200));
                 } else {
                     return res.status(400).send(this.errorMsgFormat({ message: 'The Passphrase key you entered is incorrect.' }, 'user', 400));
                 }
@@ -2345,7 +2345,7 @@ class User extends controller {
                         "change": amount.toString(),
                         "detial": {}
                     });
-                     apiServices.matchingEngineRequest('patch', 'balance/update', self.requestDataFormat(payloads), res, 'data');
+                    apiServices.matchingEngineRequest('patch', 'balance/update', self.requestDataFormat(payloads), res, 'data');
 
                 }
                 k++;
