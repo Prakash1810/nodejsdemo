@@ -512,7 +512,7 @@ class User extends controller {
             os: data.os,
             verified: verify
         });
-        return new deviceWhitelist(addDeviceList).save();
+        return await new deviceWhitelist(addDeviceList).save();
 
     }
 
