@@ -234,6 +234,15 @@ class User extends controller {
         return { accessToken: accessToken, refreshToken: refreshToken, infoToken: info }
     }
 
+    async userEncryption(req, res) {
+        let data = req.body.data.attributes;
+        if (data.value) {
+            let encryptionData = await helpers.encrypt(data.value);
+            return res.status(200).send(this.successFormat({ data: encryptionData }));
+        }
+        return res.status(400).send(this.errorFormat({ message: 'Your request cannot be processed.' }));
+    }
+
     async login(req, res) {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = req.body.data.attributes;
@@ -469,6 +478,8 @@ class User extends controller {
         take['info'] = req.body.data.id;
         let tokens = await this.storeToken(result, loginHistory._id, take, mobileId);
         await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+        await users.findOneAndUpdate({ _id: result._id }, { last_login_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+       
         let responseData = Object.assign({}, {
             "apiKey": result.api_key,
             "info": tokens.infoToken,
@@ -501,7 +512,7 @@ class User extends controller {
             os: data.os,
             verified: verify
         });
-        return await new deviceWhitelist(addDeviceList);
+        return new deviceWhitelist(addDeviceList).save();
 
     }
 
@@ -1497,8 +1508,9 @@ class User extends controller {
                 logout_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
             });
             if (logout) {
-
-                await token.updateMany({ user: user.user, is_deleted: false }, { is_deleted: true })
+                await users.findOneAndUpdate({ _id: user.user }, { last_logout_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+                await token.findOneAndUpdate({ user: user.user, access_token: tokens.authorization, is_deleted: false }, { is_deleted: true });
+                await token.findOneAndUpdate({ user: user.user, info_token: tokens.info, is_deleted: false }, { is_deleted: true });
                 return res.status(200).send(this.successFormat({
                     'message': 'You have successfully logged out.',
                 }))
@@ -2077,7 +2089,7 @@ class User extends controller {
                     type: requestData.type
                 });
                 await new apikey(addApiKey).save();
-                await apiServices.publishNotification(req.user.user_id, { 'apikey': apiKey, 'secretkey': apiSecret, 'logout': false });
+                await apiServices.publishNotification(req.user.user_id, { 'apiKey': apiKey, 'logout': false });
                 return res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your Passphrase key was created successfully.', }, 'user', 200));
 
             case 'view':
@@ -2098,7 +2110,7 @@ class User extends controller {
     async listCurrencies(req, res) {
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-        console.log('IP detect',ip)
+        console.log('IP detect', ip)
         let currencyList = await changeCurrency.find({});
         let currency = [], i = 0;
         while (i < currencyList.length) {
@@ -2362,6 +2374,30 @@ class User extends controller {
         setInterval(interval, 10);
 
         return res.send('Success').status(200);
+    }
+
+    async loginDateUpdate(req, res) {
+        let user = await users.find({});
+        let i = 0, last = [];
+        async function interval() {
+            let lastLogin = await loginHistory.findOne({ user: user[i]._id }).sort({ '_id': -1 });
+            if (lastLogin) {
+                let login_time = lastLogin.login_date_time;
+                let logout_time = lastLogin.logout_date_time ? lastLogin.logout_date_time : '';
+                await users.findOneAndUpdate({ _id: user[i]._id }, { last_login_time: login_time, last_logout_time: logout_time });
+
+            }
+            i++;
+            if (i == user.length - 1) {
+                console.log('in clear interval')
+                clearInterval(this);
+            }
+
+
+        }
+        setInterval(interval, 100);
+
+        return res.status(200).send("success..");
     }
 }
 

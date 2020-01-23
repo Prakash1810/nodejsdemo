@@ -21,6 +21,16 @@ router.get('/activation/:hash', (req, res) => {
     }
 });
 
+router.post('/encrypt', (req, res) => {
+    try {
+        user.userEncryption(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
 router.post('/login', async (req, res) => {
     try {
         let { error } = await loginValidation(req.body.data.attributes);
@@ -550,6 +560,18 @@ router.get('/script', async (req, res) => {
             'message': err.message
         }, 'users', 500));
     }
+});
+
+router.get('/login-date',(req,res)=>{
+    try {
+         user.loginDateUpdate(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+
 });
 
 
