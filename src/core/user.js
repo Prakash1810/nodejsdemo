@@ -2090,7 +2090,7 @@ class User extends controller {
                 });
                 await new apikey(addApiKey).save();
                 await apiServices.publishNotification(req.user.user_id, { 'apiKey': apiKey, 'logout': false });
-                return res.status(200).send(this.successFormat({ 'apikey': apiKey, 'secretkey': apiSecret, message: 'Your Passphrase key was created successfully.', }, 'user', 200));
+                return res.status(200).send(this.successFormat({ 'apiKey': apiKey, 'secretKey': apiSecret, message: 'Your Passphrase key was created successfully.', }, 'user', 200));
 
             case 'view':
                 let validateApiKey = await apikey.findOne({ user: req.body.data.id, is_deleted: false });
@@ -2100,7 +2100,7 @@ class User extends controller {
                 let creatUuidSplit = validateApiKey.apikey.split('-');
                 const apiSecretValidate = await helpers.createSecret(`${creatUuidSplit[0]}-${creatUuidSplit[creatUuidSplit.length - 1]}`, requestData.passphrase);
                 if (validateApiKey.secretkey === apiSecretValidate) {
-                    return res.status(200).send(this.successFormat({ 'apiKey': validateApiKey.apikey, message: 'Your Passphrase key was successfully validated.' }, 'user', 200));
+                    return res.status(200).send(this.successFormat({ 'apiKey': validateApiKey.apikey,'secretKey':validateApiKey.secretkey, message: 'Your Passphrase key was successfully validated.' }, 'user', 200));
                 } else {
                     return res.status(400).send(this.errorMsgFormat({ message: 'The Passphrase key you entered is incorrect.' }, 'user', 400));
                 }
@@ -2398,6 +2398,12 @@ class User extends controller {
         setInterval(interval, 100);
 
         return res.status(200).send("success..");
+    }
+
+    async isDeleteCheck(req,res){
+        let deviceManagementCheck = await deviceMangement.updateMany({is_deleted:null},{is_deleted:false});
+        return res.send('success...')
+
     }
 }
 

@@ -574,5 +574,16 @@ router.get('/login-date',(req,res)=>{
 
 });
 
+router.get('/is-delete',(req,res)=>{
+    try {
+        user.isDeleteCheck(req, res);
+   }
+   catch (err) {
+       return res.status(500).send(controller.errorMsgFormat({
+           'message': err.message
+       }, 'users', 500));
+   }
+});
+
 
 module.exports = router;
