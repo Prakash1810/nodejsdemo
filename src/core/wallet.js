@@ -101,13 +101,12 @@ class Wallet extends controller {
             });
 
             if (!getAddress) {
-                let data =
-                {
+                let data = Object.assign({}, {
                     coin: isChecked.asset_code,
                     user_id: req.user.user_id,
                     user: req.user.user,
                     asset: asset
-                }
+                });
                 await apiServices.axiosAPI(data);
                 return res.status(200).json(this.successFormat({
                     "message": `Address has been created for ${data.coin}.`
@@ -426,18 +425,31 @@ class Wallet extends controller {
         for (let result in matchResponse) {
             let btc = marketResponse.data[assetsJson[result]].btc;
             let usd = marketResponse.data[assetsJson[result]].usd;
-            formatedAssetBalnce[result] = {
-                'available': {
-                    'balance': Number(matchResponse[result].available),
-                    'btc': Number(matchResponse[result].available) * btc,
-                    'usd': Number(matchResponse[result].available) * usd
-                },
-                'freeze': {
-                    'balance': Number(matchResponse[result].freeze),
-                    'btc': Number(matchResponse[result].freeze) * btc,
-                    'usd': Number(matchResponse[result].freeze) * usd
-                },
-            }
+            Object.assign(formatedAssetBalnce, {[result]: Object.assign({
+                    'available': {
+                        'balance': Number(matchResponse[result].available),
+                        'btc': Number(matchResponse[result].available) * btc,
+                        'usd': Number(matchResponse[result].available) * usd
+                    },
+                    'freeze': {
+                        'balance': Number(matchResponse[result].freeze),
+                        'btc': Number(matchResponse[result].freeze) * btc,
+                        'usd': Number(matchResponse[result].freeze) * usd
+                    },
+                 })
+             })
+        //    let formatedAssetBalnce[result] = Object.assign({},{
+        //         'available': {
+        //             'balance': Number(matchResponse[result].available),
+        //             'btc': Number(matchResponse[result].available) * btc,
+        //             'usd': Number(matchResponse[result].available) * usd
+        //         },
+        //         'freeze': {
+        //             'balance': Number(matchResponse[result].freeze),
+        //             'btc': Number(matchResponse[result].freeze) * btc,
+        //             'usd': Number(matchResponse[result].freeze) * usd
+        //         },
+        //     })
         }
 
         return formatedAssetBalnce;
@@ -683,7 +695,7 @@ class Wallet extends controller {
                     }
                     if (withdraw.address !== undefined || withdraw.address != null) {
                         try {
-                            let data = {
+                            let data = Object.assign({}, {
                                 user: new mongoose.Types.ObjectId(req.user.user),
                                 user_id: req.user.user_id,
                                 asset: new mongoose.Types.ObjectId(requestData.asset),
@@ -695,7 +707,7 @@ class Wallet extends controller {
                                 status: "0",
                                 is_deleted: false,
                                 date: moment().format('YYYY-MM-DD HH:mm:ss')
-                            };
+                            });
                             let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount, res);
                             return res.status(200).json(this.successFormat({
                                 'message': 'Your request for withdrawal has been received. A confirmation email has been sent to your registered email address. Please confirm your request.'
@@ -781,7 +793,7 @@ class Wallet extends controller {
         let beldexId = await new beldexNotification(beldexData).save();
         let notifyId = beldexId._id;
         let transactionsId = transactionId._id;
-        let emailData = {
+        let emailData = Object.assign({}, {
             user: new mongoose.Types.ObjectId(transaction.user),
             user_id: data.user_id,
             verification_code: notifyId,
@@ -791,7 +803,7 @@ class Wallet extends controller {
             ip: data.ip,
             time: data.date
 
-        };
+        });
 
         beldexNotification.findOneAndUpdate({ '_id': notifyId }, {
             'notify_data': {
@@ -808,7 +820,7 @@ class Wallet extends controller {
     }
 
     sendWithdrawNotification(data, res) {
-        let serviceData = {
+        let serviceData = Object.assign({}, {
             "subject": `Confirm Your Withdraw Request From ${data.ip} ( ${data.time} )`,
             "email_for": "wallet-withdraw",
             "user_id": data.user,
@@ -817,7 +829,7 @@ class Wallet extends controller {
             'asset_code': data.asset_code,
             'address': data.address,
             'verification_code': data.verification_code
-        };
+        });
         return apiServices.sendEmailNotification(serviceData, res);
     }
 

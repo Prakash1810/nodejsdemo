@@ -9,7 +9,7 @@ class kyc{
     
     async init(userID,auth_token) {
 
-        const SessionObj = {
+        const SessionObj =Object.assign({}, {
             "client_session_token_ttl": 600,
             "resources_ttl": 604800,
             "user_tracking_id": userID,
@@ -57,7 +57,7 @@ class kyc{
               "success_url": SUCCESS_URL,
               "error_url": ERROR_URL
             }
-          };
+          });
         
         const request = new RequestBuilder()
             .withBaseUrl(YOTI_BASE_URL)

@@ -271,7 +271,7 @@ class Password extends Controller {
 
                 if (passwordCompare == false) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'The new password must be different from the old password.'
+                        'message': 'The current password you entered is incorrect.'
                     }));
                 } else {
                     req.body.data.attributes.email = result.email;

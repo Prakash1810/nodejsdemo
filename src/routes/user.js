@@ -21,9 +21,18 @@ router.get('/activation/:hash', (req, res) => {
     }
 });
 
+router.post('/encrypt', (req, res) => {
+    try {
+        user.userEncryption(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
 router.post('/login', async (req, res) => {
     try {
-
         let { error } = await loginValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
@@ -551,6 +560,29 @@ router.get('/script', async (req, res) => {
             'message': err.message
         }, 'users', 500));
     }
+});
+
+router.get('/login-date',(req,res)=>{
+    try {
+         user.loginDateUpdate(req, res);
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+
+});
+
+router.get('/is-delete',(req,res)=>{
+    try {
+        user.isDeleteCheck(req, res);
+   }
+   catch (err) {
+       return res.status(500).send(controller.errorMsgFormat({
+           'message': err.message
+       }, 'users', 500));
+   }
 });
 
 
