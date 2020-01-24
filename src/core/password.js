@@ -16,6 +16,7 @@ class Password extends Controller {
             'email': email,
             'datetime': timeNow,
             'user': user
+
         });
 
         return helpers.encrypt(data);
@@ -33,12 +34,12 @@ class Password extends Controller {
                     let encryptedHash = this.encryptHash(user.email, user._id);
 
                     // send email notification to the registered user
-                    let serviceData = Object.assign({}, {
+                    let serviceData = {
                         'hash': encryptedHash,
                         'subject': `Password Reset - ${moment().format('YYYY-MM-DD HH:mm:ss')} (${config.get('settings.timeZone')})`,
                         'email_for': 'forget-password',
                         'user_id': user._id
-                    });
+                    };
                     await apiServices.sendEmailNotification(serviceData, res);
                     await mangHash.update({ email: user.email, is_active: false, type_for: "reset" }, { $set: { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') } })
                     await new mangHash({ email: user.email, hash: encryptedHash, type_for: "reset", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
@@ -67,12 +68,12 @@ class Password extends Controller {
                 let count = ischecked.count;
                 await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "reset" }, { hash: encryptedHash, count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
             }
-            let serviceData = Object.assign({}, {
+            let serviceData = {
                 'hash': encryptedHash,
                 'subject': `Password Reset - ${moment().format('YYYY-MM-DD HH:mm:ss')} (${config.get('settings.timeZone')})`,
                 'email_for': 'forget-password',
                 'user_id': user._id
-            });
+            };
 
             await apiServices.sendEmailNotification(serviceData, res);
             return res.status(200).json(this.successFormat({
@@ -171,6 +172,7 @@ class Password extends Controller {
             }, checkPassword._id, 'users', 400));
 
         }
+
         bcrypt.genSalt(10, (err, salt) => {
             if (err) return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
 
@@ -185,15 +187,16 @@ class Password extends Controller {
                     } else {
 
                         if (type == 'change') {
-                            let serviceData = Object.assign({}, {
+                            let serviceData =
+                            {
                                 subject: `Beldex Change Password From ${data.email} - ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
                                 email_for: "confirm-password",
                                 email: data.email,
                                 user_id: data.user_id
-                            });
+                            }
                             await apiServices.sendEmailNotification(serviceData, res);
                             await Users.findOneAndUpdate({ _id: req.body.data.id }, { withdraw: false, password_reset_time: moment().format('YYYY-MM-DD HH:mm:ss') });
-                            await apiServices.publishNotification(user.user_id, { 'change_password': true, 'logout': true });
+                            await apiServices.publishNotification(user.user_id,{'change_password':true,'logout':true});
                             return res.status(202).send(this.successFormat({
                                 'message': 'Your password has been changed successfully.'
                             }, user._id, 'users', 202));
@@ -201,14 +204,15 @@ class Password extends Controller {
                         if (checkHash != null) {
                             await mangHash.findOneAndUpdate({ email: checkHash.email, hash: checkHash.hash, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                         }
-                        let serviceData = Object.assign({}, {
+                        let serviceData =
+                        {
                             subject: `Beldex Reset Password  ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
                             email_for: "reset-password",
                             email: user.email,
                             user_id: user._id
-                        });
+                        }
                         await apiServices.sendEmailNotification(serviceData, res);
-                        await apiServices.publishNotification(user.user_id, { 'reset_password': true, 'logout': true });
+                        await apiServices.publishNotification(user.user_id,{'reset_password':true,'logout':true});
                         return res.status(202).send(this.successFormat({
                             'message': 'Your password has been reset successfully.'
                         }, user._id, 'users', 202));
@@ -267,7 +271,7 @@ class Password extends Controller {
 
                 if (passwordCompare == false) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'The new password must be different from the old password.'
+                        'message': 'The current password you entered is incorrect.'
                     }));
                 } else {
                     req.body.data.attributes.email = result.email;
