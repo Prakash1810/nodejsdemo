@@ -2283,7 +2283,7 @@ class User extends controller {
                 message: 'Unauthorized'
             }));
         }
-        if (user.email != checkUserMe.emails[0].address) {
+        if (user.email.toLowerCase() != checkUserMe.emails[0].address.toLowerCase()) {
             await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "REJECT" });
             await apiServices.publishNotification(checkUser.user_id, { 'kyc_statistics': 'REJECT', logout: false });
             return res.status(400).send(this.errorMsgFormat({
