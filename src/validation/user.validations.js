@@ -13,7 +13,7 @@ exports.loginValidation = (req) => {
         browser: Joi.string().allow('').optional(),
         browser_version: Joi.string().allow('').optional(),
         city: Joi.string().allow('').optional(),
-        region: Joi.string().allow('').optional(),
+        region: Joi.string().allow('').optional()
     }));
 
     return schema.validate(req, { abortEarly: false })
@@ -50,7 +50,7 @@ exports.deviceValidation = (req) => {
         browser: Joi.string().allow('').optional(),
         browser_version: Joi.string().allow('').optional(),
         city: Joi.string().allow('').optional(),
-        region: Joi.string().allow('').optional(),
+        region: Joi.string().allow('').optional()
     }));
 
     return schema.validate(req, { abortEarly: false });
@@ -60,7 +60,7 @@ exports.deviceValidation = (req) => {
 exports.resendOtpValidation = (req) => {
     let schema = Joi.object().keys(Object.assign({
         user_id: Joi.string().required(),
-        type: Joi.string().required(),
+        type: Joi.string().required()
     }));
 
     return schema.validate(req, { abortEarly: false });
@@ -180,7 +180,7 @@ exports.kycDetailsValidation = (req) => {
         date_of_birth: Joi.string().required(),
         address: Joi.string().required().max(100),
         g2f_code: Joi.string(),
-        otp: Joi.string(),
+        otp: Joi.string()
     }));
 
     return schema.validate(req, { abortEarly: false });
@@ -199,7 +199,8 @@ exports.apiKeyValidation = (req) => {
 exports.moveBalanceValidation = (req) => {
     let schema = Joi.object().keys(Object.assign({
         amount: Joi.number().required(),
-        asset: Joi.string().required()
+        asset: Joi.string().required(),
+        otp: Joi.string().required()
     }));
     
     return schema.validate(req, { abortEarly: false });
