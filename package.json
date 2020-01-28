@@ -28,6 +28,8 @@
   "dependencies": {
     "2fa": "^0.1.2",
     "@hapi/joi": "^16.1.8",
+    "@slack/web-api": "^5.7.0",
+    "@slack/webhook": "^5.0.2",
     "app-root-path": "^2.2.1",
     "authenticator": "^1.1.5",
     "axios": "^0.18.1",

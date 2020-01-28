@@ -12,10 +12,10 @@ const transactions = require('../db/transactions');
 const beldexNotification = require('../db/beldex-notifications');
 const user = require('../core/user');
 const mongoose = require('mongoose');
-const math = require('mathjs');
 const configs = require('../db/config');
 const rewards = require('../db/reward-history');
 const helpers = require('../helpers/helper.functions');
+const { IncomingWebhook } = require('@slack/webhook');
 // const Fawn = require("fawn");
 
 // Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
@@ -425,7 +425,8 @@ class Wallet extends controller {
         for (let result in matchResponse) {
             let btc = marketResponse.data[assetsJson[result]].btc;
             let usd = marketResponse.data[assetsJson[result]].usd;
-            Object.assign(formatedAssetBalnce, {[result]: Object.assign({
+            Object.assign(formatedAssetBalnce, {
+                [result]: Object.assign({
                     'available': {
                         'balance': Number(matchResponse[result].available),
                         'btc': Number(matchResponse[result].available) * btc,
@@ -436,20 +437,20 @@ class Wallet extends controller {
                         'btc': Number(matchResponse[result].freeze) * btc,
                         'usd': Number(matchResponse[result].freeze) * usd
                     },
-                 })
-             })
-        //    let formatedAssetBalnce[result] = Object.assign({},{
-        //         'available': {
-        //             'balance': Number(matchResponse[result].available),
-        //             'btc': Number(matchResponse[result].available) * btc,
-        //             'usd': Number(matchResponse[result].available) * usd
-        //         },
-        //         'freeze': {
-        //             'balance': Number(matchResponse[result].freeze),
-        //             'btc': Number(matchResponse[result].freeze) * btc,
-        //             'usd': Number(matchResponse[result].freeze) * usd
-        //         },
-        //     })
+                })
+            })
+            //    let formatedAssetBalnce[result] = Object.assign({},{
+            //         'available': {
+            //             'balance': Number(matchResponse[result].available),
+            //             'btc': Number(matchResponse[result].available) * btc,
+            //             'usd': Number(matchResponse[result].available) * usd
+            //         },
+            //         'freeze': {
+            //             'balance': Number(matchResponse[result].freeze),
+            //             'btc': Number(matchResponse[result].freeze) * btc,
+            //             'usd': Number(matchResponse[result].freeze) * usd
+            //         },
+            //     })
         }
 
         return formatedAssetBalnce;
@@ -879,7 +880,7 @@ class Wallet extends controller {
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
-                        await transactions.findOneAndUpdate({
+                        let transactionDetials = await transactions.findOneAndUpdate({
                             _id: notify.notify_data.transactions,
                             user: code.user,
                             is_deleted: false
@@ -888,7 +889,11 @@ class Wallet extends controller {
                                 status: "1",
                                 updated_date: moment().format('YYYY-MM-DD HH:mm:ss')
                             }
-                        });
+                        }).populate({
+                            path: 'asset',
+                            select: 'asset_name asset_code'
+                        })
+                        await this.sendMessage(transactionDetials)
                         return res.status(200).json(this.successFormat({
                             "message": "Your withdrawal request has been confirmed."
                         }, 'withdraw'));
@@ -990,6 +995,19 @@ class Wallet extends controller {
             return { status: false, err: 'Asset could not be found.' }
         }
 
+    }
+
+    async sendMessage(transaction) {
+        let checkUser = await users.findOne({ _id: transaction.user })
+        const url = process.env.SLACK_WEBHOOK_URL;
+        const webhook = new IncomingWebhook(url);
+        // Send the notification
+        (async () => {
+            await webhook.send({
+                text: `*New Withdrawal Request*\n\n Date: \`${new Date()}\`\nemail: \`${checkUser.email}\`\nAsset: \`${transaction.asset.asset_code}\`\nAmount: \`${transaction.final_amount}\`\nAmount to Sent: \`${transaction.amount}\`\nFee: \`${transaction.fee}\``
+            });
+        })();
+        return
     }
 
 
