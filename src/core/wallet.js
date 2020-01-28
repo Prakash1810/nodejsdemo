@@ -790,7 +790,6 @@ class Wallet extends controller {
         let asset = await assets.findById(data.asset);
         let checkDiscount = await discount.findOne({ user: data.user, asset_code: asset.asset_code });
         let fee = checkDiscount ? asset.withdrawal_fee - (asset.withdrawal_fee * (checkDiscount.discount / 100)) : asset.withdrawal_fee
-        console.log('Fee:',fee);
         let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted']);
         let bal = amount - transaction.amount;
         if ((bal - fee) >= 0) {
