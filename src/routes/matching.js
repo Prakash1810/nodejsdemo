@@ -72,7 +72,6 @@ router.post('/balance/query', info, auth, async (req, res) => {
 })
 
 
-
 //ORDER
 
 router.post('/order/put-market', info, auth, async (req, res) => {
@@ -163,9 +162,11 @@ router.post('/order/put-limit', info, auth, async (req, res) => {
             } else {
                 await matching.matchingEngineRequest('post', 'order/put-limit', req.body, res);
             }
-        }else{
-            return res.status(400).send({message:'The order you have placed is lesser than the minimum price'
-        },'order-matching',400)};
+        } else {
+            return res.status(400).send({
+                message: 'The order you have placed is lesser than the minimum price'
+            }, 'order-matching', 400)
+        };
 
 
     } catch (err) {

@@ -2331,7 +2331,6 @@ class User extends controller {
 
 
     async script(req, res) {
-
         let i = 0;
         let user = await balance.find().populate({
             path: 'user',
@@ -2400,11 +2399,7 @@ class User extends controller {
         return res.status(200).send("success..");
     }
 
-    async isDeleteCheck(req,res){
-        let deviceManagementCheck = await deviceMangement.updateMany({is_deleted:null},{is_deleted:false});
-        return res.send('success...')
-
-    }
+    
 }
 
 module.exports = new User;
