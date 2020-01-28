@@ -15,12 +15,31 @@ const mongoose = require('mongoose');
 const configs = require('../db/config');
 const rewards = require('../db/reward-history');
 const helpers = require('../helpers/helper.functions');
+const discount = require("../db/withdraw-discount");
 const { IncomingWebhook } = require('@slack/webhook');
 // const Fawn = require("fawn");
 
 // Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
 
 class Wallet extends controller {
+
+
+    async discountCalculation(user, data) {
+        let checkDiscount = await discount.find({ user: user, is_active: true });
+        let i = 0;
+        while (i < checkDiscount.length) {
+            let j = 0;
+            while (j < data.length) {
+                if (data[j].asset_code == checkDiscount[i].asset_code) {
+                    data[j].withdrawal_fee = data[j].withdrawal_fee - (data[j].withdrawal_fee * (checkDiscount[i].discount / 100))
+                }
+                j++
+            }
+            i++;
+        }
+
+        return data;
+    }
 
     async getAssets(req, res) {
         let pageNo = parseInt(req.query.page_no)
@@ -57,7 +76,6 @@ class Wallet extends controller {
                             "totalCount": 0
                         }, null, 'assets', 200));
                     } else {
-
                         if (req.query.get_all == 'false' || req.query.get_all == null || req.query.get_all == undefined) {
                             for (var i = 0; i < data.length; i++) {
                                 let isCheckDelist = await this.assetDelist(data[i]._id);
@@ -69,7 +87,7 @@ class Wallet extends controller {
 
                         var totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
-                            "data": data,
+                            "data": await this.discountCalculation(req.user.user, data),
                             "pages": totalPages,
                             "totalCount": totalCount
                         }, null, 'assets', 200));
@@ -770,7 +788,9 @@ class Wallet extends controller {
 
         let amount = Number(responseAmount);
         let asset = await assets.findById(data.asset);
-        let fee = asset.withdrawal_fee;
+        let checkDiscount = await discount.findOne({ user: data.user, asset_code: asset.asset_code });
+        let fee = checkDiscount ? asset.withdrawal_fee - (asset.withdrawal_fee * (checkDiscount.discount / 100)) : asset.withdrawal_fee
+        console.log('Fee:',fee);
         let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted']);
         let bal = amount - transaction.amount;
         if ((bal - fee) >= 0) {
