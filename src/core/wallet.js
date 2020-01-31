@@ -17,6 +17,7 @@ const rewards = require('../db/reward-history');
 const helpers = require('../helpers/helper.functions');
 const discount = require("../db/withdraw-discount");
 const { IncomingWebhook } = require('@slack/webhook');
+const assetDetails = require('../db/asset-details');
 // const Fawn = require("fawn");
 
 // Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
@@ -1027,6 +1028,21 @@ class Wallet extends controller {
             });
         })();
         return
+    }
+
+    async getAssetDetails(req, res) {
+        try {
+            let asset = req.params.asset
+            let data = await assetDetails.findOne({ asset });
+            return res.status(200).json(this.successFormat({
+                "data": data
+            }, 'withdraw'));
+        } catch (error) {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': error.message
+            }, 'withdraw', 400));
+        }
+
     }
 
 
