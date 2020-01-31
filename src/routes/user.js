@@ -10,6 +10,7 @@ const router = express.Router();
 const info = require('../middlewares/info');
 const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValidation, resetPasswordValidation, changePasswordValidation, settingsValidation, g2fSettingValidation, favouriteValidation, kycDetailsValidation, apiKeyValidation , moveBalanceValidation} = require('../validation/user.validations');
 const controller = new Controller;
+const user_api_auth = require('../middlewares/user-api-auth')
 
 router.get('/activation/:hash', (req, res) => {
     try {
@@ -585,5 +586,16 @@ router.get('/is-delete',(req,res)=>{
    }
 });
 
+
+router.post('/get-token', user_api_auth,  (req, res) => {
+    try {
+        user.getToken(req, res);
+
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
 
 module.exports = router;

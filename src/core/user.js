@@ -40,6 +40,7 @@ const authenticators = require('authenticator')
 const changeCurrency = require('../db/currency-list');
 const balance = require('../db/balance');
 const { deviceValidation } = require('../validation/user.validations');
+const managementToken = require('../db/management-token');
 
 
 class User extends controller {
@@ -2397,6 +2398,40 @@ class User extends controller {
         setInterval(interval, 100);
 
         return res.status(200).send("success..");
+    }
+
+    async getToken(req, res) {
+        try {
+            
+            let api_key = req.body[0]
+
+            let user = await apikey.findOne({'apikey' : api_key}).select('user');
+
+            if(user) {
+                let token_data = await managementToken.findOne({'user' : user.user}).sort({'_id':-1});
+
+                let token;
+
+                if(!_.isEmpty(token_data.access_token)) {
+                    token = token_data.access_token
+                }
+
+                res.status(200).send({
+                    status : true,
+                     token
+                })
+
+            } else {
+                res.status(400).send(this.errorMsgFormat({
+                    message: 'api key not found..!'
+                }));
+            }
+
+
+
+        } catch (err) {
+            
+        }
     }
 
     
