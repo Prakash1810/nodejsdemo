@@ -20,8 +20,9 @@ let validateSignature = async req => {
     }
     const apiKeySplit = apiKey.split('-');
     const apiSecret = utils.createSecret(`${apiKeySplit[0]}-${apiKeySplit[apiKeySplit.length - 1]}`, passphrase);
-
-    const signatureString = `${timestamp}/users/ws/verify`;
+    const METHOD = 'GET';
+    const URL = '/users/ws/verify';
+    const signatureString = `${timestamp}${METHOD}${URL}`;
     const signature = utils.createSignature(signatureString, apiSecret);
     if (reqSignature == signature) {
         return { status: true, result: checkValidateAPIKey.result }
