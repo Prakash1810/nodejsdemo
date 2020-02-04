@@ -69,7 +69,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id', query, async (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance', query, async (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -88,7 +88,7 @@ class Wallet extends controller {
 
                         var totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
-                            "data": await this.discountCalculation(req.user.user, data),
+                            "data": await this.discountCalculation('5dfb16a0a801e7005b6957ae', data),
                             "pages": totalPages,
                             "totalCount": totalCount
                         }, null, 'assets', 200));
