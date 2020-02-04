@@ -38,7 +38,9 @@ const assetsSchema = new mongoose.Schema({
     reason_for_deposit: { type: String, default: null },
     reason_for_withdraw: { type: String, default: null },
     markets: mongoose.Schema.Types.Mixed,
-    payment_id: { type: Boolean, default: false }
+    payment_id: { type: Boolean, default: false },
+    type : { type : String, default : null },
+    maitenance : { type : Boolean, default : false }
 
 });
 
