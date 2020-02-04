@@ -88,7 +88,7 @@ class Wallet extends controller {
 
                         var totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
-                            "data": await this.discountCalculation('5dfb16a0a801e7005b6957ae', data),
+                            "data": await this.discountCalculation(req.user.user, data),
                             "pages": totalPages,
                             "totalCount": totalCount
                         }, null, 'assets', 200));
