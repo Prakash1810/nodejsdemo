@@ -646,7 +646,7 @@ class Wallet extends controller {
 
             if (!checkUser.withdraw) {
                 return res.status(400).send(this.errorMsgFormat({
-                    'message': 'Your password was recently changed. You cannot make a withdrawal for 24 hours.'
+                    'message': 'You cannot make a withdrawal. Either your password was recently changed within 24 hours or withdrawal has been disabled. Please contact support.'
                 }, 'user', 400));
             }
 
