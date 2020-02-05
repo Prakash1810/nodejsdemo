@@ -152,7 +152,7 @@ router.delete('/withdraw/:id', info, auth, (req, res) => {
     }
 });
 
-router.get('/assets-details/:asset',info, auth, (req, res) => {
+router.get('/assets-details/:asset', (req, res) => {
     try {
         
        return wallet.getAssetDetails(req, res);
