@@ -6,7 +6,7 @@ const router = express.Router();
 const matchRoutes = require('./matching');
 // GET v1/docs :- swagger
 router.use(express.static('dist'));
-router.use('/api//user/registration', registrationRoutes);
+router.use('/api/user/registration', registrationRoutes);
 router.use('/user', userRoutes);
 router.use('/wallet', walletRoutes);
 router.use('/matching', matchRoutes);
