@@ -8,7 +8,7 @@ const registration = require('../core/registration');
 const slide = require('../core/geetest-captcha');
 const router = express.Router();
 const info = require('../middlewares/info');
-const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValidation, resetPasswordValidation, changePasswordValidation, settingsValidation, g2fSettingValidation, favouriteValidation, kycDetailsValidation, apiKeyValidation , moveBalanceValidation} = require('../validation/user.validations');
+const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValidation, resetPasswordValidation, changePasswordValidation, settingsValidation, g2fSettingValidation, favouriteValidation, kycDetailsValidation, apiKeyValidation, moveBalanceValidation } = require('../validation/user.validations');
 const controller = new Controller;
 const user_api_auth = require('../middlewares/user-api-auth')
 
@@ -302,7 +302,7 @@ router.delete('/whitelist', info, auth, async (req, res) => {
     try {
         let data = req.body.data.attributes;
         data.user = req.user.user;
-        data.user_id =req.user.user_id
+        data.user_id = req.user.user_id
         await user.deleteWhiteList(data, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -563,9 +563,9 @@ router.get('/script', async (req, res) => {
     }
 });
 
-router.get('/login-date',(req,res)=>{
+router.get('/login-date', (req, res) => {
     try {
-         user.loginDateUpdate(req, res);
+        user.loginDateUpdate(req, res);
     }
     catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
@@ -575,21 +575,32 @@ router.get('/login-date',(req,res)=>{
 
 });
 
-router.get('/is-delete',(req,res)=>{
+router.get('/is-delete', (req, res) => {
     try {
         user.isDeleteCheck(req, res);
-   }
-   catch (err) {
-       return res.status(500).send(controller.errorMsgFormat({
-           'message': err.message
-       }, 'users', 500));
-   }
+    }
+    catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
 });
 
 
-router.post('/get-token', user_api_auth,  (req, res) => {
+router.post('/get-token', user_api_auth, (req, res) => {
     try {
         user.getToken(req, res);
+
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
+router.post('/withdraw-discount', auth, info, (req, res) => {
+    try {
+        user.withdrawDiscount(req, res);
 
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
