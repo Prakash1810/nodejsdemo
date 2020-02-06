@@ -363,24 +363,20 @@ class Api extends Controller {
     }
 
     async matchingEngineRequest(method, path, input, res, type = 'json', liquidity) {
-        let source = " ";
-        let data = null;
-        if (path == 'order/cancel') {
-            data = input.data.attributes;
-            if (data.source) {
-                source = data.source
-                delete input.data.attributes.source
-            }
-
-        }
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, input)
         const result = axiosResponse.data;
         if (result.status) {
             let value = result.result.result;
             if (type === 'json') {
-
                 if (path == 'order/cancel') {
+                    let source = " ";
+                    let data = null;
+                    data = input.data.attributes;
+                    if (data.source) {
+                        source = data.source
+                        delete input.data.attributes.source
+                    }
                     await new orderCancel(value).save();
                     if (liquidity.q && source.startsWith("OX")) {
                         let body
@@ -436,8 +432,8 @@ class Api extends Controller {
             if (err)
                 console.log("Error:", err);
         });
-    
-    
+
+
     }
 
     async DisposableEmailAPI(data) {
@@ -475,6 +471,75 @@ class Api extends Controller {
         }
         catch (err) {
             return false
+        }
+    }
+
+    async order(req, res, type) {
+        req.body.data.attributes.user_id = Number(req.user.user_id);
+        let data = req.body.data.attributes;
+        let check = await market.findOne({ market_name: data.market });
+        let checkUser = await users.findOne({ _id: req.user.user });
+        if (!checkUser.trade) {
+            return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
+        }
+        if (check.active == false || check.disable_trade == true) {
+            return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
+        }
+        if (type == 'limit') {
+            if (check.minimum_price >= data.pride) {
+                return res.status(400).send({
+                    message: 'The order you have placed is lesser than the minimum price'
+                }, 'order-matching', 400)
+            }
+            req.body.data.attributes.takerFeeRate = checkUser.taker_fee
+            req.body.data.attributes.makerFeeRate = checkUser.maker_fee
+            await this.okexInput(req, res, data, 'limit', check)
+        } else {
+            req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
+            await this.okexInput(req, res, data, 'market', check)
+        }
+
+    }
+
+    async okexInput(req, res, data, type, check) {
+        if (check.q) {
+            let side = data.side == 2 ? "buy" : "sell";
+            let pair = data.market;
+            let input;
+            let body;
+            if (pair.substr(pair.length - 4) == 'USDT') {
+                body = pair.slice(0, pair.length - 4) + '-' + pair.slice(pair.length - 4);
+            }
+            else {
+                body = pair.slice(0, pair.length - 3) + '-' + pair.slice(pair.length - 3);
+            }
+            let fee = req.body.data.attributes.takerFeeRate.replace('.', 'D')
+            if (type == 'limit') {
+                input = Object.assign({}, {
+                    'type': 'limit',
+                    'side': side,
+                    'instrument_id': body,
+                    'size': Number(data.amount),
+                    'client_oid': `BDXU${data.user_id}F${fee}`,
+                    'price': data.pride,
+                    'order_type': '0'
+                })
+            } else {
+                input = Object.assign({}, {
+                    'type': 'market',
+                    'side': side,
+                    'instrument_id': body,
+                    'size': data.side == 1 ? Number(data.amount) : 0,
+                    'client_oid': `BDXU${data.user_id}F${fee}`,
+                    "notional": data.side == 2 ? data.amount : '',
+                    'order_type': '0'
+                })
+            }
+            console.log(input)
+            await this.OkexHttp(input, req.body, res);
+        } else {
+            console.log(new Date())
+            await this.matchingEngineRequest('post', `order/${type == 'limit' ? 'put-limit' : 'put-market'}`, req.body, res);
         }
     }
 

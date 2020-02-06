@@ -41,6 +41,7 @@ const changeCurrency = require('../db/currency-list');
 const balance = require('../db/balance');
 const { deviceValidation } = require('../validation/user.validations');
 const managementToken = require('../db/management-token');
+const withdrawDiscount = require('../db/withdraw-discount');
 
 
 class User extends controller {
@@ -248,7 +249,7 @@ class User extends controller {
         let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
         let data = req.body.data.attributes;
         let isChecked = await accountActive.findOne({ email: data.email, type_for: 'login' });
-        data.password = await helpers.decrypt(data.password, res);
+        //data.password = await helpers.decrypt(data.password, res);
         if (data.password === '') {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Your request was not encrypted.'
@@ -480,7 +481,7 @@ class User extends controller {
         let tokens = await this.storeToken(result, loginHistory._id, take, mobileId);
         await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
         await users.findOneAndUpdate({ _id: result._id }, { last_login_time: moment().format('YYYY-MM-DD HH:mm:ss') });
-       
+
         let responseData = Object.assign({}, {
             "apiKey": result.api_key,
             "info": tokens.infoToken,
@@ -2101,7 +2102,7 @@ class User extends controller {
                 let creatUuidSplit = validateApiKey.apikey.split('-');
                 const apiSecretValidate = await helpers.createSecret(`${creatUuidSplit[0]}-${creatUuidSplit[creatUuidSplit.length - 1]}`, requestData.passphrase);
                 if (validateApiKey.secretkey === apiSecretValidate) {
-                    return res.status(200).send(this.successFormat({ 'apiKey': validateApiKey.apikey,'secretKey':validateApiKey.secretkey, message: 'Your Passphrase key was successfully validated.' }, 'user', 200));
+                    return res.status(200).send(this.successFormat({ 'apiKey': validateApiKey.apikey, 'secretKey': validateApiKey.secretkey, message: 'Your Passphrase key was successfully validated.' }, 'user', 200));
                 } else {
                     return res.status(400).send(this.errorMsgFormat({ message: 'The Passphrase key you entered is incorrect.' }, 'user', 400));
                 }
@@ -2402,23 +2403,23 @@ class User extends controller {
 
     async getToken(req, res) {
         try {
-            
+
             let api_key = req.body[0]
 
-            let user = await apikey.findOne({'apikey' : api_key}).select('user');
+            let user = await apikey.findOne({ 'apikey': api_key }).select('user');
 
-            if(user) {
-                let token_data = await managementToken.findOne({'user' : user.user}).sort({'_id':-1});
+            if (user) {
+                let token_data = await managementToken.findOne({ 'user': user.user }).sort({ '_id': -1 });
 
                 let token;
 
-                if(!_.isEmpty(token_data.access_token)) {
+                if (!_.isEmpty(token_data.access_token)) {
                     token = token_data.access_token
                 }
 
                 res.status(200).send({
-                    status : true,
-                     token
+                    status: true,
+                    token
                 })
 
             } else {
@@ -2430,11 +2431,19 @@ class User extends controller {
 
 
         } catch (err) {
-            
+
         }
     }
 
-    
+    async withdrawDiscount(req, res) {
+        let checkUser = await withdrawDiscount.find({ user: req.user.user });
+        if (checkUser.length > 0){
+            return res.status(200).send(this.successFormat({data:checkUser}));
+        }
+        return res.status(200).send(this.successFormat({data:[]}));
+    }
+
+
 }
 
 module.exports = new User;
