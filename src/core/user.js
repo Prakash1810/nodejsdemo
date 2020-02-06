@@ -2437,10 +2437,10 @@ class User extends controller {
 
     async withdrawDiscount(req, res) {
         let checkUser = await withdrawDiscount.find({ user: req.user.user });
-        if (checkUser.length > 0){
-            return res.status(200).send(this.successFormat({data:checkUser}));
+        if (checkUser.length > 0) {
+            return res.status(200).send(this.successFormat({ data: checkUser }));
         }
-        return res.status(200).send(this.successFormat({data:[]}));
+        return res.status(200).send(this.successFormat({ data: [] }));
     }
 
 
