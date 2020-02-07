@@ -1035,7 +1035,7 @@ class Wallet extends controller {
             let asset = req.params.asset
             let data = await assetDetails.findOne({ asset }).populate({
                 path: 'asset',
-                select: 'asset_name asset_code logo_url address_url url'
+                select: 'asset_name asset_code logo_url address_url url' 
             })
             return res.status(200).json(this.successFormat({
                 "data": data

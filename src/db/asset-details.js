@@ -13,7 +13,7 @@ const assetDetailschema = new mongoose.Schema({
     proof_type: { type: String },
     algorithm: { type: String },
     categories: { type: String },
-    social_contacts: { type: mongoose.Schema.Types.Mixed },
+    social_contacts: { type: mongoose.Schema.Types.Mixed }, 
     sourcecode: { type: String },
     announcement: { type: String },
     whitepaper : { type : String },
