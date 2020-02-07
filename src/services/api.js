@@ -363,6 +363,18 @@ class Api extends Controller {
     }
 
     async matchingEngineRequest(method, path, input, res, type = 'json', liquidity) {
+        if (path === 'order/cancel') {
+            let source = " ";
+            let data = null;
+            if (path == 'order/cancel') {
+                data = input.data.attributes;
+                if (data.source) {
+                    source = data.source
+                    delete input.data.attributes.source
+                }
+
+            }
+        }
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, input)
         const result = axiosResponse.data;
@@ -370,13 +382,6 @@ class Api extends Controller {
             let value = result.result.result;
             if (type === 'json') {
                 if (path == 'order/cancel') {
-                    let source = " ";
-                    let data = null;
-                    data = input.data.attributes;
-                    if (data.source) {
-                        source = data.source
-                        delete input.data.attributes.source
-                    }
                     await new orderCancel(value).save();
                     if (liquidity.q && source.startsWith("OX")) {
                         let body
