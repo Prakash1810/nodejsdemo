@@ -1033,7 +1033,10 @@ class Wallet extends controller {
     async getAssetDetails(req, res) {
         try {
             let asset = req.params.asset
-            let data = await assetDetails.findOne({ asset });
+            let data = await assetDetails.findOne({ asset }).populate({
+                path: 'asset',
+                select: 'asset_name asset_code logo_url address_url'
+            })
             return res.status(200).json(this.successFormat({
                 "data": data
             }, 'withdraw'));

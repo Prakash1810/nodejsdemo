@@ -2,10 +2,7 @@ const mongoose = require('mongoose');
 	
 const assetDetailschema = new mongoose.Schema({
     asset: { type: mongoose.Schema.Types.ObjectId, ref: 'assets', index: true },
-    asset_name : { type : String },
-    asset_code : { type : String },
     subtype : { type : String },
-    logo_url: { type: String },
     asset_type: { type: String },
     total_supply: { type: String },
     asset_id : { type : Number },
@@ -18,7 +15,6 @@ const assetDetailschema = new mongoose.Schema({
     categories: { type: String },
     social_contacts: { type: mongoose.Schema.Types.Mixed },
     website: { type: String },
-    explorer: { type: String },
     sourcecode: { type: String },
     announcement: { type: String },
     whitepaper : { type : String },
