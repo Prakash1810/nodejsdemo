@@ -14,7 +14,6 @@ const assetDetailschema = new mongoose.Schema({
     algorithm: { type: String },
     categories: { type: String },
     social_contacts: { type: mongoose.Schema.Types.Mixed },
-    website: { type: String },
     sourcecode: { type: String },
     announcement: { type: String },
     whitepaper : { type : String },
