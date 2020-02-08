@@ -5,7 +5,7 @@ const assetDetailschema = new mongoose.Schema({
     subtype : { type : String },
     asset_type: { type: String },
     total_supply: { type: String },
-    asset_id : { type : Number },
+    asset_id : { type : String },
     circulation: { type: String },
     market_cap: { type: String },
     token_type : { type : String },
