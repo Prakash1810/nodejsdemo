@@ -363,8 +363,8 @@ class Api extends Controller {
     }
 
     async matchingEngineRequest(method, path, input, res, type = 'json', liquidity) {
+        let source = " ";
         if (path === 'order/cancel') {
-            let source = " ";
             let data = null;
             if (path == 'order/cancel') {
                 data = input.data.attributes;
