@@ -4,7 +4,7 @@ const userRoutes = require('./user');
 const walletRoutes = require('./wallet');
 const router = express.Router();
 const matchRoutes = require('./matching');
-// GET v1/docs :- swagger
+
 router.use(express.static('dist'));
 router.use('/user/registration', registrationRoutes);
 router.use('/user', userRoutes);
