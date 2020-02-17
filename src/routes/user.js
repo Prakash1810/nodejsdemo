@@ -609,4 +609,24 @@ router.post('/withdraw-discount', auth, info, (req, res) => {
     }
 });
 
+router.patch('/disable-token', (req, res) => {
+    try {
+        user.disableToken(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
+router.get('/user-info',auth, (req, res) => {
+    try {
+        user.getUserInfo(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+})
+
 module.exports = router;

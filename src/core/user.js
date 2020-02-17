@@ -2443,6 +2443,48 @@ class User extends controller {
         return res.status(200).send(this.successFormat({ data: [] }));
     }
 
+    async disableToken(req, res) {
+        try {
+            let user_id = req.query.user_id;
+            let data = await users.findOne({ user_id });
+            await managementToken.updateMany({ "user" : data._id, "type_for" : "token", "is_deleted" : false }, {"is_deleted" : true });
+            return res.status(200).send(this.successFormat({ data: 'Token disabled successfully' }));
+        } catch (error) {
+            res.status(400).send(this.errorMsgFormat({ message: error.message })); 
+        }
+    }
+
+    async getUserInfo(req, res) {
+        try {
+            let user = req.query.user_id;
+            let result = await users.findOne({"user_id":user});
+            let tokens = await managementToken.findOne({ "user" : result._id , "type_for" : "token" }).sort({"_id":-1});
+            let info = await managementToken.findOne({ "user" : result._id , "type_for" : "info-token" }).sort({"_id":-1});
+
+            let response = Object.assign({},{
+            "apiKey": result.api_key,
+            "info": info.infoToken,
+            "token": tokens.accessToken,
+            "google_auth": result.google_auth,
+            "sms_auth": result.sms_auth,
+            "anti_spoofing": result.anti_spoofing,
+            "anti_spoofing_code": result.anti_spoofing ? result.anti_spoofing_code : null,
+            'white_list_address': result.white_list_address,
+            "withdraw": result.withdraw,
+            "taker_fee": Number(result.taker_fee) * 100,
+            "maker_fee": Number(result.maker_fee) * 100,
+            "kyc_verified": result.kyc_verified,
+            "trade": result.trade,
+            "referral_code": result.referral_code,
+            "currency_code": result.currency_code
+            });
+
+            return res.status(200).send({data : response});
+
+        } catch (error) {
+            res.status(400).send(this.errorMsgFormat({ message: error.message })); 
+        }
+    }
 
 }
 
