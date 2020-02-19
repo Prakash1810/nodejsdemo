@@ -8,7 +8,7 @@ const registration = require('../core/registration');
 const slide = require('../core/geetest-captcha');
 const router = express.Router();
 const info = require('../middlewares/info');
-const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValidation, resetPasswordValidation, changePasswordValidation, settingsValidation, g2fSettingValidation, favouriteValidation, kycDetailsValidation, apiKeyValidation, moveBalanceValidation } = require('../validation/user.validations');
+const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValidation, resetPasswordValidation, changePasswordValidation, settingsValidation, g2fSettingValidation, favouriteValidation, kycDetailsValidation, apiKeyValidation, moveBalanceValidation, userVotingCoin } = require('../validation/user.validations');
 const controller = new Controller;
 const user_api_auth = require('../middlewares/user-api-auth')
 
@@ -563,30 +563,6 @@ router.get('/script', async (req, res) => {
     }
 });
 
-router.get('/login-date', (req, res) => {
-    try {
-        user.loginDateUpdate(req, res);
-    }
-    catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'users', 500));
-    }
-
-});
-
-router.get('/is-delete', (req, res) => {
-    try {
-        user.isDeleteCheck(req, res);
-    }
-    catch (err) {
-        return res.status(500).send(controller.errorMsgFormat({
-            'message': err.message
-        }, 'users', 500));
-    }
-});
-
-
 router.post('/get-token', user_api_auth, (req, res) => {
     try {
         user.getToken(req, res);
@@ -619,7 +595,7 @@ router.patch('/disable-token', (req, res) => {
     }
 });
 
-router.get('/user-info',auth, (req, res) => {
+router.get('/user-info', auth, (req, res) => {
     try {
         user.getUserInfo(req, res);
     } catch (err) {
@@ -627,6 +603,32 @@ router.get('/user-info',auth, (req, res) => {
             'message': err.message
         }, 'users', 500));
     }
-})
+});
+
+router.get('/voting-list',auth,info, (req, res) => {
+    try {
+        user.votingCoinList(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
+router.post('/vote', auth, info, (req, res) => {
+    try {
+        let { error } = userVotingCoin(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        }
+        user.userVote(req, res);
+
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+
+});
 
 module.exports = router;

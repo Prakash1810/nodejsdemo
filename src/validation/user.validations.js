@@ -202,6 +202,15 @@ exports.moveBalanceValidation = (req) => {
         asset: Joi.string().required(),
         otp: Joi.string().required()
     }));
-    
+
     return schema.validate(req, { abortEarly: false });
+}
+
+exports.userVotingCoin = (req) => {
+    let schema = Joi.object().keys(Object.assign({
+        coin_id: Joi.string().required(),
+        phase_id: Joi.string().required()
+    }));
+
+    return schema.validate(req,{abortEarly:false});
 }

@@ -42,6 +42,9 @@ const balance = require('../db/balance');
 const { deviceValidation } = require('../validation/user.validations');
 const managementToken = require('../db/management-token');
 const withdrawDiscount = require('../db/withdraw-discount');
+const votingUserList = require('../db/voted-users-list');
+const votingCoinList = require('../db/voting-coin-list');
+const votingPhase = require('../db/voting-phase');
 
 
 class User extends controller {
@@ -2067,17 +2070,17 @@ class User extends controller {
             case 'remove':
                 let checkApiKeyRemove = await apikey.findOne({ user: req.body.data.id, is_deleted: false });
                 if (!checkApiKeyRemove) {
-                    return res.status(400).send(this.errorMsgFormat({ message: 'Passphrase key cannot be found.Please create you Passphrase key.' }, 'user', 400));
+                    return res.status(400).send(this.errorMsgFormat({ message: 'API key cannot be found.Please create you Passphrase key.' }, 'user', 400));
                 }
                 await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
                 await apiServices.publishNotification(req.user.user_id, { 'apiKey': null, 'logout': false });
-                return res.status(200).send(this.successFormat({ message: 'Passphrase key deleted.' }, 'user', 200));
+                return res.status(200).send(this.successFormat({ message: 'API key deleted.' }, 'user', 200));
 
             case 'create':
                 let checkUser = await apikey.findOne({ user: req.body.data.id, is_deleted: false });
                 if (checkUser) {
-                    return res.status(400).send(this.errorMsgFormat({ message: 'A Passphrase key is already available for this account.' }, 'user', 400));
+                    return res.status(400).send(this.errorMsgFormat({ message: 'A API key is already available for this account.' }, 'user', 400));
                 }
                 const apiKey = await helpers.generateUuid();
                 let uuidSplit = apiKey.split('-');
@@ -2092,19 +2095,19 @@ class User extends controller {
                 });
                 await new apikey(addApiKey).save();
                 await apiServices.publishNotification(req.user.user_id, { 'apiKey': apiKey, 'logout': false });
-                return res.status(200).send(this.successFormat({ 'apiKey': apiKey, 'secretKey': apiSecret, message: 'Your Passphrase key was created successfully.', }, 'user', 200));
+                return res.status(200).send(this.successFormat({ 'apiKey': apiKey, 'secretKey': apiSecret, message: 'Your API key was created successfully.', }, 'user', 200));
 
             case 'view':
                 let validateApiKey = await apikey.findOne({ user: req.body.data.id, is_deleted: false });
                 if (!validateApiKey) {
-                    return res.status(400).send(this.errorMsgFormat({ message: 'Passphrase key cannot be found.Please create you API key.' }, 'user', 400));
+                    return res.status(400).send(this.errorMsgFormat({ message: 'API key cannot be found.Please create you API key.' }, 'user', 400));
                 }
                 let creatUuidSplit = validateApiKey.apikey.split('-');
                 const apiSecretValidate = await helpers.createSecret(`${creatUuidSplit[0]}-${creatUuidSplit[creatUuidSplit.length - 1]}`, requestData.passphrase);
                 if (validateApiKey.secretkey === apiSecretValidate) {
-                    return res.status(200).send(this.successFormat({ 'apiKey': validateApiKey.apikey, 'secretKey': validateApiKey.secretkey, message: 'Your Passphrase key was successfully validated.' }, 'user', 200));
+                    return res.status(200).send(this.successFormat({ 'apiKey': validateApiKey.apikey, 'secretKey': validateApiKey.secretkey, message: 'Your API key was successfully validated.' }, 'user', 200));
                 } else {
-                    return res.status(400).send(this.errorMsgFormat({ message: 'The Passphrase key you entered is incorrect.' }, 'user', 400));
+                    return res.status(400).send(this.errorMsgFormat({ message: 'The API key you entered is incorrect.' }, 'user', 400));
                 }
         }
     }
@@ -2377,30 +2380,6 @@ class User extends controller {
         return res.send('Success').status(200);
     }
 
-    async loginDateUpdate(req, res) {
-        let user = await users.find({});
-        let i = 0, last = [];
-        async function interval() {
-            let lastLogin = await loginHistory.findOne({ user: user[i]._id }).sort({ '_id': -1 });
-            if (lastLogin) {
-                let login_time = lastLogin.login_date_time;
-                let logout_time = lastLogin.logout_date_time ? lastLogin.logout_date_time : '';
-                await users.findOneAndUpdate({ _id: user[i]._id }, { last_login_time: login_time, last_logout_time: logout_time });
-
-            }
-            i++;
-            if (i == user.length - 1) {
-                console.log('in clear interval')
-                clearInterval(this);
-            }
-
-
-        }
-        setInterval(interval, 100);
-
-        return res.status(200).send("success..");
-    }
-
     async getToken(req, res) {
         try {
 
@@ -2447,42 +2426,90 @@ class User extends controller {
         try {
             let user_id = req.query.user_id;
             let data = await users.findOne({ user_id });
-            await managementToken.updateMany({ "user" : data._id, "type_for" : "token", "is_deleted" : false }, {"is_deleted" : true });
+            await managementToken.updateMany({ "user": data._id, "type_for": "token", "is_deleted": false }, { "is_deleted": true });
             return res.status(200).send(this.successFormat({ data: 'Token disabled successfully' }));
         } catch (error) {
-            res.status(400).send(this.errorMsgFormat({ message: error.message })); 
+            res.status(400).send(this.errorMsgFormat({ message: error.message }));
         }
     }
 
     async getUserInfo(req, res) {
         try {
             let user = req.query.user_id;
-            let result = await users.findOne({"user_id":user});
-            let tokens = await managementToken.findOne({ "user" : result._id , "type_for" : "token" }).sort({"_id":-1});
-            let info = await managementToken.findOne({ "user" : result._id , "type_for" : "info-token" }).sort({"_id":-1});
+            let result = await users.findOne({ "user_id": user });
+            let tokens = await managementToken.findOne({ "user": result._id, "type_for": "token" }).sort({ "_id": -1 });
+            let info = await managementToken.findOne({ "user": result._id, "type_for": "info-token" }).sort({ "_id": -1 });
 
-            let response = Object.assign({},{
-            "apiKey": result.api_key,
-            "info": info.infoToken,
-            "token": tokens.accessToken,
-            "google_auth": result.google_auth,
-            "sms_auth": result.sms_auth,
-            "anti_spoofing": result.anti_spoofing,
-            "anti_spoofing_code": result.anti_spoofing ? result.anti_spoofing_code : null,
-            'white_list_address': result.white_list_address,
-            "withdraw": result.withdraw,
-            "taker_fee": Number(result.taker_fee) * 100,
-            "maker_fee": Number(result.maker_fee) * 100,
-            "kyc_verified": result.kyc_verified,
-            "trade": result.trade,
-            "referral_code": result.referral_code,
-            "currency_code": result.currency_code
+            let response = Object.assign({}, {
+                "apiKey": result.api_key,
+                "info": info.infoToken,
+                "token": tokens.accessToken,
+                "google_auth": result.google_auth,
+                "sms_auth": result.sms_auth,
+                "anti_spoofing": result.anti_spoofing,
+                "anti_spoofing_code": result.anti_spoofing ? result.anti_spoofing_code : null,
+                'white_list_address': result.white_list_address,
+                "withdraw": result.withdraw,
+                "taker_fee": Number(result.taker_fee) * 100,
+                "maker_fee": Number(result.maker_fee) * 100,
+                "kyc_verified": result.kyc_verified,
+                "trade": result.trade,
+                "referral_code": result.referral_code,
+                "currency_code": result.currency_code
             });
 
-            return res.status(200).send({data : response});
+            return res.status(200).send({ data: response });
 
         } catch (error) {
-            res.status(400).send(this.errorMsgFormat({ message: error.message })); 
+            res.status(400).send(this.errorMsgFormat({ message: error.message }));
+        }
+    }
+
+    async votingCoinList(req, res) {
+        try {
+            let currentPhase = await votingPhase.findOne({ is_active: true }).sort({ _id: -1 });
+            let checkUserVote = await votingUserList.findOne({ user: req.user.user, phase_id: currentPhase._id });
+            let coinList = await votingCoinList.find({ phase_id: currentPhase._id });
+            return res.status(200).send(this.successFormat({ userVote: (checkUserVote) ? true : false, result: coinList }, currentPhase._id));
+        }
+        catch (error) {
+            res.status(400).send(this.errorMsgFormat({ message: error.message }));
+        }
+    }
+
+    async userVote(req, res) {
+        try {
+            let data = req.body.data.attributes;
+            let checkUser = await users.findOne({ _id: req.user.user });
+            if (!checkUser) {
+                return res.status(400).send(this.errorMsgFormat({ message: 'user not found.' }));
+            }
+            if (!checkUser.kyc_verified) {
+                return res.status(400).send(this.errorMsgFormat({ message: 'You must verify your kyc to participate in voting.' }));
+            }
+            let checkPhase = await votingPhase.findOne({ _id: data.phase_id });
+            if (!checkPhase) {
+                return res.status(400).send(this.errorMsgFormat({ message: 'phase not found.' }));
+            }
+            let checkCoinListing = await votingCoinList.findOne({ phase_id: data.phase_id, _id: data.coin_id });
+            if (!checkCoinListing) {
+                return res.status(400).send(this.errorMsgFormat({ message: 'This coin not list.' }));
+            }
+            let checkUserVoting = await votingUserList.findOne({ user: req.user.user, phase_id: data.phase_id });
+            if (checkUserVoting) {
+                return res.status(400).send(this.errorMsgFormat({ message: 'This user already voted.' }));
+            }
+            data.user = req.user.user;
+            await new votingUserList(data).save();
+            await votingCoinList.findOneAndUpdate({ _id: data.coin_id }, {
+                $inc: {
+                    number_of_vote: 1
+                }
+            });
+            res.status(400).send(this.successFormat({ message: "successfully voted." }));
+        }
+        catch (error) {
+            res.status(400).send(this.errorMsgFormat({ message: error.message }));
         }
     }
 
