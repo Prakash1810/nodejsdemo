@@ -2444,7 +2444,7 @@ class User extends controller {
                 "apiKey": result.api_key,
                 "info": info.infoToken,
                 "token": tokens.accessToken,
-                "google_auth": result.google_auth,
+                "g2fEnabled": result.google_auth,
                 "sms_auth": result.sms_auth,
                 "anti_spoofing": result.anti_spoofing,
                 "anti_spoofing_code": result.anti_spoofing ? result.anti_spoofing_code : null,
