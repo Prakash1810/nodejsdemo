@@ -42,8 +42,8 @@ const balance = require('../db/balance');
 const { deviceValidation } = require('../validation/user.validations');
 const managementToken = require('../db/management-token');
 const withdrawDiscount = require('../db/withdraw-discount');
-const coinVoting = require('../db/coin-voting');
-const userVote = require('../db/user-coin-voting');
+const votingUserList = require('../db/voted-users-list');
+const votingCoinList = require('../db/voting-coin-list');
 const votingPhase = require('../db/voting-phase');
 
 
@@ -2468,8 +2468,9 @@ class User extends controller {
     async votingCoinList(req, res) {
         try {
             let currentPhase = await votingPhase.findOne({ is_active: true }).sort({ _id: -1 });
-            let coinList = await coinVoting.find({ phase_id: currentPhase._id });
-            return res.status(200).send(this.successFormat({ result: coinList }, currentPhase._id));
+            let checkUserVote = await votingUserList.findOne({ user: req.user.user, phase_id: currentPhase._id });
+            let coinList = await votingCoinList.find({ phase_id: currentPhase._id });
+            return res.status(200).send(this.successFormat({ userVote: (checkUserVote) ? true : false, result: coinList }, currentPhase._id));
         }
         catch (error) {
             res.status(400).send(this.errorMsgFormat({ message: error.message }));
@@ -2480,7 +2481,6 @@ class User extends controller {
         try {
             let data = req.body.data.attributes;
             let checkUser = await users.findOne({ _id: req.user.user });
-            console.log(checkUser)
             if (!checkUser) {
                 return res.status(400).send(this.errorMsgFormat({ message: 'user not found.' }));
             }
@@ -2491,13 +2491,17 @@ class User extends controller {
             if (!checkPhase) {
                 return res.status(400).send(this.errorMsgFormat({ message: 'phase not found.' }));
             }
-            let checkUserVoting = await userVote.findOne({ user: req.user.user, phase_id: data.phase_id });
+            let checkCoinListing = await votingCoinList.findOne({ phase_id: data.phase_id, _id: data.coin_id });
+            if (!checkCoinListing) {
+                return res.status(400).send(this.errorMsgFormat({ message: 'This coin not list.' }));
+            }
+            let checkUserVoting = await votingUserList.findOne({ user: req.user.user, phase_id: data.phase_id });
             if (checkUserVoting) {
                 return res.status(400).send(this.errorMsgFormat({ message: 'This user already voted.' }));
             }
             data.user = req.user.user;
-            await new userVote(data).save();
-            await coinVoting.findOneAndUpdate({ _id: data.coin_id }, {
+            await new votingUserList(data).save();
+            await votingCoinList.findOneAndUpdate({ _id: data.coin_id }, {
                 $inc: {
                     number_of_vote: 1
                 }

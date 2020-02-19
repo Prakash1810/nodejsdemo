@@ -605,7 +605,7 @@ router.get('/user-info', auth, (req, res) => {
     }
 });
 
-router.get('/voting-list', (req, res) => {
+router.get('/voting-list',auth,info, (req, res) => {
     try {
         user.votingCoinList(req, res);
     } catch (err) {
