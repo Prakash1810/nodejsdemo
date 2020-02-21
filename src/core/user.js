@@ -2407,8 +2407,6 @@ class User extends controller {
                 }));
             }
 
-
-
         } catch (err) {
 
         }
@@ -2468,9 +2466,12 @@ class User extends controller {
     async votingCoinList(req, res) {
         try {
             let currentPhase = await votingPhase.findOne({ is_active: true }).sort({ _id: -1 });
+            if (!currentPhase) {
+                return res.status(200).send(this.successFormat({ message: 'No voting phase available.' }));
+            }
             let checkUserVote = await votingUserList.findOne({ user: req.user.user, phase_id: currentPhase._id });
             let coinList = await votingCoinList.find({ phase_id: currentPhase._id });
-            return res.status(200).send(this.successFormat({ userVote: (checkUserVote) ? true : false, result: coinList }, currentPhase._id));
+            return res.status(200).send(this.successFormat({ currentPhase, userVote: (checkUserVote) ? true : false, result: coinList }));
         }
         catch (error) {
             res.status(400).send(this.errorMsgFormat({ message: error.message }));
@@ -2501,12 +2502,12 @@ class User extends controller {
             }
             data.user = req.user.user;
             await new votingUserList(data).save();
-            await votingCoinList.findOneAndUpdate({ _id: data.coin_id }, {
+            let votedCoin = await votingCoinList.findOneAndUpdate({ _id: data.coin_id }, {
                 $inc: {
                     number_of_vote: 1
                 }
             });
-            res.status(400).send(this.successFormat({ message: "successfully voted." }));
+            res.status(200).send(this.successFormat({ message: "successfully voted.", voteCount: votedCoin.number_of_vote + 1 }));
         }
         catch (error) {
             res.status(400).send(this.errorMsgFormat({ message: error.message }));
