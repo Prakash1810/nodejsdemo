@@ -641,4 +641,14 @@ router.get('/banners', (req, res) => {
     }
 });
 
+router.get('/trade-volume', auth, info, (req, res) =>{
+    try {
+        user.getUserTradeVolume(req, res);
+    } catch (error) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': error.message
+        }, 'users', 500));
+    }
+})
+
 module.exports = router;
