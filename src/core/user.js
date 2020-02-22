@@ -45,6 +45,7 @@ const withdrawDiscount = require('../db/withdraw-discount');
 const votingUserList = require('../db/voted-users-list');
 const votingCoinList = require('../db/voting-coin-list');
 const votingPhase = require('../db/voting-phase');
+const banner = require('../db/banner');
 
 
 class User extends controller {
@@ -2151,9 +2152,9 @@ class User extends controller {
     }
 
     async rewardUserBalance(req, res) {
-        let checkBalance = await rewardBalance.findOne({ user: req.user.user, is_deleted: false }).select('reward reward_asset');
+        let checkBalance = await rewardBalance.findOne({ user: req.user.user, is_deleted: false }).select('reward reward_asset created_date');
         if (checkBalance) {
-            return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_asset]));
+            return res.status(200).send(this.successFormat([checkBalance.reward, checkBalance.reward_asset, checkBalance.created_date]));
         }
         return res.status(200).send(this.successFormat([]));
     }
@@ -2507,13 +2508,25 @@ class User extends controller {
                     number_of_vote: 1
                 }
             });
-            res.status(200).send(this.successFormat({ message: "successfully voted.", voteCount: votedCoin.number_of_vote + 1 }));
+            res.status(200).send(this.successFormat({ message: "successfully voted.", voteCount: votedCoin.number_of_vote + 1, coin_code: votedCoin.coin_code }));
         }
         catch (error) {
             res.status(400).send(this.errorMsgFormat({ message: error.message }));
         }
     }
 
+    async getPanetPosters(req, res) {
+        if (req.query.mobile) {
+            let bannerList = await banner.find({ is_mobile: true, is_active: true });
+            res.status(200).send(this.successFormat({ result: bannerList }));
+        }
+        if (req.query.desktop) {
+            let bannerList = await banner.find({ is_mobile: false, is_active: true });
+            res.status(200).send(this.successFormat({ result: bannerList }));
+        }
+    }
+
 }
+
 
 module.exports = new User;

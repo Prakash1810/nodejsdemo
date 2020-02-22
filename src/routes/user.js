@@ -631,4 +631,14 @@ router.post('/vote', auth, info, (req, res) => {
 
 });
 
+router.get('/banners', (req, res) => {
+    try {
+        user.getPanetPosters(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'users', 500));
+    }
+});
+
 module.exports = router;
