@@ -46,7 +46,7 @@ const votingUserList = require('../db/voted-users-list');
 const votingCoinList = require('../db/voting-coin-list');
 const votingPhase = require('../db/voting-phase');
 const banner = require('../db/banner');
-
+const tradeVolume = require('../db/user-trade-volumes');
 
 class User extends controller {
 
@@ -2463,16 +2463,15 @@ class User extends controller {
             res.status(400).send(this.errorMsgFormat({ message: error.message }));
         }
     }
-
     async votingCoinList(req, res) {
         try {
             let currentPhase = await votingPhase.findOne({ is_active: true }).sort({ _id: -1 });
             if (!currentPhase) {
                 return res.status(200).send(this.successFormat({ message: 'No voting phase available.' }));
             }
-            let checkUserVote = await votingUserList.findOne({ user: req.user.user, phase_id: currentPhase._id });
+            let checkUserVote = await votingUserList.findOne({ user: req.user.user, phase_id: currentPhase._id }).populate('coin_id');
             let coinList = await votingCoinList.find({ phase_id: currentPhase._id });
-            return res.status(200).send(this.successFormat({ currentPhase, userVote: (checkUserVote) ? true : false, result: coinList }));
+            return res.status(200).send(this.successFormat({ currentPhase, userVote: (checkUserVote) ? true : false, coin_code:checkUserVote ? checkUserVote.coin_id.coin_code : null , result: coinList }));
         }
         catch (error) {
             res.status(400).send(this.errorMsgFormat({ message: error.message }));
@@ -2524,6 +2523,19 @@ class User extends controller {
             let bannerList = await banner.find({ is_mobile: false, is_active: true });
             res.status(200).send(this.successFormat({ result: bannerList }));
         }
+    }
+
+    async getUserTradeVolume(req, res) {
+        let user_id = req.user.user_id;
+        let lastThirtyDay = new Date(moment().subtract(30, 'days'));
+        let today = new Date();
+        let data = await tradeVolume.find({ user_id, created_date: { $gte: new Date(lastThirtyDay), $lte: today } });
+        let i = 0, totalVolume = 0;
+        while (i < data.length) {
+            totalVolume += data[i].btc_volume;
+            i++;
+        };
+        res.status(200).send(this.successFormat({ result: totalVolume }))
     }
 
 }
