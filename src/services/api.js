@@ -30,12 +30,12 @@ class Api extends Controller {
                 return res.status(400).send(controller.errorMsgFormat({ "message": "User could not be found." }, 'users', 400));
             }
             if (data.email_for == 'wallet-withdraw') {
-                data.code = helpers.encrypt(
+                data.code = helpers.encrypt(JSON.stringify(
                     {
                         user: data.user_id,
                         user_id: data.userId,
                         code: data.verification_code
-                    })
+                    }))
             }
         }
         axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
