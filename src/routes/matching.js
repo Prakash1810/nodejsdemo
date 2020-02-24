@@ -158,9 +158,9 @@ router.post('/order/pending', info, auth, async (req, res) => {
     }
 })
 
-router.post('/order/pending-detials', info, auth, async (req, res) => {
+router.post('/order/pending-details', info, auth, async (req, res) => {
     try {
-        await matching.matchingEngineRequest('post', 'order/pending-detials', req.body, res);
+        await matching.matchingEngineRequest('post', 'order/pending-details', req.body, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -189,9 +189,9 @@ router.post('/order/finished', info, auth, async (req, res) => {
     }
 })
 
-router.post('/order/finished-detials', info, auth, async (req, res) => {
+router.post('/order/finished-details', info, auth, async (req, res) => {
     try {
-        await matching.matchingEngineRequest('post', 'order/finished-detials', req.body, res);
+        await matching.matchingEngineRequest('post', 'order/finished-details', req.body, res);
 
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
