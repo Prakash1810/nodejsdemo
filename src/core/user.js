@@ -2515,14 +2515,15 @@ class User extends controller {
     }
 
     async getPanetPosters(req, res) {
-        if (req.query.mobile) {
+        if (req.query.mobile=='true') {
             let bannerList = await banner.find({ is_mobile: true, is_active: true });
-            res.status(200).send(this.successFormat({ result: bannerList }));
+            return res.status(200).send(this.successFormat({ result: bannerList }));
         }
-        if (req.query.desktop) {
+        if (req.query.desktop=='true') {
             let bannerList = await banner.find({ is_mobile: false, is_active: true });
-            res.status(200).send(this.successFormat({ result: bannerList }));
+            return res.status(200).send(this.successFormat({ result: bannerList }));
         }
+        return res.status(400).send(this.errorMsgFormat({ message: "Your request was wrong." }));
     }
 
     async getUserTradeVolume(req, res) {

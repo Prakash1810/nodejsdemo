@@ -373,7 +373,6 @@ class Api extends Controller {
             }
 
         }
-
         const axiosResponse = await axios[method](
             `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`, input)
         const result = axiosResponse.data;
@@ -411,9 +410,12 @@ class Api extends Controller {
                 return controller.successFormat(value, result.result.id);
             }
         } else {
-            return res.status(result.errorCode).send(controller.errorMsgFormat({
-                'message': result.error
-            }, 'order-matching', result.errorCode));
+            if (type == 'json') {
+                return res.status(result.errorCode).send(controller.errorMsgFormat({
+                    'message': result.error
+                }, 'order-matching', result.errorCode));
+            }
+            return controller.errorFormat(result.error);
         }
     }
 
