@@ -42,44 +42,38 @@ class ieo extends Controller {
         if (!checkIeoDetails) {
             return res.send(this.errorMsgFormat({ message: 'Ieo id is not be found' }))
         }
-        let checkStatus = await this.checkAndUpdateBalance(checkIeoDetails, 28, data);
-        if (checkStatus.status) {
-            data['user'] = '5da9c400a91eda036c064c43';
-            data['ieo'] = req.params.ieo_id
-            await new ieoTokenSale(data).save();
-            return res.send(this.successFormat({ message: "Your data has been added" })).status(200)
+        let checkUser = await users.findOne({ _id: checkIeoDetails.ieo_user_id });
+        let asset = await assets.findOne({ _id: checkIeoDetails.asset })
+        let amount = await this.calculateAmount(data, checkIeoDetails.token_price);
+        let balanceEnquiry = await this.checkBalance(checkUser.user_id, asset.asset_code, data.amount)
+        if (balanceEnquiry.status) {
+            let balanceEnquiry = await this.checkBalance(req.user.user_id, data.currency_code, amount)
+            if (!balanceEnquiry.status) {
+                return res.status(400).send(balanceEnquiry.error)
+            }
+            let updateBalance = await this.BalanceUpdate(req, checkUser, asset, data, amount)
+            if (updateBalance.status) {
+                data['user'] = req.user.user;
+                data['ieo'] = req.params.ieo_id
+                await new ieoTokenSale(data).save();
+                return res.send(this.successFormat({ message: "Your data has been added" })).status(200)
+            }
+            return res.status(400).send(updateBalance.error)
         }
-        return res.status(400).send(checkStatus.error)
+        return res.status(400).send(balanceEnquiry.error)
+
     }
-    async checkAndUpdateBalance(details, customer, data) {
-        let checkUser = await users.findOne({ _id: details.ieo_user_id });
-        let asset = await assets.findOne({ _id: details.asset })
-        let input = {
-            "data": {
-                "attributes": {
-                    "user_id": checkUser.user_id,
-                    "asset": [asset.asset_code]
-                }
-            }
-        }
-        let checkBalance = await apiService.matchingEngineRequest('post', 'balance/query', input, null, 'query');
-        if (checkBalance.code == 200) {
-            if (checkBalance.data.attributes[asset.asset_code].available <= data.amount) {
-                return { status: false, error: this.errorMsgFormat({ 'message': 'Amount is greater than session supply' }) }
-            }
-            let checkOwnerUpdateBalance = await this.UpdateBalance(checkUser.user_id, data.amount, asset.asset_code)
-            if (checkOwnerUpdateBalance.status) {
-                let checkCustomer = await this.UpdateBalance(customer, data.amount, asset.asset_code, 'deposit');
-                if (checkCustomer.status) {
-                    return { status: true }
-                }
-                return { status: false, error: checkCustomer.error }
-            }
-            return { status: false, error: checkOwnerUpdateBalance.error }
+    async checkAndUpdateBalance(owner, customer, asset, amount) {
 
+        let checkOwnerUpdateBalance = await this.UpdateBalance(owner, amount, asset)
+        if (checkOwnerUpdateBalance.status) {
+            let checkCustomer = await this.UpdateBalance(customer, amount, asset, 'deposit');
+            if (checkCustomer.status) {
+                return { status: true }
+            }
+            return { status: false, error: checkCustomer.error }
         }
-
-        return { status: false, error: checkBalance }
+        return { status: false, error: checkOwnerUpdateBalance.error }
 
     }
 
@@ -98,6 +92,52 @@ class ieo extends Controller {
         }
         return { status: false, error: updateBalance }
     }
+
+    async checkBalance(user, asset, amount) {
+        let input = {
+            "data": {
+                "attributes": {
+                    "user_id": user,
+                    "asset": [asset]
+                }
+            }
+        }
+        let balanceQuery = await apiService.matchingEngineRequest('post', 'balance/query', input, null, 'query');
+        if (balanceQuery.code == 200) {
+
+            if (amount < Number(balanceQuery.data.attributes[asset].available)) {
+                return { status: true }
+            }
+            return { status: false, error: this.errorMsgFormat({ 'message': "amount is too low" }) }
+        }
+        return { status: false, error: balanceQuery }
+    }
+
+
+    async BalanceUpdate(req, checkUser, asset, data, amount) {
+        let checkStatus = await this.checkAndUpdateBalance(checkUser.user_id, req.user.user_id, asset.asset_code, data.amount);
+        if (checkStatus.status) {
+            let checkStatus = await this.checkAndUpdateBalance(req.user.user_id, checkUser.user_id, data.currency_code, amount);
+            if (checkStatus.status) {
+                return { status: true }
+            }
+            return { status: false, error: checkStatus.error }
+        }
+        return { status: false, error: checkStatus.error }
+    }
+
+    async calculateAmount(data, tokenPrice) {
+        let amount = 0;
+        if (data.currency_code !== "USDT") {
+            let marketTodayStatus = await apiService.userApi(data.currency_code + 'USDT');
+            let lastPrice = Number(marketTodayStatus.data.result);
+            amount = (tokenPrice / lastPrice) * data.amount;
+        } else {
+            amount = tokenPrice * data.amount;
+        }
+        return amount
+    }
+
 
 
 

@@ -27,7 +27,7 @@ router.get('/details/:ieo_id', auth, info, async (req, res) => {
         }, 'user', 500));
     }
 })
-router.post('/token-sale/:ieo_id', auth,info, async (req, res) => {
+router.post('/token-sale/:ieo_id', auth, info, async (req, res) => {
     try {
         let { error } = await ieoValidation.ieoTokenSale(req.body.data.attributes);
         if (error) {

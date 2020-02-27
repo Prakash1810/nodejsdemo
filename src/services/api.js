@@ -549,6 +549,10 @@ class Api extends Controller {
         }
     }
 
+    async userApi(pair) {
+        return axios.get(`http://api.beldex.io/api/v1/market/last/${pair}`)
+    }
+
 }
 
 module.exports = new Api();

@@ -2368,7 +2368,6 @@ class User extends controller {
                 k++;
             }
             i++;
-            console.log("I:", i);
 
             if (i == user.length - 1) {
                 console.log('in clear interval')
