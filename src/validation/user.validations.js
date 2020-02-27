@@ -189,7 +189,7 @@ exports.kycDetailsValidation = (req) => {
 exports.apiKeyValidation = (req) => {
     let schema = Joi.object().keys(Object.assign({
         type: Joi.string().required(),
-        passphrase: Joi.string().alphanum().min(5).max(8),
+        passphrase: Joi.string(),
         g2f_code: Joi.string().required()
     }));
 
