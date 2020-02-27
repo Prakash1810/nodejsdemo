@@ -65,7 +65,7 @@ class User extends controller {
         }
         else {
             return res.status(400).send(this.errorMsgFormat({
-                'message': 'Hash cannot be found'
+                'message': 'The verification link has expired or Hash cannot be found.'
             }));
         }
         let date = new Date(userHash.date);
@@ -2079,6 +2079,10 @@ class User extends controller {
                 return res.status(200).send(this.successFormat({ message: 'API key deleted.' }, 'user', 200));
 
             case 'create':
+                let reg = new RegExp(/^[a-zA-Z0-9]{5,8}$/);
+                if (!reg.test(requestData.passphrase)) {
+                    return res.status(400).send(this.errorMsgFormat({ message: 'The passphrase must contain min 5 and max 8 characters. Please use alphanumeric characters.' }, 'user', 400));
+                }
                 let checkUser = await apikey.findOne({ user: req.body.data.id, is_deleted: false });
                 if (checkUser) {
                     return res.status(400).send(this.errorMsgFormat({ message: 'A API key is already available for this account.' }, 'user', 400));
@@ -2471,7 +2475,7 @@ class User extends controller {
             }
             let checkUserVote = await votingUserList.findOne({ user: req.user.user, phase_id: currentPhase._id }).populate('coin_id');
             let coinList = await votingCoinList.find({ phase_id: currentPhase._id });
-            return res.status(200).send(this.successFormat({ currentPhase, userVote: (checkUserVote) ? true : false, coin_code:checkUserVote ? checkUserVote.coin_id.coin_code : null , result: coinList }));
+            return res.status(200).send(this.successFormat({ currentPhase, userVote: (checkUserVote) ? true : false, coin_code: checkUserVote ? checkUserVote.coin_id.coin_code : null, result: coinList }));
         }
         catch (error) {
             res.status(400).send(this.errorMsgFormat({ message: error.message }));
@@ -2515,11 +2519,11 @@ class User extends controller {
     }
 
     async getPanetPosters(req, res) {
-        if (req.query.mobile=='true') {
+        if (req.query.mobile == 'true') {
             let bannerList = await banner.find({ is_mobile: true, is_active: true });
             return res.status(200).send(this.successFormat({ result: bannerList }));
         }
-        if (req.query.desktop=='true') {
+        if (req.query.desktop == 'true') {
             let bannerList = await banner.find({ is_mobile: false, is_active: true });
             return res.status(200).send(this.successFormat({ result: bannerList }));
         }
