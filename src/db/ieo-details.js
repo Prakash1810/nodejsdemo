@@ -6,9 +6,9 @@ const ieoSchema = new mongoose.Schema({
     ieo_user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', index: true },
     session_supply: { type: Number, required: true },
     available_currency: { type: mongoose.Schema.Types.Mixed, index: true },
-    token_distrubution: { type: String, required: true },
+    token_distribution: { type: String, required: true },
     token_price: { type: Number, required: true },
-    bonous: { type: String, required: true },
+    bonus: { type: String, required: true },
     status: { type: String, required: true },
     start_date: { type: Date },
     end_date: { type: Date }

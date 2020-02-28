@@ -85,10 +85,10 @@ class Wallet extends controller {
                                 }
                             }
                         }
-
+                        // await this.discountCalculation(req.user.user, data)
                         var totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
-                            "data": await this.discountCalculation(req.user.user, data),
+                            "data": data,
                             "pages": totalPages,
                             "totalCount": totalCount
                         }, null, 'assets', 200));
@@ -1035,7 +1035,7 @@ class Wallet extends controller {
             let asset = req.params.asset
             let data = await assetDetails.findOne({ asset }).populate({
                 path: 'asset',
-                select: 'asset_name asset_code logo_url address_url url' 
+                select: 'asset_name asset_code logo_url address_url url'
             })
             return res.status(200).json(this.successFormat({
                 "data": data
