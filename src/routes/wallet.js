@@ -3,11 +3,11 @@ const Controller = require('../core/controller');
 const wallet = require('../core/wallet');
 const info = require('../middlewares/info');
 const auth = require("../middlewares/authentication");
-const { postWithdrawAddressValidation , postWithdrawValidation , patchWithdrawConfirmationValidation} = require('../validation/wallet.validation');
+const { postWithdrawAddressValidation, postWithdrawValidation, patchWithdrawConfirmationValidation } = require('../validation/wallet.validation');
 const router = express.Router();
 const controller = new Controller;
 
-router.get('/assets', auth, info, (req, res) => {
+router.get('/assets', (req, res) => {
     try {
         return wallet.getAssets(req, res);
     } catch (err) {
@@ -154,8 +154,8 @@ router.delete('/withdraw/:id', info, auth, (req, res) => {
 
 router.get('/assets-details/:asset', (req, res) => {
     try {
-        
-       return wallet.getAssetDetails(req, res);
+
+        return wallet.getAssetDetails(req, res);
 
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
