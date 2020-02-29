@@ -7,6 +7,7 @@ const ieoSchema = new mongoose.Schema({
     session_supply: { type: Number, required: true },
     available_currency: { type: mongoose.Schema.Types.Mixed, index: true },
     token_distribution: { type: String, required: true },
+    token_protocol:{ type: String, required: true },
     token_price: { type: Number, required: true },
     bonus: { type: String, required: true },
     status: { type: String, required: true },
