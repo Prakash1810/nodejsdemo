@@ -7,7 +7,7 @@ const ieo = require('../core/ieo');
 const info = require('../middlewares/info');
 const auth = require('../middlewares/authentication');
 
-router.get('/', auth, info, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         await ieo.ieoList(req, res)
 
@@ -17,7 +17,7 @@ router.get('/', auth, info, async (req, res) => {
         }, 'user', 500));
     }
 })
-router.get('/details/:ieo_id', auth, info, async (req, res) => {
+router.get('/details/:ieo_id', async (req, res) => {
     try {
         await ieo.ieoDetails(req, res)
 
