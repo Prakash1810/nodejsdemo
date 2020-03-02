@@ -7,7 +7,7 @@ const users = require('../db/users')
 class ieo extends Controller {
 
     async ieoList(req, res) {
-        let checkIeoList = await ieoList.find({}).populate({
+        let checkIeoList = await ieoList.find({}).select('-ieo_user_id').populate({
             path: 'asset',
             select: 'asset_name asset_code _id logo_url '
         })
@@ -15,6 +15,7 @@ class ieo extends Controller {
                 path: 'asset_details',
                 select: 'social_contacts video content'
             }).exec()
+
         if (checkIeoList.length == 0) {
             return res.send(this.successFormat({ data: [] })).status(200)
         }
@@ -22,7 +23,7 @@ class ieo extends Controller {
     }
 
     async ieoDetails(req, res) {
-        let checkIeoDetails = await ieoList.findOne({ _id: req.params.ieo_id }).populate({
+        let checkIeoDetails = await ieoList.findOne({ _id: req.params.ieo_id }).select('-ieo_user_id').populate({
             path: 'asset',
             select: 'asset_name asset_code _id logo_url '
         })
@@ -47,7 +48,7 @@ class ieo extends Controller {
         let amount = await this.calculateAmount(data, checkIeoDetails.token_price);
         let balanceEnquiry = await this.checkBalance(checkUser.user_id, asset.asset_code, data.amount)
         if (balanceEnquiry.status) {
-            let balanceEnquiry = await this.checkBalance(req.user.user_id, data.currency_code, amount)
+            let balanceEnquiry = await this.checkBalance(req.user.user_id, 'USDT', amount)
             if (!balanceEnquiry.status) {
                 return res.status(400).send(balanceEnquiry.error)
             }
@@ -117,7 +118,7 @@ class ieo extends Controller {
     async BalanceUpdate(req, checkUser, asset, data, amount) {
         let checkStatus = await this.checkAndUpdateBalance(checkUser.user_id, req.user.user_id, asset.asset_code, data.amount);
         if (checkStatus.status) {
-            let checkStatus = await this.checkAndUpdateBalance(req.user.user_id, checkUser.user_id, data.currency_code, amount);
+            let checkStatus = await this.checkAndUpdateBalance(req.user.user_id, checkUser.user_id, 'USDT', amount);
             if (checkStatus.status) {
                 return { status: true }
             }
@@ -127,15 +128,8 @@ class ieo extends Controller {
     }
 
     async calculateAmount(data, tokenPrice) {
-        let amount = 0;
-        if (data.currency_code !== "USDT") {
-            let marketTodayStatus = await apiService.userApi(data.currency_code + 'USDT');
-            let lastPrice = Number(marketTodayStatus.data.result);
-            amount = (tokenPrice / lastPrice) * data.amount;
-        } else {
-            amount = tokenPrice * data.amount;
-        }
-        return amount
+        
+        return tokenPrice * data.amount
     }
 
 
