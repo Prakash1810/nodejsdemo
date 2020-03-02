@@ -8,7 +8,7 @@ const registration = require('../core/registration');
 const slide = require('../core/geetest-captcha');
 const router = express.Router();
 const info = require('../middlewares/info');
-const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValidation, resetPasswordValidation, changePasswordValidation, settingsValidation, g2fSettingValidation, favouriteValidation, kycDetailsValidation, apiKeyValidation, moveBalanceValidation, userVotingCoin } = require('../validation/user.validations');
+const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValidation, resetPasswordValidation, changePasswordValidation, settingsValidation, g2fSettingValidation, favouriteValidation, kycDetailsValidation, apiKeyValidation, moveBalanceValidation, userVotingCoin, g2fResetRequest, g2fValidateOtp, g2fResendOtp } = require('../validation/user.validations');
 const controller = new Controller;
 const user_api_auth = require('../middlewares/user-api-auth')
 
@@ -649,6 +649,48 @@ router.get('/trade-volume', auth, info, (req, res) =>{
             'message': error.message
         }, 'users', 500));
     }
-})
+});
+
+router.post('/g2f-reset', (req, res) => {
+    try {
+        let { error } = g2fResetRequest(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        }
+        user.g2fResetRequest(req, res);
+    } catch (error) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': error.message
+        }, 'users', 500));
+    }
+});
+
+router.post('/g2f/validate-otp', (req, res) => {
+    try {
+        let { error } = g2fValidateOtp(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        }
+        user.g2fValidateOtp(req, res);
+    } catch (error) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': error.message
+        }, 'users', 500));
+    }
+});
+
+router.post('/g2f/resend-otp', (req, res) => {
+    try {
+        let { error } = g2fResendOtp(req.body.data.attributes);
+        if (error) {
+            return res.status(400).send(controller.errorFormat(error, 'users', 400));
+        }
+        user.g2fResendOtp(req, res);
+    } catch (error) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': error.message
+        }, 'users', 500));
+    }
+});
 
 module.exports = router;

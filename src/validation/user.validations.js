@@ -214,3 +214,28 @@ exports.userVotingCoin = (req) => {
 
     return schema.validate(req,{abortEarly:false});
 }
+
+exports.g2fResetRequest = (req) => {
+    let schema = Joi.object().keys(Object.assign({
+        email: Joi.string().required().email()
+    }));
+
+    return schema.validate(req,{abortEarly:false});
+}
+
+exports.g2fValidateOtp = (req) => {
+    let schema = Joi.object().keys(Object.assign({
+        email: Joi.string().required().email(),
+        otp : Joi.string().required()
+    }));
+
+    return schema.validate(req,{abortEarly:false});
+}
+
+exports.g2fResendOtp = (req) => {
+    let schema = Joi.object().keys(Object.assign({
+        email: Joi.string().required().email()
+    }));
+
+    return schema.validate(req,{abortEarly:false});
+}

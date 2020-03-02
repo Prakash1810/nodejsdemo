@@ -47,7 +47,7 @@ const votingCoinList = require('../db/voting-coin-list');
 const votingPhase = require('../db/voting-phase');
 const banner = require('../db/banner');
 const tradeVolume = require('../db/user-trade-volumes');
-
+const resetRequest = require('../db/g2f-reset-request');
 class User extends controller {
 
     async activate(req, res) {
@@ -2542,7 +2542,106 @@ class User extends controller {
         res.status(200).send(this.successFormat({ result: totalVolume }))
     }
 
-}
+    async g2fResetRequest(req, res) {
+        let data = req.body.data.attributes;
+        let email = data.email;
+        let user_data = await users.findOne({ email });
+        if (user_data) {
+            let user = user_data._id;
+            const rand = Math.random() * (999999 - 100000) + 100000;
+            const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
+            const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
+            let g2f_reset_data = await resetRequest.find({ user, status: 'pending' });
+            if (!_.isEmpty(g2f_reset_data)) {
+                return res.status(400).send(this.errorMsgFormat({ message: 'Already g2f reset requeset raised...!' }))
+            } else {
+                let data = Object.assign({
+                    user,
+                    status: 'pending'
+                })
+                await new resetRequest(data).save();
+                let serviceData = Object.assign({}, {
+                    subject: `Beldex g2f-reset verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')} ( ${config.get('settings.timeZone')} )`,
+                    email_for: "g2f-reset",
+                    otp: Math.floor(rand),
+                    user_id: user
+                });
+                await apiServices.sendEmailNotification(serviceData, res);
+                const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false, type_for: 'g2f-reset' }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+                if (!isChecked) {
+                    let data = Object.assign({}, {
+                        otp_type: getOtpType._id,
+                        user_id: user,
+                        otp: otp,
+                        create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'),
+                        type_for: 'g2f-reset',
+                        count: 0
+                    });
+                    await new otpHistory(data).save();
+                }
+                return res.status(200).send(this.successFormat({
+                    'message': "An OTP has been sent to your registered email address."
+                }, user));
+            }
+        } else {
+            return res.status(400).send(this.errorMsgFormat({ message: 'User not found...!' }))
+        }
+    }
 
+    async g2fValidateOtp(req, res) {
+        let data = req.body.data.attributes;
+        let email = data.email;
+        let user_data = await users.findOne({ email });
+        if (user_data) {
+            let user = user_data._id;
+            let isChecked = await otpHistory.findOneAndUpdate({ user_id: user, otp: data.otp, is_active: false, type_for: 'g2f-reset' }, { is_active: true });
+            if (isChecked) {
+                let date = new Date(isChecked.create_date_time);
+                let getSeconds = date.getSeconds() + config.get('otpForEmail.timeExpiry');
+                let duration = moment.duration(moment().diff(isChecked.create_date_time));
+                if (getSeconds > duration.asSeconds()) {
+                    await otpHistory.findOneAndUpdate({ user_id: user, otp: data.otp, is_active: false, type_for: 'g2f-reset' }, { is_active: true });
+                    return res.status(200).send(this.successFormat({
+                        'message': "successfully g2f restart requeset raised"
+                    }, user));
+                } else {
+                    return res.status(400).send(this.errorMsgFormat({ message: 'OTP has expired' }));
+                }
+            } else {
+                return res.status(400).send(this.errorMsgFormat({ message: 'OTP enterd is invalid' }));
+            }
+
+        } else {
+            return res.status(400).send(this.errorMsgFormat({ message: 'User not found...!' }));
+        }
+    }
+
+    async g2fResendOtp(req, res) {
+        let data = req.body.data.attributes;
+        let email = data.email;
+        let user_data = await users.findOne({ email });
+        if (user_data) {
+            const isChecked = await otpHistory.findOne({ user_id: user_data._id, is_active: false, type_for: 'g2f-reset' });
+            if (isChecked) {
+                let count = isChecked.count++;
+                let inCount = ++count;
+                const rand = Math.random() * (999999 - 100000) + 100000
+                const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
+                let serviceData = Object.assign({}, {
+                    subject: `Beldex g2f-reset verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')} ( ${config.get('settings.timeZone')} )`,
+                    email_for: "otp-login",
+                    otp: Math.floor(rand),
+                    user_id: user_data._id
+                });
+                await apiServices.sendEmailNotification(serviceData, res);
+                await otpHistory.findOneAndUpdate({ user_id: user_data._id, is_active: false, type_for: 'g2f-reset' }, { count: inCount, otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
+
+                return res.status(200).send(this.successFormat({
+                    'message': "An OTP has been sent to your registered email address."
+                }, user_data._id));
+            }
+        }
+    }
+}
 
 module.exports = new User;
