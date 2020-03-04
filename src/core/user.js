@@ -759,7 +759,12 @@ class User extends controller {
     }
 
     async resendOtpForEmail(req, res, typeFor) {
-        let data = req.body.data.attributes;
+        let data;
+        if (typeFor == 'g2f-reset') {
+            data = req;
+        } else {
+            data = req.body.data.attributes;
+        }
         const isChecked = await otpHistory.findOne({ user_id: data.user_id, is_active: false, type_for: typeFor });
         if (isChecked) {
             if (isChecked.count <= config.get('otpForEmail.hmt')) {
@@ -2547,43 +2552,19 @@ class User extends controller {
         let email = data.email;
         let user_data = await users.findOne({ email });
         if (user_data) {
-            let user = user_data._id;
-            const rand = Math.random() * (999999 - 100000) + 100000;
-            const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
-            const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
-            let g2f_reset_data = await resetRequest.find({ user, status: 'pending' });
+            let g2f_reset_data = await resetRequest.find({ user: user_data._id, status: 'pending' });
             if (!_.isEmpty(g2f_reset_data)) {
                 return res.status(400).send(this.errorMsgFormat({ message: 'Already g2f reset requeset raised...!' }))
             } else {
                 let data = Object.assign({
-                    user,
+                    user: user_data._id,
                     status: 'pending'
                 })
                 await new resetRequest(data).save();
-                let serviceData = Object.assign({}, {
-                    subject: `Beldex g2f-reset verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')} ( ${config.get('settings.timeZone')} )`,
-                    email_for: "g2f-reset",
-                    otp: Math.floor(rand),
-                    user_id: user
-                });
-                await apiServices.sendEmailNotification(serviceData, res);
-                const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false, type_for: 'g2f-reset' }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
-                if (!isChecked) {
-                    let data = Object.assign({}, {
-                        otp_type: getOtpType._id,
-                        user_id: user,
-                        otp: otp,
-                        create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'),
-                        type_for: 'g2f-reset',
-                        count: 0
-                    });
-                    await new otpHistory(data).save();
-                }
-                return res.status(200).send(this.successFormat({
-                    'message': "An OTP has been sent to your registered email address."
-                }, user));
+                this.generatorOtpforEmail(user_data._id, 'g2f-reset', res)
             }
-        } else {
+        }
+        else {
             return res.status(400).send(this.errorMsgFormat({ message: 'User not found...!' }))
         }
     }
@@ -2621,25 +2602,9 @@ class User extends controller {
         let email = data.email;
         let user_data = await users.findOne({ email });
         if (user_data) {
-            const isChecked = await otpHistory.findOne({ user_id: user_data._id, is_active: false, type_for: 'g2f-reset' });
-            if (isChecked) {
-                let count = isChecked.count++;
-                let inCount = ++count;
-                const rand = Math.random() * (999999 - 100000) + 100000
-                const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
-                let serviceData = Object.assign({}, {
-                    subject: `Beldex g2f-reset verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')} ( ${config.get('settings.timeZone')} )`,
-                    email_for: "otp-login",
-                    otp: Math.floor(rand),
-                    user_id: user_data._id
-                });
-                await apiServices.sendEmailNotification(serviceData, res);
-                await otpHistory.findOneAndUpdate({ user_id: user_data._id, is_active: false, type_for: 'g2f-reset' }, { count: inCount, otp: `${getOtpType.otp_prefix}-${Math.floor(rand)}`, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
-
-                return res.status(200).send(this.successFormat({
-                    'message': "An OTP has been sent to your registered email address."
-                }, user_data._id));
-            }
+            this.resendOtpForEmail({ user_id: user_data._id }, res, 'g2f-reset');
+        } else {
+            return res.status(400).send(this.errorMsgFormat({ message: 'User not found...!' }))
         }
     }
 }
