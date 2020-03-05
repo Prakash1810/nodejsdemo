@@ -52,12 +52,12 @@ class ieo extends Controller {
             if (!balanceEnquiry.status) {
                 return res.status(400).send(balanceEnquiry.error)
             }
-            let updateBalance = await this.BalanceUpdate(req, checkUser, asset, data, amount)
+            let updateBalance = await this.BalanceUpdate(req, checkUser, asset, data, amount, checkIeoDetails)
             if (updateBalance.status) {
                 data['user'] = req.user.user;
                 data['ieo'] = req.params.ieo_id
                 await new ieoTokenSale(data).save();
-                return res.send(this.successFormat({ message: "Your data has been added" })).status(200)
+                return res.send(this.successFormat({ message: "Your data has been added", supply: checkIeoDetails.session_supply })).status(200)
             }
             return res.status(400).send(updateBalance.error)
         }
@@ -115,9 +115,12 @@ class ieo extends Controller {
     }
 
 
-    async BalanceUpdate(req, checkUser, asset, data, amount) {
+    async BalanceUpdate(req, checkUser, asset, data, amount, ieoUser) {
         let checkStatus = await this.checkAndUpdateBalance(checkUser.user_id, req.user.user_id, asset.asset_code, data.amount);
         if (checkStatus.status) {
+            let balance = ieoUser.session_supply - data.amount
+            ieoUser.session_supply = balance;
+            ieoUser.save();
             let checkStatus = await this.checkAndUpdateBalance(req.user.user_id, checkUser.user_id, 'USDT', amount);
             if (checkStatus.status) {
                 return { status: true }
@@ -128,7 +131,7 @@ class ieo extends Controller {
     }
 
     async calculateAmount(data, tokenPrice) {
-        
+
         return tokenPrice * data.amount
     }
 
