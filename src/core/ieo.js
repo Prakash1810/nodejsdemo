@@ -57,7 +57,7 @@ class ieo extends Controller {
                 data['user'] = req.user.user;
                 data['ieo'] = req.params.ieo_id
                 await new ieoTokenSale(data).save();
-                return res.send(this.successFormat({ message: "Your data has been added" })).status(200)
+                return res.send(this.successFormat({ message: "Your data has been added", supply: checkIeoDetails.session_supply })).status(200)
             }
             return res.status(400).send(updateBalance.error)
         }
