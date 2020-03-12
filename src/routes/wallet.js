@@ -154,9 +154,17 @@ router.delete('/withdraw/:id', info, auth, (req, res) => {
 
 router.get('/assets-details/:asset', (req, res) => {
     try {
-
         return wallet.getAssetDetails(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'wallet', 500));
+    }
+});
 
+router.post('/address/validation', (req, res) => {
+    try {
+        wallet.addressValidation(req, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
