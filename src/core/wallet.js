@@ -1048,6 +1048,29 @@ class Wallet extends controller {
 
     }
 
+    async addressValidation(req, res) {
+        try {
+            let data = req.body.data.attributes;
+            if (!data.address || !data.asset) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': "Asset and address must be provided."
+                }, 'withdraw', 400));
+            }
+            let isValid = await this.coinAddressValidate(data.address, data.asset);
+            if (isValid == false) {
+                return res.status(400).send(this.errorMsgFormat({
+                    "isValid": isValid
+                }, 'withdrawAddress'));
+            }
+            return res.status(200).json(this.successFormat({
+                "isValid": isValid
+            }, 'withdraw'));
+        } catch (error) {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': error.message
+            }, 'withdraw', 400));
+        }
+    }
 
 }
 
