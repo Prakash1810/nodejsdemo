@@ -144,7 +144,7 @@ class Wallet extends controller {
         }
     }
 
-    async coinAddressValidate(address, asset, res) {
+    async coinAddressValidate(address, asset) {
         let getAsset = await assets.findOne({ _id: asset });
         let asset_code;
         if (getAsset) {
@@ -158,9 +158,7 @@ class Wallet extends controller {
             // check if bdx
             if (asset_code.toLowerCase() === 'bdx') {
                 if (asset_code.length <= 8) {
-                    return res.status(400).json(this.errorMsgFormat({
-                        "message": "Invalid address."
-                    }, 'assets', 400));
+                    return false;
                 }
                 return true;
             }
@@ -210,7 +208,7 @@ class Wallet extends controller {
             }
         }
         // check addres is valid or not
-        let isValid = await this.coinAddressValidate(requestData.address, requestData.asset, res);
+        let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
         if (isValid !== true) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Invalid asset address.'
@@ -711,7 +709,7 @@ class Wallet extends controller {
                         });
                     }
                     else if (requestData.address != null && requestData.address != undefined) {
-                        let isValid = await this.coinAddressValidate(requestData.address, requestData.asset, res);
+                        let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
                         if (isValid !== true) {
                             return res.status(400).send(this.errorMsgFormat({
                                 'address': 'Invalid asset address.'
@@ -1064,7 +1062,7 @@ class Wallet extends controller {
                     'message': "Asset and address must be provided."
                 }, 'withdraw', 400));
             }
-            let isValid = await this.coinAddressValidate(data.address, data.asset, res);
+            let isValid = await this.coinAddressValidate(data.address, data.asset);
             if (isValid == false) {
                 return res.status(400).send(this.errorMsgFormat({
                     "isValid": isValid
