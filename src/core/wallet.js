@@ -156,7 +156,13 @@ class Wallet extends controller {
                 asset_code = getAsset.asset_code;
             }
             // check if bdx
-            if (asset_code.toLowerCase() === 'bdx') return true;
+            if (asset_code.toLowerCase() === 'bdx') {
+                if (asset_code.length <= 8) {
+                    return false;
+                }
+                return true;
+            }
+
 
             return coinAddressValidator.validate(address, asset_code.toLowerCase());
         } else {
