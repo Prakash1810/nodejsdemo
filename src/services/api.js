@@ -249,6 +249,8 @@ class Api extends Controller {
                     _.map(data, function (res) {
                         if (res.name === noMarkets) {
                             res.is_favourite = true;
+                        } else {
+                            res.is_favourite = false;
                         }
                     })
                 })
