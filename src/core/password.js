@@ -34,7 +34,7 @@ class Password extends Controller {
                     let encryptedHash = this.encryptHash(user.email, user._id);
 
                     // send email notification to the registered user
-                    if (!req.body.data.type) {
+                    if (!req.headers.device) {
                         let serviceData = {
                             'hash': encryptedHash,
                             'subject': `Password Reset - ${moment().format('YYYY-MM-DD HH:mm:ss')} (${config.get('settings.timeZone')})`,

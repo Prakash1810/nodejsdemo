@@ -69,8 +69,7 @@ exports.resendOtpValidation = (req) => {
 exports.forgetPasswordValidation = (req) => {
     let schema = Joi.object().keys(Object.assign({
         email: Joi.string().required().email(),
-        ip: Joi.string().allow('').optional(),
-        type:Joi.string().allow('').optional()
+        ip: Joi.string().allow('').optional()
     }));
 
     return schema.validate(req, { abortEarly: false });
