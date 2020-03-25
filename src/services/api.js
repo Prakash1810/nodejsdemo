@@ -259,7 +259,8 @@ class Api extends Controller {
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
-                            data[k].q = getMarket[j].q
+                            data[k].q = getMarket[j].q;
+                            data[k].disable_trade= getMarket[j].disable_trade;
                             if (getMarket[j].q == true) {
                                 if (data[k].stock == "ETH") {
                                     data[k].min_amount = "0.05"
@@ -295,7 +296,8 @@ class Api extends Controller {
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
-                            data[k].q = getMarket[j].q
+                            data[k].q = getMarket[j].q;
+                            data[k].disable_trade= getMarket[j].disable_trade;
                             if (getMarket[j].q == true) {
                                 if (data[k].stock == "ETH") {
                                     data[k].min_amount = "0.05"

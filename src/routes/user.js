@@ -693,4 +693,14 @@ router.post('/g2f/resend-otp', (req, res) => {
     }
 });
 
+router.get('/update/anti-spoofing', (req, res) => {
+    try {
+        user.updateScript(req, res);
+    } catch (error) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': error.message
+        }, 'users', 500));
+    }
+});
+
 module.exports = router;
