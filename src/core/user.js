@@ -2279,7 +2279,12 @@ class User extends controller {
 
     async kycVerified(req, res) {
         let data = req.query.code;
-        let user = await users.findOne({ _id: req.user.user })
+        let user = await users.findOne({ _id: req.user.user });
+        if(user.kyc_verified) {
+            return res.status(200).send(this.successFormat({
+                message: 'Already KYC veified for this email.'
+            }));
+        }
         if (!data) {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Kyc code must be provide.'
