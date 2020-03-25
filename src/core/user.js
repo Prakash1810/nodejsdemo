@@ -494,7 +494,7 @@ class User extends controller {
             "google_auth": result.google_auth,
             "sms_auth": result.sms_auth,
             "anti_spoofing": result.anti_spoofing,
-            "anti_spoofing_code": result.anti_spoofing ? await helpers.decrypt(result.anti_spoofing_code) : null,
+            "anti_spoofing_code": result.anti_spoofing ? result.anti_spoofing_code : null,
             'white_list_address': result.white_list_address,
             "withdraw": result.withdraw,
             "taker_fee": Number(result.taker_fee) * 100,
@@ -1151,7 +1151,7 @@ class User extends controller {
                         await apiServices.publishNotification(update.user_id, { 'white_list_address': requestData.white_list_address, 'logout': false });
                     }
                     if (requestData.hasOwnProperty('anti_spoofing')) {
-                        await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'anti_spoofing_code': requestData.anti_spoofing_code ? await helpers.decrypt(requestData.anti_spoofing_code) : null, 'logout': false });
+                        await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'anti_spoofing_code': requestData.anti_spoofing_code ? requestData.anti_spoofing_code : null, 'logout': false });
                     }
                     return res.status(202).send(this.successFormat({
                         'message': 'The changes you made were saved successfully.'
