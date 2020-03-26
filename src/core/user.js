@@ -2612,6 +2612,19 @@ class User extends controller {
             return res.status(400).send(this.errorMsgFormat({ message: 'User not found...!' }))
         }
     }
+
+    async updateScript(req, res) {
+        let userList = await users.find({ anti_spoofing: true });
+        let i = 0;
+        while (i < userList.length) {
+            let encryptData = await helpers.encrypt(userList[i].anti_spoofing_code);
+            userList[i].anti_spoofing_code = encryptData;
+            userList[i].save();
+            console.log("i:", i);
+            i++;
+        }
+        return res.status(200).send(this.successFormat({ message: "successfully updated.", updatedCount: i }));
+    }
 }
 
 module.exports = new User;
