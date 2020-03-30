@@ -1994,6 +1994,12 @@ class User extends controller {
             }, 'user', 400));
         }
 
+        if(checkUser.kyc_verified) {
+            return res.status(200).send(this.successFormat({
+                message: 'Already KYC veified for this email.'
+            }));
+        }
+
         if (data.otp == null || undefined) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Please enter the OTP.'
