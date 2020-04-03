@@ -293,6 +293,11 @@ class Api extends Controller {
                 if (type == 'withAdd') {
                     return { status: true, result: data };
                 }
+                let z = 0;
+                while (z < data.length) {
+                        data[z].is_favourite = false
+                    z++;
+                }
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
