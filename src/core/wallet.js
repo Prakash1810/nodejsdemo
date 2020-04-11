@@ -157,7 +157,7 @@ class Wallet extends controller {
             }
             // check if bdx
             if (asset_code.toLowerCase() === 'bdx') {
-                if (asset_code.length <= 8) {
+                if (address.length <= 8) {
                     return false;
                 }
                 return true;
@@ -712,7 +712,7 @@ class Wallet extends controller {
                         let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
                         if (isValid !== true) {
                             return res.status(400).send(this.errorMsgFormat({
-                                'address': 'Invalid asset address.'
+                                'message': 'Invalid asset address.'
                             }, 'withdrawAddress'));
                         }
                         withdraw = {
