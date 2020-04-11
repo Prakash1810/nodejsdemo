@@ -156,8 +156,8 @@ class Wallet extends controller {
                 asset_code = getAsset.asset_code;
             }
             // check if bdx
-            if (address.toLowerCase() === 'bdx') {
-                if (asset_code.length <= 8) {
+            if (asset_code.toLowerCase() === 'bdx') {
+                if (address.length <= 8) {
                     return false;
                 }
                 return true;
