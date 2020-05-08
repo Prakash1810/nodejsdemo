@@ -2311,7 +2311,7 @@ class User extends controller {
         }
         if (user.email.toLowerCase() != checkUserMe.emails[0].address.toLowerCase()) {
             await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "REJECT" });
-            await apiServices.publishNotification(checkUser.user_id, { 'kyc_statistics': 'REJECT', logout: false });
+            await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'REJECT', logout: false });
             return res.status(400).send(this.errorMsgFormat({
                 message: 'KYC verification failed since the email address you provided did not match your Beldex registered email address'
             }));
@@ -2328,7 +2328,7 @@ class User extends controller {
                 });
                 await apiServices.sendEmailNotification(serviceData, res);
                 await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "REJECT" });
-                await apiServices.publishNotification(checkUser.user_id, { 'kyc_statistics': 'REJECT', logout: false });
+                await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'REJECT', logout: false });
                 return res.status(400).send(this.errorMsgFormat({
                     message: 'Your KYC verification has been failed due to duplicate KYC entry, please check your email for more details.'
                 }));
