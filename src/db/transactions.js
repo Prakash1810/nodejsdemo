@@ -19,7 +19,6 @@ const transactionSchema = mongoose.Schema({
     is_deleted: { type: Boolean, default: false },
     payment_id: { type: String }
 
-
 });
 
 let transactionFee = mongoose.model('transaction', transactionSchema);
