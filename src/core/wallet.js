@@ -136,7 +136,7 @@ class Wallet extends controller {
                     return res.status(200).json(this.successFormat({
                         'asset_code': isChecked.asset_code,
                         'address': getAddress.address,
-                        'memo':getAddress.memo
+                        'paymentid':getAddress.paymentid
                     }, asset, 'address'));
                 }
                 return res.status(200).json(this.successFormat({
@@ -666,7 +666,7 @@ class Wallet extends controller {
             if (checkAsset.asset_code == 'TREEP') {
                 if (!requestData.memo) {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Memo must be provided.'
+                        'message': 'Payment Id must be provided.'
                     }, 'user', 400));
                 }
             }
@@ -748,7 +748,7 @@ class Wallet extends controller {
                                 status: "0",
                                 is_deleted: false,
                                 date: moment().format('YYYY-MM-DD HH:mm:ss'),
-                                memo : requestData.memo ? requestData.memo : null 
+                                payment_id : requestData.payment_id ? requestData.payment_id : null 
                             });
                             let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount, res);
                             return res.status(200).json(this.successFormat({
@@ -813,7 +813,7 @@ class Wallet extends controller {
         let asset = await assets.findById(data.asset);
         let checkDiscount = await discount.findOne({ user: data.user, asset_code: asset.asset_code, is_active: true });
         let fee = checkDiscount ? asset.withdrawal_fee - (asset.withdrawal_fee * (checkDiscount.discount / 100)) : asset.withdrawal_fee
-        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted','memo']);
+        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted','payment_id']);
         let bal = amount - transaction.amount;
         if ((bal - fee) >= 0) {
             transaction.fee = fee
