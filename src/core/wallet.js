@@ -132,6 +132,13 @@ class Wallet extends controller {
                 }, asset, 'address'));
 
             } else {
+                if(isChecked.asset_code == 'TREEP') {
+                    return res.status(200).json(this.successFormat({
+                        'asset_code': isChecked.asset_code,
+                        'address': getAddress.address,
+                        'memo':getAddress.memo
+                    }, asset, 'address'));
+                }
                 return res.status(200).json(this.successFormat({
                     'asset_code': getAddress.asset_code,
                     'address': getAddress.address
@@ -656,6 +663,14 @@ class Wallet extends controller {
                 }, 'user', 400));
             }
 
+            if (checkAsset.asset_code == 'TREEP') {
+                if (!requestData.memo) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Memo must be provided.'
+                    }, 'user', 400));
+                }
+            }
+
             else if (checkUser.google_auth) {
                 if (!requestData.g2f_code) {
                     return res.status(400).send(this.errorMsgFormat({
@@ -732,7 +747,8 @@ class Wallet extends controller {
                                 final_amount: requestData.amount,
                                 status: "0",
                                 is_deleted: false,
-                                date: moment().format('YYYY-MM-DD HH:mm:ss')
+                                date: moment().format('YYYY-MM-DD HH:mm:ss'),
+                                memo : requestData.memo ? requestData.memo : null 
                             });
                             let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount, res);
                             return res.status(200).json(this.successFormat({
@@ -797,7 +813,7 @@ class Wallet extends controller {
         let asset = await assets.findById(data.asset);
         let checkDiscount = await discount.findOne({ user: data.user, asset_code: asset.asset_code, is_active: true });
         let fee = checkDiscount ? asset.withdrawal_fee - (asset.withdrawal_fee * (checkDiscount.discount / 100)) : asset.withdrawal_fee
-        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted']);
+        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted','memo']);
         let bal = amount - transaction.amount;
         if ((bal - fee) >= 0) {
             transaction.fee = fee

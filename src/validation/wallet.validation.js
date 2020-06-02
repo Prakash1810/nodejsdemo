@@ -23,7 +23,8 @@ exports.postWithdrawValidation = (req) => {
         otp: Joi.string(),
         address: Joi.string(),
         withdraw_id: Joi.string(),
-        payment_id: Joi.string()
+        payment_id: Joi.string(),
+        memo: Joi.string()
     });
 
     return schema.validate(req, { abortEarly: false });

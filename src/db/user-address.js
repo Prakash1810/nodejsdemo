@@ -4,6 +4,7 @@ const userAddressSchema = mongoose.Schema({
     user: { type: Schema.Types.ObjectId, ref: 'Users', index: true },
     asset: { type: Schema.Types.ObjectId, ref: 'Assets', index: true },
     address: String,
+    memo: { type: String },
     created_date: { type: Date, default: Date.now }
 });
 
