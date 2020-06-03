@@ -156,7 +156,9 @@ class Wallet extends controller {
         let asset_code;
         if (getAsset) {
             if (getAsset.token != null && getAsset.token != undefined) {
-
+                if(getAsset.asset_code ==='TREEP'){
+                    return true;
+                }
                 asset_code = getAsset.token;
             }
             else {
@@ -169,8 +171,6 @@ class Wallet extends controller {
                 }
                 return true;
             }
-
-
             return coinAddressValidator.validate(address, asset_code.toLowerCase());
         } else {
             return false;
