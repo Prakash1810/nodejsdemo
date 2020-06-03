@@ -670,12 +670,11 @@ class Wallet extends controller {
             }
 
             if (checkAsset.asset_code == 'TREEP') {
-                if (!requestData.memo) {
+                if (!requestData.payment_id) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Payment Id must be provided.'
                     }, 'user', 400));
                 }
-                requestData.payment_id = requestData.memo;
             }
 
             else if (checkUser.google_auth) {
