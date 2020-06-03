@@ -132,11 +132,11 @@ class Wallet extends controller {
                 }, asset, 'address'));
 
             } else {
-                if(isChecked.asset_code == 'TREEP') {
+                if (isChecked.asset_code == 'TREEP') {
                     return res.status(200).json(this.successFormat({
                         'asset_code': isChecked.asset_code,
                         'address': getAddress.address,
-                        'paymentid':getAddress.paymentid
+                        'paymentid': getAddress.paymentid
                     }, asset, 'address'));
                 }
                 return res.status(200).json(this.successFormat({
@@ -446,6 +446,12 @@ class Wallet extends controller {
         }
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
+        let response =marketResponse.data;
+        let value = {
+            "btc": process.env.TREEP_BTC,
+            "usd": process.env.TREEP_USDT
+        };
+        Object.assign(response,{'treep': value });
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
         return res.status(200).json(this.successFormat({
             "data": formatedResponse, sum
@@ -669,6 +675,7 @@ class Wallet extends controller {
                         'message': 'Payment Id must be provided.'
                     }, 'user', 400));
                 }
+                requestData.payment_id = requestData.memo;
             }
 
             else if (checkUser.google_auth) {
@@ -748,7 +755,7 @@ class Wallet extends controller {
                                 status: "0",
                                 is_deleted: false,
                                 date: moment().format('YYYY-MM-DD HH:mm:ss'),
-                                payment_id : requestData.payment_id ? requestData.payment_id : null 
+                                payment_id: requestData.payment_id ? requestData.payment_id : null
                             });
                             let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount, res);
                             return res.status(200).json(this.successFormat({
@@ -813,7 +820,7 @@ class Wallet extends controller {
         let asset = await assets.findById(data.asset);
         let checkDiscount = await discount.findOne({ user: data.user, asset_code: asset.asset_code, is_active: true });
         let fee = checkDiscount ? asset.withdrawal_fee - (asset.withdrawal_fee * (checkDiscount.discount / 100)) : asset.withdrawal_fee
-        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted','payment_id']);
+        let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted', 'payment_id']);
         let bal = amount - transaction.amount;
         if ((bal - fee) >= 0) {
             transaction.fee = fee
