@@ -48,6 +48,7 @@ const votingPhase = require('../db/voting-phase');
 const banner = require('../db/banner');
 const tradeVolume = require('../db/user-trade-volumes');
 const resetRequest = require('../db/g2f-reset-request');
+const redis = helpers.redisConnection();
 class User extends controller {
 
     async activate(req, res) {
@@ -260,9 +261,7 @@ class User extends controller {
             }));
         }
 
-        users.findOne({
-            email: data.email
-        })
+        users.findOne({ email: data.email })
             .exec()
             .then(async (result) => {
                 if (!result) {
@@ -276,6 +275,12 @@ class User extends controller {
                     }, 'users', 400));
                 }
                 else if (result.is_active) {
+                    let checkBlockedUserList = await redis.get(`BLOCKED_USER:${result._id}`);
+                    if (checkBlockedUserList) {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Due to a previous invalid action, your account was blocked for 6 hours. Try again later or contact support.',
+                        }, 'users', 400));
+                    }
                     let passwordCompare = bcrypt.compareSync(data.password, result.password);
                     if (passwordCompare == false) {
 
@@ -690,7 +695,7 @@ class User extends controller {
 
     }
 
-    async validateOtpForEmail(req, res, typeFor = "login") {
+    async   validateOtpForEmail(req, res, typeFor = "login") {
         try {
             let data = req.body.data.attributes;
             let id = req.body.data.id;
@@ -734,10 +739,23 @@ class User extends controller {
                     }));
 
                 }
-
-
             }
             else {
+                const lastOtpHistory = await otpHistory.findOne({ user_id: id }).sort({ _id: -1 });
+                if (lastOtpHistory.count == 4) {
+                    await redis.set(`BLOCKED_USER:${id}`, true);
+                    await redis.expire(`BLOCKED_USER:${id}`, 21600);
+
+                    let serviceData = Object.assign({}, {
+                        "subject": `Unsuccessful OTP Entries. Your account is temporarily blocked.`,
+                        "email_for": "blocked-user",
+                        "user_id": id
+                    });
+                    await apiServices.sendEmailNotification(serviceData, res);
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Too many incorrect entries. Your account is blocked for 6 hours. Try again later or contact support.'
+                    }));
+                }
                 if (typeFor !== 'login') {
                     return { status: false, err: 'OTP entered is invalid' }
                 }
@@ -1994,7 +2012,7 @@ class User extends controller {
             }, 'user', 400));
         }
 
-        if(checkUser.kyc_verified) {
+        if (checkUser.kyc_verified) {
             return res.status(200).send(this.successFormat({
                 message: 'Already KYC veified for this email.'
             }));
@@ -2286,7 +2304,7 @@ class User extends controller {
     async kycVerified(req, res) {
         let data = req.query.code;
         let user = await users.findOne({ _id: req.user.user });
-        if(user.kyc_verified) {
+        if (user.kyc_verified) {
             return res.status(200).send(this.successFormat({
                 message: 'Already KYC veified for this email.'
             }));

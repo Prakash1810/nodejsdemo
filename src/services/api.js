@@ -145,7 +145,7 @@ class Api extends Controller {
             const deviceInfo = await jwt.verify(token, config.get('secrete.infokey'), jwtOptions);
             const checkToken = await accesToken.findOne({ user: deviceInfo.info, info_token: token, type_for: "info-token" });
             if (!checkToken || checkToken.is_deleted) {
-                throw error
+                throw 'Authentication failed. Your request could not be authenticated.';
             } else {
                 let checkDevice = await device.findOne({
                     browser: deviceInfo.browser,
@@ -157,16 +157,13 @@ class Api extends Controller {
                     os: deviceInfo.os
                 })
                 let checkActive = await users.findOne({ _id: deviceInfo.info, is_active: false });
-
                 if (!checkDevice) {
-                    res.status(401).json(controller.errorMsgFormat({
-                        message: 'The device are browser that you are currently logged in has been removed from the device whitelist.'
-                    }, 'user', 401));
+                    return { status: false, result: "The device are browser that you are currently logged in has been removed from the device whitelist." };
+
                 } else if (checkActive) {
-                    await accesstoken.findOneAndUpdate({ user: checkActive.id, info_token: token, type_for: "info-token" }, { is_deleted: true });
-                    res.status(401).json(controller.errorMsgFormat({
-                        message: 'Your account has been disabled. Please contact support.'
-                    }, 'user', 401));
+                    await accesToken.findOneAndUpdate({ user: checkActive.id, info_token: token, type_for: "info-token" }, { is_deleted: true });
+                    return { status: false, result: "Your account has been disabled. Please contact support." };
+
 
                 }
                 else {
@@ -196,7 +193,7 @@ class Api extends Controller {
                 user: data.user, access_token: token, type_for: "token"
             })
             if (!isChecked || isChecked.is_deleted) {
-                throw error;
+                throw 'Authentication failed. Your request could not be authenticated.';
             }
             else {
                 return { status: true, result: data }
@@ -204,7 +201,7 @@ class Api extends Controller {
 
 
         }
-        catch (err) {
+        catch (error) {
             return { status: false, result: "Authentication failed. Your request could not be authenticated." };
         }
 
@@ -260,7 +257,7 @@ class Api extends Controller {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
                             data[k].q = getMarket[j].q;
-                            data[k].disable_trade= getMarket[j].disable_trade;
+                            data[k].disable_trade = getMarket[j].disable_trade;
                             if (getMarket[j].q == true) {
                                 if (data[k].stock == "ETH") {
                                     data[k].min_amount = "0.05"
@@ -295,14 +292,14 @@ class Api extends Controller {
                 }
                 let z = 0;
                 while (z < data.length) {
-                        data[z].is_favourite = false
+                    data[z].is_favourite = false
                     z++;
                 }
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
                             data[k].q = getMarket[j].q;
-                            data[k].disable_trade= getMarket[j].disable_trade;
+                            data[k].disable_trade = getMarket[j].disable_trade;
                             if (getMarket[j].q == true) {
                                 if (data[k].stock == "ETH") {
                                     data[k].min_amount = "0.05"
@@ -496,6 +493,9 @@ class Api extends Controller {
         let checkUser = await users.findOne({ _id: req.user.user });
         if (!checkUser.trade) {
             return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
+        }
+        if (!checkUser.is_active) {
+            return res.status(400).send(controller.errorMsgFormat({ message: 'Your account has been disabled. Please contact support.' }));
         }
         if (check.active == false || check.disable_trade == true) {
             return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
