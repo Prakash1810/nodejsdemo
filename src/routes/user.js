@@ -10,7 +10,8 @@ const router = express.Router();
 const info = require('../middlewares/info');
 const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValidation, resetPasswordValidation, changePasswordValidation, settingsValidation, g2fSettingValidation, favouriteValidation, kycDetailsValidation, apiKeyValidation, moveBalanceValidation, userVotingCoin, g2fResetRequest, g2fValidateOtp, g2fResendOtp } = require('../validation/user.validations');
 const controller = new Controller;
-const user_api_auth = require('../middlewares/user-api-auth')
+const user_api_auth = require('../middlewares/user-api-auth');
+const apiServices = require('../services/api');
 
 router.get('/activation/:hash', (req, res) => {
     try {
@@ -357,10 +358,30 @@ router.patch('/favourite', info, auth, async (req, res) => {
 });
 
 
-router.post('/generate/otp', info, auth, async (req, res) => {
+router.post('/generate/otp', async (req, res) => {
     try {
         if (req.body.data.attributes.type) {
-            await user.generatorOtpforEmail(req.user.user, req.body.data.attributes.type, res);
+            let user_id;
+            if (req.headers.authorization && req.headers.info) {
+                let isInfo = await apiServices.authenticationInfo(req);
+                let isChecked = await apiServices.authentication(req);
+
+                if (!isInfo.status) {
+                    return res.status(401).json(controller.errorMsgFormat({
+                        message: isInfo.result
+                    }, 'user', 401));
+                }
+                else if (!isChecked.status) {
+                    return res.status(401).json(controller.errorMsgFormat({
+                        message: isChecked.result
+                    }, 'user', 401));
+                }
+                user_id = isChecked.result.user;
+            }
+            if (req.body.data.attributes.type === 'reset-password') {
+                user_id = req.body.data.id;
+            }
+            await user.generatorOtpforEmail(user_id, req.body.data.attributes.type, res);
         } else {
             return res.status(400).send(controller.errorMsgFormat({
                 'message': "Type is required"
@@ -605,7 +626,7 @@ router.get('/user-info', auth, (req, res) => {
     }
 });
 
-router.get('/voting-list',auth,info, (req, res) => {
+router.get('/voting-list', auth, info, (req, res) => {
     try {
         user.votingCoinList(req, res);
     } catch (err) {
@@ -641,7 +662,7 @@ router.get('/banners', (req, res) => {
     }
 });
 
-router.get('/trade-volume', auth, info, (req, res) =>{
+router.get('/trade-volume', auth, info, (req, res) => {
     try {
         user.getUserTradeVolume(req, res);
     } catch (error) {

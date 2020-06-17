@@ -166,6 +166,19 @@ class Password extends Controller {
                 message: 'Your request was not encrypted.'
             }));
         }
+        if (type === 'reset') {
+            if (data.otp == null || undefined) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': 'OTP is required.'
+                }, 'user', 400));
+            }
+            let checkOtp = await user.validateOtpForEmail(req, res, "reset-password");
+            if (checkOtp.status == false) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': checkOtp.err
+                }, 'user', 400));
+            }
+        }
         const checkPassword = await Users.findById({ _id: req.body.data.id });
         let comparePassword = await bcrypt.compare(data.password, checkPassword.password);
         if (comparePassword) {
@@ -187,7 +200,7 @@ class Password extends Controller {
                     if (user == null) {
                         return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
                     } else {
-
+                
                         if (type == 'change') {
                             let serviceData =
                             {

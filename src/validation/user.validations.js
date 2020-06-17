@@ -77,6 +77,7 @@ exports.forgetPasswordValidation = (req) => {
 
 exports.resetPasswordValidation = (req) => {
     let schema = Joi.object().keys(Object.assign({
+        otp: Joi.string(),
         password: Joi.string().required().min(8).max(30).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/).error(errors => {
             errors.forEach(err => {
                 switch (err.code) {
@@ -212,7 +213,7 @@ exports.userVotingCoin = (req) => {
         phase_id: Joi.string().required()
     }));
 
-    return schema.validate(req,{abortEarly:false});
+    return schema.validate(req, { abortEarly: false });
 }
 
 exports.g2fResetRequest = (req) => {
@@ -220,16 +221,16 @@ exports.g2fResetRequest = (req) => {
         email: Joi.string().required().email()
     }));
 
-    return schema.validate(req,{abortEarly:false});
+    return schema.validate(req, { abortEarly: false });
 }
 
 exports.g2fValidateOtp = (req) => {
     let schema = Joi.object().keys(Object.assign({
         email: Joi.string().required().email(),
-        otp : Joi.string().required()
+        otp: Joi.string().required()
     }));
 
-    return schema.validate(req,{abortEarly:false});
+    return schema.validate(req, { abortEarly: false });
 }
 
 exports.g2fResendOtp = (req) => {
@@ -237,5 +238,5 @@ exports.g2fResendOtp = (req) => {
         email: Joi.string().required().email()
     }));
 
-    return schema.validate(req,{abortEarly:false});
+    return schema.validate(req, { abortEarly: false });
 }
