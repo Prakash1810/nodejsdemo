@@ -1749,8 +1749,8 @@ class User extends controller {
                 }, null, 'user', 200));
             }
         }
-        return res.status(400).send(this.errorMsgFormat({
-            'message': 'Withdrawals are disabled for your account. Please contact our support for assistance.'
+        return res.status(200).send(this.successFormat({
+            'message': 'You can be proceed withdraw.'
         }));
 
     }
