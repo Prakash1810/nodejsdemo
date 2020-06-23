@@ -156,7 +156,7 @@ class Wallet extends controller {
         let asset_code;
         if (getAsset) {
             if (getAsset.token != null && getAsset.token != undefined) {
-                if(getAsset.asset_code ==='TREEP'){
+                if (getAsset.asset_code === 'TREEP') {
                     return true;
                 }
                 asset_code = getAsset.token;
@@ -446,12 +446,14 @@ class Wallet extends controller {
         }
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         let marketResponse = await apiServices.marketPrice(assetNames);
-        let response =marketResponse.data;
+        let response = marketResponse.data;
+        let marketLast = await apiServices.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "TREEPBTC" }), res, 'data');
+        let usd = marketResponse.data['bitcoin'].usd;
         let value = {
-            "btc": process.env.TREEP_BTC,
-            "usd": process.env.TREEP_USDT
+            "btc": marketLast.data.attributes,
+            "usd": marketLast.data.attributes * usd
         };
-        Object.assign(response,{'treep': value });
+        Object.assign(response, { 'treep': value });
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
         return res.status(200).json(this.successFormat({
             "data": formatedResponse, sum
