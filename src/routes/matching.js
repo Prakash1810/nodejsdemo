@@ -290,6 +290,16 @@ router.post('/market/kline', async (req, res) => {
             'message': err.message
         }, 'order-matching', 500));
     }
-})
+});
+
+router.post('/all/orders/cancel', info, auth, async (req, res) => {
+    try {
+        await matching.allOrdersCancel(req, res, req.user.user_id, 'allCancel');
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'order-matching', 500));
+    }
+});
 
 module.exports = router;

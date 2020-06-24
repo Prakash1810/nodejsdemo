@@ -587,6 +587,42 @@ class Api extends Controller {
         return axios.get(`http://api.beldex.io/api/v1/market/last/${pair}`)
     }
 
+    async allOrdersCancel(req, res, user, type) {
+        let requestedData = req.body.data.attributes, marketList;
+        if (!requestedData.market) {
+            marketList = await market.find({});
+        } else {
+            marketList = await market.find({ market_name: requestedData.market });
+        }
+        let i = 0;
+        while (i < marketList.length) {
+            let orderPendingRequest = {};
+            Object.assign(orderPendingRequest, {
+                market: marketList[i].market_name,
+                offset: 0,
+                limit: 10,
+                user_id: user
+            });
+            let data = this.requestDataFormat(orderPendingRequest);
+
+            let orderdetails = await this.matchingEngineRequest('post', 'order/pending', data, res, 'json', marketList[i], type);
+            let j = 0;
+            while (j < orderdetails.total) {
+                let orderCancelRequest = {};
+                Object.assign(orderCancelRequest, { "market": orderdetails.records[j].market, "order_id": orderdetails.records[j].id, user_id: user, "source": orderdetails.records[j].source });
+                let orderCancel = this.requestDataFormat(orderCancelRequest);
+                await this.matchingEngineRequest('post', 'order/cancel', orderCancel, res, 'json', marketList[i], type);
+                j++;
+            }
+            i++;
+        }
+        if (type == 'disable')
+            return;
+        return res.status(200).send(this.successFormat({
+            'message': 'Successfully all orders cancel'
+        }, null, 'api', 200));
+    }
+
 }
 
 module.exports = new Api();
