@@ -21,6 +21,7 @@ const { AuthenticatedClient } = require("../helpers/AuthenticatedClient");
 const Utils = require('../helpers/utils');
 const utils = new Utils();
 const redis = helpers.redisConnection();
+const orders = require('../db/orders');
 class Api extends Controller {
 
     async sendEmailNotification(data, res) {
@@ -385,7 +386,15 @@ class Api extends Controller {
         if (result.status) {
             let value = result.result.result;
             if (type === 'json') {
+                if (path == 'order/put-limit') {
+                    let data = {};
+                    data = value;
+                    data['order_id'] = data.id;
+                    delete data.id;
+                    new orders(data).save();
+                }
                 if (path == 'order/cancel') {
+                    orders.deleteOne({ order_id: value.id });
                     await new orderCancel(value).save();
                     if (liquidity.q && source.startsWith("OX")) {
                         let body
@@ -497,7 +506,7 @@ class Api extends Controller {
         if (!checkUser.is_active) {
             return res.status(400).send(controller.errorMsgFormat({ message: 'Your account has been disabled. Please contact support.' }));
         }
-        if (check.active == false || check.disable_trade == true) {
+        if (check.is_active == false || check.disable_trade == true) {
             return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
         }
         if (type == 'limit') {
@@ -506,9 +515,25 @@ class Api extends Controller {
                     message: 'The order you have placed is lesser than the minimum price'
                 }, 'order-matching', 400)
             }
-            req.body.data.attributes.takerFeeRate = checkUser.taker_fee
-            req.body.data.attributes.makerFeeRate = checkUser.maker_fee
-            await this.okexInput(req, res, data, 'limit', check)
+            let payloads = {},
+                asset = [], asset_code;
+            payloads.user_id = req.user.user_id;
+            if (data.side == 1) {
+                let assetSplitting = data.market.split(check.market_pair);
+                asset_code = assetSplitting[0];
+                asset.push(asset_code.toUpperCase());
+            } else {
+                asset_code = check.market_pair;
+                asset.push(asset_code.toUpperCase());
+            }
+            payloads.asset = asset;
+            let apiResponse = await this.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
+            let currentBalance = Number(apiResponse.data.attributes[asset_code].available);
+            if (Number(data.amount) <= currentBalance) {
+                req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
+                req.body.data.attributes.makerFeeRate = checkUser.maker_fee;
+                await this.okexInput(req, res, data, 'limit', check);
+            }
         } else {
             req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
             await this.okexInput(req, res, data, 'market', check)
@@ -560,6 +585,42 @@ class Api extends Controller {
 
     async userApi(pair) {
         return axios.get(`http://api.beldex.io/api/v1/market/last/${pair}`)
+    }
+
+    async allOrdersCancel(req, res, user, type) {
+        let requestedData = req.body.data.attributes, marketList;
+        if (!requestedData.market) {
+            marketList = await market.find({});
+        } else {
+            marketList = await market.find({ market_name: requestedData.market });
+        }
+        let i = 0;
+        while (i < marketList.length) {
+            let orderPendingRequest = {};
+            Object.assign(orderPendingRequest, {
+                market: marketList[i].market_name,
+                offset: 0,
+                limit: 10,
+                user_id: user
+            });
+            let data = this.requestDataFormat(orderPendingRequest);
+
+            let orderdetails = await this.matchingEngineRequest('post', 'order/pending', data, res, 'json', marketList[i], type);
+            let j = 0;
+            while (j < orderdetails.total) {
+                let orderCancelRequest = {};
+                Object.assign(orderCancelRequest, { "market": orderdetails.records[j].market, "order_id": orderdetails.records[j].id, user_id: user, "source": orderdetails.records[j].source });
+                let orderCancel = this.requestDataFormat(orderCancelRequest);
+                await this.matchingEngineRequest('post', 'order/cancel', orderCancel, res, 'json', marketList[i], type);
+                j++;
+            }
+            i++;
+        }
+        if (type == 'disable')
+            return;
+        return res.status(200).send(this.successFormat({
+            'message': 'Successfully all orders cancel'
+        }, null, 'api', 200));
     }
 
 }

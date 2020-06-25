@@ -75,23 +75,23 @@ router.post('/balance/query', info, auth, async (req, res) => {
 
 router.post('/order/put-market', info, auth, async (req, res) => {
     try {
-        await matching.order(req, res, 'market')
+        await matching.order(req, res, 'market');
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'order-matching', 500));
     }
-})
+});
 
 router.post('/order/put-limit', info, auth, async (req, res) => {
     try {
-        await matching.order(req, res, 'limit')
+        await matching.order(req, res, 'limit');
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'order-matching', 500));
     }
-})
+});
 
 router.post('/order/cancel', info, auth, async (req, res) => {
     try {
@@ -290,6 +290,16 @@ router.post('/market/kline', async (req, res) => {
             'message': err.message
         }, 'order-matching', 500));
     }
-})
+});
+
+router.post('/all/orders/cancel', info, auth, async (req, res) => {
+    try {
+        await matching.allOrdersCancel(req, res, req.user.user_id, 'allCancel');
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'order-matching', 500));
+    }
+});
 
 module.exports = router;
