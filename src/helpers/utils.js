@@ -2,7 +2,12 @@ require('dotenv').config();
 const axios = require('axios');
 const crypto = require('crypto');
 const iv = Buffer.from("uyewdbnyjsyedord");
-class Utils {
+const helpers = require('./helper.functions');
+const Controller = require('../core/controller');
+const _ = require('lodash');
+
+
+class Utils extends Controller {
     async getTime() {
         const time = await axios({
             method: 'get',
@@ -12,7 +17,6 @@ class Utils {
     }
 
     createSignature(requestString, api_secret) {
-       
         const hmac = crypto.createHmac('sha256', api_secret);
         const signature = hmac.update(requestString).digest('base64');
         return signature;
@@ -34,6 +38,17 @@ class Utils {
         var dec = decipher.update(secret, 'hex', 'utf8')
         dec += decipher.final('utf8');
         return dec;
+    }
+
+    async passwordDecryption(data, res) {
+        data.password = await helpers.decrypt(data.password, res);
+        data.password_confirmation = await helpers.decrypt(data.password_confirmation, res);
+        if (data.password == '' || data.password_confirmation == '') {
+            return res.status(400).send(this.errorMsgFormat({
+                message: 'Your request was not encrypted.'
+            }));
+        }
+        return data;
     }
 }
 
