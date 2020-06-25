@@ -724,4 +724,14 @@ router.get('/update/anti-spoofing', (req, res) => {
     }
 });
 
+router.get('/market/pairs/:asset', async (req, res) => {
+    try {
+        await user.getAllAssetPairs(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'marketlist', 500));
+    }
+});
+
 module.exports = router;

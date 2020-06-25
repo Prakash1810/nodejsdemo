@@ -150,7 +150,31 @@ router.get('/order/cancel', info, auth, async (req, res) => {
 router.post('/order/pending', info, auth, async (req, res) => {
     try {
         req.body.data.attributes.user_id = Number(req.user.user_id);
-        await matching.matchingEngineRequest('post', 'order/pending', req.body, res);
+        if (req.body.data.attributes.market == 'ALL') {
+            let marketList = await markets.find(), pendingOrders = [], i = 0;
+            while (i < marketList.length) {
+                Object.assign(req.body.data.attributes, {
+                    "user_id": req.user.user_id,
+                    "market": marketList[i].market_name,
+                    "offset": 0,
+                    "limit": 100
+                });
+                let response = await matching.matchingEngineRequest('post', 'order/pending', req.body, res, 'list');
+                if (!response.errors) {
+                    let j = 0;
+                    while (j < response.data.attributes.records.length) {
+                        delete response.data.attributes.records[j].user;
+                        pendingOrders.push(response.data.attributes.records[j]);
+                        j++;
+                    }
+                }
+                i++;
+            }
+            let sortedOrder = _.orderBy(pendingOrders, ['mtime'], ['desc']);
+            return res.status(200).send(controller.successFormat({ records: sortedOrder }));
+        } else {
+            await matching.matchingEngineRequest('post', 'order/pending', req.body, res);
+        }
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
@@ -181,7 +205,34 @@ router.post('/order/deals', async (req, res) => {
 router.post('/order/finished', info, auth, async (req, res) => {
     try {
         req.body.data.attributes.user_id = Number(req.user.user_id);
-        await matching.matchingEngineRequest('post', 'order/finished', req.body, res);
+        if (req.body.data.attributes.market == 'ALL') {
+            let marketList = await markets.find(), finishedOrders = [], i = 0;
+            while (i < marketList.length) {
+                Object.assign(req.body.data.attributes, {
+                    "user_id": req.user.user_id,
+                    "market": marketList[i].market_name,
+                    "start_time": req.body.data.attributes.start_time,
+                    "end_time": req.body.data.attributes.end_time,
+                    "offset": 0,
+                    "limit": 100,
+                    "side": 0
+                });
+                let response = await matching.matchingEngineRequest('post', 'order/finished', req.body, res, 'list');
+                if (!response.errors) {
+                    let j = 0;
+                    while (j < response.data.attributes.records.length) {
+                        delete response.data.attributes.records[j].user;
+                        finishedOrders.push(response.data.attributes.records[j]);
+                        j++;
+                    }
+                }
+                i++;
+            }
+            let sortedOrder = _.orderBy(finishedOrders,['ftime'],['desc']);
+            return res.status(200).send(controller.successFormat({ records: sortedOrder }));
+        } else {
+            await matching.matchingEngineRequest('post', 'order/finished', req.body, res);
+        }
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
