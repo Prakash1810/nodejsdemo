@@ -2655,15 +2655,11 @@ class User extends controller {
             let asset = req.params.asset.toUpperCase();
             let data = await addMarket.find({ 'market_name': { $regex: asset } }).select({ 'market_name': 1, '_id': 0, 'market_pair': 1, 'is_active': 1 });
             if (!_.isEmpty(data)) {
-                let s = 0;
-                while (s < data.length) {
-                    if (!data[s].is_active) {
-                        data.splice(s, 1);
-                    }
-                    s++;
-                }
+                let filtererd = data.filter(d => {
+                    return d.is_active == true
+                 });
 
-                return res.status(200).send(this.successFormat({ market_list: data }, '', 'market'));
+                return res.status(200).send(this.successFormat({ market_list: filtererd }, '', 'market'));
             } else {
                 return res.status(400).send(this.errorMsgFormat({ message: 'No market pair found for the chosen asset.' }, 'market'));
             }
