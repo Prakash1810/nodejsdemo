@@ -12,6 +12,8 @@ const { loginValidation, otpValidation, resendOtpValidation, forgetPasswordValid
 const controller = new Controller;
 const user_api_auth = require('../middlewares/user-api-auth');
 const apiServices = require('../services/api');
+const Utils = require('../helpers/utils');
+const utils = new Utils();
 
 router.get('/activation/:hash', (req, res) => {
     try {
@@ -109,8 +111,9 @@ router.get('/reset-password/:hash', (req, res) => {
 });
 
 
-router.patch('/reset-password', (req, res) => {
+router.patch('/reset-password',async (req, res) => {
     try {
+        await utils.passwordDecryption(req.body.data.attributes, res);
         let { error } = resetPasswordValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
@@ -124,10 +127,10 @@ router.patch('/reset-password', (req, res) => {
     }
 });
 
-router.patch('/change-password', auth, info, (req, res) => {
+router.patch('/change-password', auth, info, async(req, res) => {
     try {
+        await utils.passwordDecryption(req.body.data.attributes, res);
         let { error } = changePasswordValidation(req.body.data.attributes);
-
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
         } else {
