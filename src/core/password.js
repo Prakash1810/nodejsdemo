@@ -159,13 +159,6 @@ class Password extends Controller {
             return;
         }
         let data = req.body.data.attributes;
-        data.password = await helpers.decrypt(data.password, res);
-        data.password_confirmation = await helpers.decrypt(data.password_confirmation, res);
-        if (data.password === '' || data.password_confirmation === '') {
-            return res.status(400).send(this.errorMsgFormat({
-                message: 'Your request was not encrypted.'
-            }));
-        }
         if (type === 'reset') {
             if (data.otp == null || undefined) {
                 return res.status(400).send(this.errorMsgFormat({
@@ -200,7 +193,7 @@ class Password extends Controller {
                     if (user == null) {
                         return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
                     } else {
-                
+
                         if (type == 'change') {
                             let serviceData =
                             {

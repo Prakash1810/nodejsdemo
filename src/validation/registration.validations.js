@@ -3,7 +3,7 @@ const Joi = require('@hapi/joi');
 exports.registrationValidation = (req) => {
     let schema = Joi.object().keys({
         email: Joi.string().required().email(),
-        password: Joi.string().required().min(8).max(30).regex(/^(?=.*?[Aa-zZ])(?=.*?[0-9]).{8,}$/).error(errors => {
+        password: Joi.string().required().min(8).max(20).regex(/^(?=.*[A-Z])(?=.*\d).{8,20}$/).error(errors => {
             errors.forEach(err => {
                 switch (err.code) {
                     case "string.pattern.base":
