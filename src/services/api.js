@@ -460,9 +460,10 @@ class Api extends Controller {
             } else {
                 let coinCode = (assetCode[i] + 'BTC');
                 let marketLast = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": coinCode }), res, 'data');
+                let btcValue = marketLast.data.attributes;
                 let value = {
-                    "btc": marketLast,
-                    "usd": marketLast * usd
+                    "btc": btcValue,
+                    "usd": btcValue * usd
                 };
                 let assetName = assetNames[i];
                 response[assetName] = value;
