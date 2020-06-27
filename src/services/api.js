@@ -438,6 +438,40 @@ class Api extends Controller {
         return await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${assetsName}&vs_currencies=${convertTo}`);
     }
 
+    async marketPriceGetting(assetNames, assetCode, res) {
+        let i = 0, response = {}, value;
+        let assetPrice = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "BTCUSDT" }), res, 'data');
+        let usd = Number(assetPrice.data.attributes);
+        while (i < assetNames.length) {
+            if (assetNames[i] == 'bitcoin') {
+                value = {
+                    "btc": 1,
+                    "usd": usd
+                };
+                let assetName = assetNames[i];
+                response[assetName] = value;
+            } else if (assetNames[i] == 'tether') {
+                value = {
+                    "btc": (1 / usd).toFixed(8),
+                    "usd": 1
+                };
+                let assetName = assetNames[i];
+                response[assetName] = value;
+            } else {
+                let coinCode = (assetCode[i] + 'BTC');
+                let marketLast = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": coinCode }), res, 'data');
+                let value = {
+                    "btc": marketLast,
+                    "usd": marketLast * usd
+                };
+                let assetName = assetNames[i];
+                response[assetName] = value;
+            }
+            i++;
+        }
+        return response;
+    }
+
     async publishNotification(user, data) {
         return await redis.publish(`NOTIFICATIONS:${user}`, JSON.stringify(data));
     }

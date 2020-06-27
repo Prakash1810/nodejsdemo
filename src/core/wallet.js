@@ -412,7 +412,7 @@ class Wallet extends controller {
 
     async getAssetsBalance(req, res) {
         let payloads = {},
-            assetNames,
+            assetNames = [], assetCode = [],
             asset = [];
         let collectOfAssetName = {};
         payloads.user_id = req.user.user_id;
@@ -421,8 +421,9 @@ class Wallet extends controller {
             payloads.asset = asset;
             let noofAsset = await assets.findOne({ asset_code: req.query.asset_code });
             if (noofAsset) {
-                assetNames = noofAsset.asset_name.toLowerCase();
                 collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
+                assetCode.push(noofAsset.asset_code);
+                assetNames.push(noofAsset.asset_name.toLowerCase());
             }
             else {
                 return res.status(400).send(this.errorMsgFormat({
@@ -434,8 +435,10 @@ class Wallet extends controller {
             let noofAsset = await assets.find({});
             _.map(noofAsset, function (asset) {
                 collectOfAssetName[asset.asset_code] = asset.asset_name.toLowerCase();
-            })
-            assetNames = _.values(_.reverse(collectOfAssetName)).join(',');
+                assetCode.push(asset.asset_code);
+                assetNames.push(asset.asset_name.toLowerCase());
+
+            });
         }
         let reward = await rewards.find({ user: req.user.user, reward_asset: "BDX" });
         let i = 0;
@@ -445,15 +448,9 @@ class Wallet extends controller {
             i++;
         }
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
-        let marketResponse = await apiServices.marketPrice(assetNames);
-        let response = marketResponse.data;
-        let marketLast = await apiServices.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "TREEPBTC" }), res, 'data');
-        let usd = marketResponse.data['bitcoin'].usd;
-        let value = {
-            "btc": marketLast.data.attributes,
-            "usd": marketLast.data.attributes * usd
-        };
-        Object.assign(response, { 'treep': value });
+        // let marketResponse = await apiServices.marketPrice(assetNames);
+        let marketResponse = await apiServices.marketPriceGetting(assetNames, assetCode, res);
+        console.log("market:", marketResponse)
         let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
         return res.status(200).json(this.successFormat({
             "data": formatedResponse, sum
@@ -463,8 +460,8 @@ class Wallet extends controller {
     currencyConversion(matchResponse, marketResponse, assetsJson) {
         let formatedAssetBalnce = {};
         for (let result in matchResponse) {
-            let btc = marketResponse.data[assetsJson[result]].btc;
-            let usd = marketResponse.data[assetsJson[result]].usd;
+            let btc = marketResponse[assetsJson[result]].btc;
+            let usd = marketResponse[assetsJson[result]].usd;
             Object.assign(formatedAssetBalnce, {
                 [result]: Object.assign({
                     'available': {
