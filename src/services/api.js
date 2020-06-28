@@ -550,25 +550,9 @@ class Api extends Controller {
                     message: 'The order you have placed is lesser than the minimum price'
                 }, 'order-matching', 400)
             }
-            let payloads = {},
-                asset = [], asset_code;
-            payloads.user_id = req.user.user_id;
-            if (data.side == 1) {
-                let assetSplitting = data.market.split(check.market_pair);
-                asset_code = assetSplitting[0];
-                asset.push(asset_code.toUpperCase());
-            } else {
-                asset_code = check.market_pair;
-                asset.push(asset_code.toUpperCase());
-            }
-            payloads.asset = asset;
-            let apiResponse = await this.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
-            let currentBalance = Number(apiResponse.data.attributes[asset_code].available);
-            if (Number(data.amount) <= currentBalance) {
-                req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
-                req.body.data.attributes.makerFeeRate = checkUser.maker_fee;
-                await this.okexInput(req, res, data, 'limit', check);
-            }
+            req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
+            req.body.data.attributes.makerFeeRate = checkUser.maker_fee;
+            await this.okexInput(req, res, data, 'limit', check);
         } else {
             req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
             await this.okexInput(req, res, data, 'market', check)
@@ -578,40 +562,58 @@ class Api extends Controller {
 
     async okexInput(req, res, data, type, check) {
         if (check.q) {
-            let side = data.side == 2 ? "buy" : "sell";
-            let pair = data.market;
-            let input;
-            let body;
-            if (pair.substr(pair.length - 4) == 'USDT') {
-                body = pair.slice(0, pair.length - 4) + '-' + pair.slice(pair.length - 4);
-            }
-            else {
-                body = pair.slice(0, pair.length - 3) + '-' + pair.slice(pair.length - 3);
-            }
-            let fee = req.body.data.attributes.takerFeeRate.replace('.', 'D')
-            if (type == 'limit') {
-                input = Object.assign({}, {
-                    'type': 'limit',
-                    'side': side,
-                    'instrument_id': body,
-                    'size': Number(data.amount),
-                    'client_oid': `BDXU${data.user_id}F${fee}`,
-                    'price': data.pride,
-                    'order_type': '0'
-                })
+            let amount = Number(req.body.data.attributes.amount);
+            let payloads = {},
+                asset = [], asset_code;
+            payloads.user_id = req.user.user_id;
+            if (data.side == 1) {
+                asset_code = data.market.replace(check.market_pair, "");
+                asset.push(asset_code.toUpperCase());
             } else {
-                input = Object.assign({}, {
-                    'type': 'market',
-                    'side': side,
-                    'instrument_id': body,
-                    'size': data.side == 1 ? Number(data.amount) : 0,
-                    'client_oid': `BDXU${data.user_id}F${fee}`,
-                    "notional": data.side == 2 ? data.amount : '',
-                    'order_type': '0'
-                })
+                asset_code = check.market_pair;
+                asset.push(asset_code.toUpperCase());
+                amount = amount * Number(req.body.data.attributes.pride);
             }
-            console.log(input)
-            await this.OkexHttp(input, req.body, res);
+            payloads.asset = asset;
+            let apiResponse = await this.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
+            let currentBalance = Number(apiResponse.data.attributes[asset_code].available);
+            if (amount <= currentBalance) {
+                let side = data.side == 2 ? "buy" : "sell";
+                let pair = data.market;
+                let input;
+                let body;
+                if (pair.substr(pair.length - 4) == 'USDT') {
+                    body = pair.slice(0, pair.length - 4) + '-' + pair.slice(pair.length - 4);
+                }
+                else {
+                    body = pair.slice(0, pair.length - 3) + '-' + pair.slice(pair.length - 3);
+                }
+                let fee = req.body.data.attributes.takerFeeRate.replace('.', 'D')
+                if (type == 'limit') {
+                    input = Object.assign({}, {
+                        'type': 'limit',
+                        'side': side,
+                        'instrument_id': body,
+                        'size': Number(data.amount),
+                        'client_oid': `BDXU${data.user_id}F${fee}`,
+                        'price': data.pride,
+                        'order_type': '0'
+                    })
+                } else {
+                    input = Object.assign({}, {
+                        'type': 'market',
+                        'side': side,
+                        'instrument_id': body,
+                        'size': data.side == 1 ? Number(data.amount) : 0,
+                        'client_oid': `BDXU${data.user_id}F${fee}`,
+                        "notional": data.side == 2 ? data.amount : '',
+                        'order_type': '0'
+                    })
+                }
+                console.log(input)
+                await this.OkexHttp(input, req.body, res);
+            }
+            return res.status(400).send(this.errorMsgFormat({ 'message': 'The order cannot be placed due to insufficient balance.' }, null, 'api', 400));
         } else {
             console.log(new Date())
             await this.matchingEngineRequest('post', `order/${type == 'limit' ? 'put-limit' : 'put-market'}`, req.body, res);
