@@ -40,7 +40,8 @@ const assetsSchema = new mongoose.Schema({
     markets: mongoose.Schema.Types.Mixed,
     payment_id: { type: Boolean, default: false },
     type : { type : String, default : null },
-    maitenance : { type : Boolean, default : false }
+    maitenance : { type : Boolean, default : false },
+    precision: { type: Number }
 
 });
 

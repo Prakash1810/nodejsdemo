@@ -841,11 +841,13 @@ class Wallet extends controller {
         let beldexId = await new beldexNotification(beldexData).save();
         let notifyId = beldexId._id;
         let transactionsId = transactionId._id;
+        let txnAmount = String(transaction.amount);
+        let precisionAmount = (asset.precision && txnAmount.indexOf('.') > -1) ? txnAmount.substring(0, txnAmount.indexOf('.') + Number(asset.precision + 1)) : txnAmount;
         let emailData = Object.assign({}, {
             user: new mongoose.Types.ObjectId(transaction.user),
             user_id: data.user_id,
             verification_code: notifyId,
-            amount: transaction.amount,
+            amount: Number(precisionAmount),
             asset_code: asset.asset_code,
             address: transaction.address,
             ip: data.ip,
