@@ -829,6 +829,7 @@ class Wallet extends controller {
             transaction.fee = fee
             transaction.amount = transaction.amount - remaningFee;
         }
+        transaction.amount = await this.precisionAmount(transaction.amount,asset.precision);
         let transactionId = await new transactions(transaction).save();
         let beldexData = {
             user: new mongoose.Types.ObjectId(transaction.user),
@@ -841,13 +842,11 @@ class Wallet extends controller {
         let beldexId = await new beldexNotification(beldexData).save();
         let notifyId = beldexId._id;
         let transactionsId = transactionId._id;
-        let txnAmount = String(transaction.amount);
-        let precisionAmount = (asset.precision && txnAmount.indexOf('.') > -1) ? txnAmount.substring(0, txnAmount.indexOf('.') + Number(asset.precision + 1)) : txnAmount;
         let emailData = Object.assign({}, {
             user: new mongoose.Types.ObjectId(transaction.user),
             user_id: data.user_id,
             verification_code: notifyId,
-            amount: Number(precisionAmount),
+            amount: transaction.amount,
             asset_code: asset.asset_code,
             address: transaction.address,
             ip: data.ip,
@@ -867,6 +866,12 @@ class Wallet extends controller {
         this.sendWithdrawNotification(emailData, res);
 
         return notifyId;
+    }
+
+    precisionAmount(data, precision) {
+        let txnAmount = String(data);
+        let precisionAmount = (precision && txnAmount.indexOf('.') > -1) ? txnAmount.substring(0, txnAmount.indexOf('.') + Number(precision + 1)) : txnAmount;
+        return precisionAmount;
     }
 
     sendWithdrawNotification(data, res) {
