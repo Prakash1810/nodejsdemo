@@ -419,9 +419,15 @@ class User extends controller {
     }
     async generatorOtpforEmail(user, typeFor = 'login', res) {
         try {
-            const rand = Math.random() * (999999 - 100000) + 100000;
             const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
-            const otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
+            let otp, rand;
+            if (process.env.NODE_ENV === 'development') {
+                rand = 202020;
+                otp = `${getOtpType.otp_prefix}-${(rand)}`;
+            } else {
+                rand = Math.random() * (999999 - 100000) + 100000;
+                otp = `${getOtpType.otp_prefix}-${Math.floor(rand)}`;
+            }
             const isChecked = await otpHistory.findOneAndUpdate({ user_id: user, is_active: false, type_for: typeFor }, { count: 0, otp: otp, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') })
             if (!isChecked) {
                 let data = Object.assign({}, {
@@ -695,7 +701,7 @@ class User extends controller {
 
     }
 
-    async   validateOtpForEmail(req, res, typeFor = "login") {
+    async validateOtpForEmail(req, res, typeFor = "login") {
         try {
             let data = req.body.data.attributes;
             let id = req.body.data.id;
@@ -2657,7 +2663,7 @@ class User extends controller {
             if (!_.isEmpty(data)) {
                 let filtererd = data.filter(d => {
                     return d.is_active == true
-                 });
+                });
 
                 return res.status(200).send(this.successFormat({ market_list: filtererd }, '', 'market'));
             } else {

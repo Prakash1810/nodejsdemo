@@ -39,13 +39,17 @@ class Api extends Controller {
                     }))
             }
         }
-        axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
-            .then((res) => {
+        if (process.env.NODE_ENV === 'development') {
+            return;
+        } else {
+            axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
+                .then((res) => {
 
-            })
-            .catch((err) => {
-                throw (err.message)
-            });
+                })
+                .catch((err) => {
+                    throw (err.message)
+                });
+        }
     }
 
 
