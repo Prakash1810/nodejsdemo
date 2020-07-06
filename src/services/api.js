@@ -39,17 +39,18 @@ class Api extends Controller {
                     }))
             }
         }
-        if (process.env.NODE_ENV === 'development') {
-            return;
-        } else {
-            axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
-                .then((res) => {
 
-                })
-                .catch((err) => {
-                    throw (err.message)
-                });
+        if (process.env.NODE_ENV === 'development' && data.email_for === "otp-login") {
+            return;
         }
+        axios.post(`${process.env.NOTIFICATION}/api/${process.env.NOTIFICATION_VERSION}/email-notification`, this.requestDataFormat(data))
+            .then((res) => {
+
+            })
+            .catch((err) => {
+                throw (err.message)
+            });
+
     }
 
 
