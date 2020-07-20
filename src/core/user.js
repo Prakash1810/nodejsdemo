@@ -695,7 +695,7 @@ class User extends controller {
 
     }
 
-    async   validateOtpForEmail(req, res, typeFor = "login") {
+    async validateOtpForEmail(req, res, typeFor = "login") {
         try {
             let data = req.body.data.attributes;
             let id = req.body.data.id;
@@ -788,7 +788,12 @@ class User extends controller {
             if (isChecked.count <= config.get('otpForEmail.hmt')) {
                 let count = isChecked.count++;
                 let inCount = ++count;
-                const rand = Math.random() * (999999 - 100000) + 100000
+                let rand;
+                if (process.env.NODE_ENV === 'development') {
+                    rand = 202020;
+                } else {
+                    rand = Math.random() * (999999 - 100000) + 100000;
+                }
                 const getOtpType = await otpType.findOne({ otp_prefix: "BEL" });
                 let serviceData = Object.assign({}, {
                     subject: `Beldex ${typeFor == "login" ? "login" : typeFor} verification code  ${moment().format('YYYY-MM-DD HH:mm:ss')} ( ${config.get('settings.timeZone')} )`,
@@ -2657,7 +2662,7 @@ class User extends controller {
             if (!_.isEmpty(data)) {
                 let filtererd = data.filter(d => {
                     return d.is_active == true
-                 });
+                });
 
                 return res.status(200).send(this.successFormat({ market_list: filtererd }, '', 'market'));
             } else {

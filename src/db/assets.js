@@ -39,9 +39,10 @@ const assetsSchema = new mongoose.Schema({
     reason_for_withdraw: { type: String, default: null },
     markets: mongoose.Schema.Types.Mixed,
     payment_id: { type: Boolean, default: false },
-    type : { type : String, default : null },
-    maitenance : { type : Boolean, default : false },
-    precision: { type: Number }
+    type: { type: String, default: null },
+    maitenance: { type: Boolean, default: false },
+    precision: { type: Number },
+    withdraw_fee_percentage: { type: Number }
 
 });
 
