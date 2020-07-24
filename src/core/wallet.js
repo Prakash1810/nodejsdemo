@@ -817,7 +817,11 @@ class Wallet extends controller {
         let amount = Number(responseAmount);
         let asset = await assets.findById(data.asset);
         let checkDiscount = await discount.findOne({ user: data.user, asset_code: asset.asset_code, is_active: true });
-        let fee = checkDiscount ? asset.withdrawal_fee - (asset.withdrawal_fee * (checkDiscount.discount / 100)) : asset.withdrawal_fee
+        let withdrawal_fee = asset.withdrawal_fee;
+        if (asset.withdraw_fee_percentage) {
+            withdrawal_fee = transaction.amount * asset.withdraw_fee_percentage / 100;
+        }
+        let fee = checkDiscount ? withdrawal_fee - (withdrawal_fee * (checkDiscount.discount / 100)) : withdrawal_fee;
         let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted', 'payment_id']);
         let bal = amount - transaction.amount;
         if ((bal - fee) >= 0) {
@@ -829,7 +833,7 @@ class Wallet extends controller {
             transaction.fee = fee
             transaction.amount = transaction.amount - remaningFee;
         }
-        transaction.amount = await this.precisionAmount(transaction.amount,asset.precision);
+        transaction.amount = await this.precisionAmount(transaction.amount, asset.precision);
         let transactionId = await new transactions(transaction).save();
         let beldexData = {
             user: new mongoose.Types.ObjectId(transaction.user),
