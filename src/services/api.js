@@ -660,6 +660,17 @@ class Api extends Controller {
         }, null, 'api', 200));
     }
 
+    async okexRequest() {
+        try {
+            const timestamp = await utils.getTime();
+            const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
+            return { status: true, result: authClient }
+        }
+        catch (err) {
+            return { status: false, error: err.message }
+        }
+
+    }
 }
 
 module.exports = new Api();

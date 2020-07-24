@@ -829,7 +829,7 @@ class Wallet extends controller {
             transaction.fee = fee
             transaction.amount = transaction.amount - remaningFee;
         }
-        transaction.amount = await this.precisionAmount(transaction.amount,asset.precision);
+        transaction.amount = await this.precisionAmount(transaction.amount, asset.precision);
         let transactionId = await new transactions(transaction).save();
         let beldexData = {
             user: new mongoose.Types.ObjectId(transaction.user),
@@ -930,23 +930,37 @@ class Wallet extends controller {
                     let response = await this.updateWithdrawRequest(notify, req, res);
 
                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
-
-                        notify.status = 2;
-                        notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
-                        await notify.save();
-                        let transactionDetials = await transactions.findOneAndUpdate({
+                        let transactionDetials = await transactions.findOne({
                             _id: notify.notify_data.transactions,
                             user: code.user,
                             is_deleted: false
-                        }, {
-                            $set: {
-                                status: "1",
-                                updated_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                            }
                         }).populate({
                             path: 'asset',
                             select: 'asset_name asset_code'
                         })
+                        const result = await apiServices.okexRequest()
+                        if (!result.status) {
+                            console.log("Liquidity Connection error :", result.error)
+                            return;
+                        }
+                        let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
+                        if (!okexFee) {
+                            return res.status(400).json(this.errorMsgFormat({
+                                "message": "Asset not found in liquidity"
+                            }, 'withdraw'));
+                        }
+                        let putWallet = await this.okexAutoWithdraw(transactionDetials,okexFee,result.result)
+                        if(!putWallet.status){
+                            return res.status(400).json(this.errorMsgFormat({
+                                "message": putWallet.error
+                            }, 'withdraw'));
+                        }
+                        notify.status = 2;
+                        notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
+                        await notify.save();
+                        transactionDetials.status = 1;
+                        transactionDetials.updated_date = moment().format('YYYY-MM-DD HH:mm:ss')
+                        await transactionDetials.save();
                         await this.sendMessage(transactionDetials)
                         return res.status(200).json(this.successFormat({
                             "message": "Your withdrawal request has been confirmed."
@@ -1104,6 +1118,35 @@ class Wallet extends controller {
                 'message': error.message
             }, 'withdraw', 400));
         }
+    }
+
+    async getWithdawalFee(client, asset) {
+        const authClient = client
+        let response = await authClient.account().getWithdrawalFee(asset.toLowerCase());
+        return response;
+    }
+
+    async okexAutoWithdraw(pendingDetials, filterFee, client) {
+        try {
+            const authClient = client;
+            let payload = Object.assign({}, {
+                "amount": pendingDetials.amount,
+                "fee": filterFee.min_fee,
+                "trade_pwd": process.env.OKEX_TRADEPWD,
+                "destination": 4,
+                "currency": filterFee.currency.toLowerCase(),
+                "to_address": process.env.TOADDRESS
+            })
+            console.log('Payload:', payload)
+            let response = await authClient.account().postWithdrawal(payload);
+            if (response.status) {
+                return { status: true }
+            }
+            return { status: false, error: "Something went wrong" }
+        } catch (err) {
+            return { status: false, error: err }
+        }
+
     }
 
 }
