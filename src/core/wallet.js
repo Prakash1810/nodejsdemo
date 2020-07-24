@@ -949,16 +949,13 @@ class Wallet extends controller {
                             }, 'withdraw'))
                         }
                         let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
-                        if (!okexFee) {
-                            return res.status(400).json(this.errorMsgFormat({
-                                "message": "Asset not found in liquidity"
-                            }, 'withdraw'));
-                        }
-                        let putWallet = await this.okexAutoWithdraw(transactionDetials,okexFee,result.result)
-                        if(!putWallet.status){
-                            return res.status(400).json(this.errorMsgFormat({
-                                "message": putWallet.error
-                            }, 'withdraw'));
+                        if (okexFee) {
+                            let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee, result.result)
+                            if (!putWallet.status) {
+                                return res.status(400).json(this.errorMsgFormat({
+                                    "message": putWallet.error
+                                }, 'withdraw'));
+                            }
                         }
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
@@ -1140,7 +1137,7 @@ class Wallet extends controller {
                 "trade_pwd": process.env.OKEX_TRADEPWD,
                 "destination": 4,
                 "currency": filterFee.currency.toLowerCase(),
-                "to_address": process.env.TOADDRESS
+                "to_address": process.env[`${pendingDetials.asset.asset_code}_TOADDRESS`]
             })
             console.log('Payload:', payload)
             let response = await authClient.account().postWithdrawal(payload);
