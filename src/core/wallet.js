@@ -942,21 +942,23 @@ class Wallet extends controller {
                             path: 'asset',
                             select: 'asset_name asset_code'
                         })
-                        const result = await apiServices.okexRequest()
-                        if (!result.status) {
-                            return res.status(400).json(this.errorMsgFormat({
-                                "message": result.error
-                            }, 'withdraw'))
-                        }
-                        let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
-                        if (okexFee) {
-                            let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee, result.result)
-                            if (!putWallet.status) {
+                        //if (transactionDetials.asset_code.automatic_withdrawal) {
+                            const result = await apiServices.okexRequest()
+                            if (!result.status) {
                                 return res.status(400).json(this.errorMsgFormat({
-                                    "message": putWallet.error
-                                }, 'withdraw'));
+                                    "message": result.error
+                                }, 'withdraw'))
                             }
-                        }
+                            let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
+                            if (okexFee) {
+                                let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee, result.result)
+                                if (!putWallet.status) {
+                                    return res.status(400).json(this.errorMsgFormat({
+                                        "message": putWallet.error
+                                    }, 'withdraw'));
+                                }
+                            }
+                        //}
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
