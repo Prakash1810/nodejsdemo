@@ -944,8 +944,9 @@ class Wallet extends controller {
                         })
                         const result = await apiServices.okexRequest()
                         if (!result.status) {
-                            console.log("Liquidity Connection error :", result.error)
-                            return;
+                            return res.status(400).json(this.errorMsgFormat({
+                                "message": result.error
+                            }, 'withdraw'))
                         }
                         let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
                         if (!okexFee) {
@@ -1147,8 +1148,8 @@ class Wallet extends controller {
                 return { status: true }
             }
             return { status: false, error: "Something went wrong" }
-        } catch (err) {
-            return { status: false, error: err }
+        } catch (error) {
+            return { status: false, error: error }
         }
 
     }
