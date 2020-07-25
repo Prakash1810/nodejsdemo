@@ -942,7 +942,7 @@ class Wallet extends controller {
                             path: 'asset',
                             select: 'asset_name asset_code'
                         })
-                        //if (transactionDetials.asset_code.automatic_withdrawal) {
+                        if (transactionDetials.asset_code.automatic_withdrawal) {
                             const result = await apiServices.okexRequest()
                             if (!result.status) {
                                 return res.status(400).json(this.errorMsgFormat({
@@ -958,7 +958,7 @@ class Wallet extends controller {
                                     }, 'withdraw'));
                                 }
                             }
-                        //}
+                        }
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
