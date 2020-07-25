@@ -942,7 +942,7 @@ class Wallet extends controller {
                             is_deleted: false
                         }).populate({
                             path: 'asset',
-                            select: 'asset_name asset_code'
+                            select: 'asset_name asset_code automatic_withdrawal'
                         })
                         if (transactionDetials.asset.automatic_withdrawal) {
                             const result = await apiServices.okexRequest()
@@ -952,7 +952,7 @@ class Wallet extends controller {
                                 }, 'withdraw'))
                             }
                             let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
-                            if (okexFee) {
+                            if (okexFee.length) {
                                 let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee, result.result)
                                 if (!putWallet.status) {
                                     return res.status(400).json(this.errorMsgFormat({
