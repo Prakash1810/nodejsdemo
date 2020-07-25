@@ -663,7 +663,7 @@ class Api extends Controller {
     async okexRequest() {
         try {
             const timestamp = await utils.getTime();
-            const authClient = new AuthenticatedClient(process.env.HTTPKEY, process.env.HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
+            const authClient = new AuthenticatedClient(process.env.WITHDRAWAL_HTTPKEY, process.env.WITHDRAWAL_HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
             return { status: true, result: authClient }
         }
         catch (err) {

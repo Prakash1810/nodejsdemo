@@ -952,8 +952,8 @@ class Wallet extends controller {
                                 }, 'withdraw'))
                             }
                             let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
-                            if (okexFee.length) {
-                                let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee, result.result)
+                            if (okexFee.length != 0) {
+                                let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee[0], result.result)
                                 if (!putWallet.status) {
                                     return res.status(400).json(this.errorMsgFormat({
                                         "message": putWallet.error
