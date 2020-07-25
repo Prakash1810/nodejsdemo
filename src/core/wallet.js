@@ -823,16 +823,18 @@ class Wallet extends controller {
             withdrawal_fee = transaction.amount * asset.withdraw_fee_percentage / 100;
         }
         let fee = checkDiscount ? withdrawal_fee - (withdrawal_fee * (checkDiscount.discount / 100)) : withdrawal_fee;
-        let bal = amount - transaction.amount;
-        if ((bal - fee) >= 0) {
-            transaction.fee = fee
-            transaction.amount = transaction.amount
-        }
-        else {
-            let remaningFee = fee - bal;
-            transaction.fee = fee
-            transaction.amount = transaction.amount - remaningFee;
-        }
+        // let bal = amount - transaction.amount;
+        // if ((bal - fee) >= 0) {
+        //     transaction.fee = fee
+        //     transaction.amount = transaction.amount
+        // }
+        // else {
+        //     let remaningFee = fee - bal;
+        //     transaction.fee = fee
+        //     transaction.amount = transaction.amount - remaningFee;
+        // }
+        transaction.fee = fee;
+        transaction.amount = transaction.amount - fee;
         transaction.amount = await this.precisionAmount(transaction.amount, asset.precision);
         let transactionId = await new transactions(transaction).save();
         let beldexData = {
