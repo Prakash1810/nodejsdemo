@@ -942,29 +942,34 @@ class Wallet extends controller {
                             is_deleted: false
                         }).populate({
                             path: 'asset',
-                            select: 'asset_name asset_code automatic_withdrawal'
+                            select: 'asset_name asset_code automatic_withdrawal token'
                         })
-                        if (transactionDetials.asset.automatic_withdrawal) {
-                            const result = await apiServices.okexRequest()
-                            if (!result.status) {
-                                return res.status(400).json(this.errorMsgFormat({
-                                    "message": result.error
-                                }, 'withdraw'))
-                            }
-                            let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
-                            if (okexFee.length != 0) {
-                                let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee[0], result.result)
-                                if (!putWallet.status) {
-                                    return res.status(400).json(this.errorMsgFormat({
-                                        "message": putWallet.error
-                                    }, 'withdraw'));
-                                }
-                            }
-                        }
+                        // if (transactionDetials.asset.automatic_withdrawal) {
+                        //     const result = await apiServices.okexRequest()
+                        //     if (!result.status) {
+                        //         return res.status(400).json(this.errorMsgFormat({
+                        //             "message": result.error
+                        //         }, 'withdraw'))
+                        //     }
+                        //     let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
+                        //     if (okexFee.length != 0) {
+                        //         let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee[0], result.result)
+                        //         if (!putWallet.status) {
+                        //             return res.status(400).json(this.errorMsgFormat({
+                        //                 "message": putWallet.error
+                        //             }, 'withdraw'));
+                        //         }
+                        //     }
+                        // }
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
-                        transactionDetials.status = 1;
+                        if (transactionDetials.asset.token == 'ETH' && transactionDetials.asset.asset_code != 'USDT') {
+                            transactionDetials.status = "4";
+
+                        } else {
+                            transactionDetials.status = "1";
+                        }
                         transactionDetials.updated_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await transactionDetials.save();
                         await this.sendMessage(transactionDetials)
