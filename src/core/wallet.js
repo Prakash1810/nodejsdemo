@@ -964,7 +964,7 @@ class Wallet extends controller {
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
-                        if (transactionDetials.asset.token == 'ETH' && transactionDetials.asset.asset_code != 'USDT') {
+                        if (transactionDetials.asset.token == 'ETH') {
                             transactionDetials.status = "4";
 
                         } else {
