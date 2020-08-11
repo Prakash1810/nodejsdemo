@@ -457,8 +457,16 @@ class Api extends Controller {
                 };
                 let assetName = assetNames[i];
                 response[assetName] = value;
+            } else if (assetNames[i] == 'prediqt') {
+                let PQTMarket = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "PQTUSDT" }), res, 'data');
+                let value = {
+                    "btc": PQTMarket.data.attributes,
+                    "usd": PQTMarket.data.attributes * usd
+                };
+                let assetName = assetNames[i];
+                response[assetName] = value;
             } else {
-                let coinCode = (assetCode[i] + 'BTC');
+                let coinCode = (assetCode[i] === 'IDRT') ? ('BTC' + assetCode[i]) : (assetCode[i] + 'BTC');
                 let marketLast = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": coinCode }), res, 'data');
                 let btcValue = marketLast.data.attributes;
                 let value = {
