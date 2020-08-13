@@ -460,8 +460,8 @@ class Api extends Controller {
             } else if (assetNames[i] == 'prediqt') {
                 let PQTMarket = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "PQTUSDT" }), res, 'data');
                 let value = {
-                    "btc": PQTMarket.data.attributes,
-                    "usd": PQTMarket.data.attributes * usd
+                    "btc": usd / PQTMarket.data.attributes,
+                    "usd": PQTMarket.data.attributes
                 };
                 let assetName = assetNames[i];
                 response[assetName] = value;
