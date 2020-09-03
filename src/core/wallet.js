@@ -155,22 +155,23 @@ class Wallet extends controller {
         let getAsset = await assets.findOne({ _id: asset });
         let asset_code;
         if (getAsset) {
-            if (getAsset.token != null && getAsset.token != undefined) {
-                if (getAsset.asset_code === 'TREEP') {
+            if (!getAsset.validate_address) {
+                // check if bdx
+                if (asset_code.toLowerCase() === 'bdx') {
+                    if (address.length <= 8) {
+                        return false;
+                    }
                     return true;
                 }
+                return true;
+            }
+            if (getAsset.token != null && getAsset.token != undefined) {
                 asset_code = getAsset.token;
             }
             else {
                 asset_code = getAsset.asset_code;
             }
-            // check if bdx
-            if (asset_code.toLowerCase() === 'bdx') {
-                if (address.length <= 8) {
-                    return false;
-                }
-                return true;
-            }
+            
             return coinAddressValidator.validate(address, asset_code.toLowerCase());
         } else {
             return false;
@@ -964,7 +965,7 @@ class Wallet extends controller {
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
-                        if (transactionDetials.asset.token == 'ETH' && transactionDetials.asset.asset_code!='ETH') {
+                        if (transactionDetials.asset.token == 'ETH' && transactionDetials.asset.asset_code != 'ETH') {
                             transactionDetials.status = "4";
 
                         } else {

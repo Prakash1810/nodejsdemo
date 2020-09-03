@@ -43,7 +43,8 @@ const assetsSchema = new mongoose.Schema({
     maitenance: { type: Boolean, default: false },
     precision: { type: Number },
     withdraw_fee_percentage: { type: Number },
-    automatic_withdrawal: { type: Boolean }
+    automatic_withdrawal: { type: Boolean },
+    validate_address:{type:Boolean}
 
 });
 
