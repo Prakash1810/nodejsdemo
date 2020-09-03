@@ -354,6 +354,7 @@ class Api extends Controller {
                 let markets = [];
                 let k = 0;
                 while (k < data.length) {
+                    
                     let assetUrl = await assets.findOne({ asset_code: data[k].stock });
                     data[k].logo_url = assetUrl.logo_url;
                     if (pairs[i] == data[k].money) {
@@ -361,7 +362,7 @@ class Api extends Controller {
                     }
                     k++;
                 }
-                response.push({ [pairs[i]]: markets })
+                response.push({ [pairs[i]]: markets });
             }
             return res.status(200).send(controller.successFormat([response, market_name], result.result.id))
         } catch (err) {
