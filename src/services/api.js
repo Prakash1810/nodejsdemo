@@ -352,13 +352,17 @@ class Api extends Controller {
             })
             for (var i = 0; i < pairs.length; i++) {
                 let markets = [];
-                _.map(data, function (result) {
-                    if (pairs[i] == result.money) {
-                        markets.push(result);
+                let k = 0;
+                while (k < data.length) {
+                    
+                    let assetUrl = await assets.findOne({ asset_code: data[k].stock });
+                    data[k].logo_url = assetUrl.logo_url;
+                    if (pairs[i] == data[k].money) {
+                        markets.push(data[k]);
                     }
-
-                })
-                response.push({ [pairs[i]]: markets })
+                    k++;
+                }
+                response.push({ [pairs[i]]: markets });
             }
             return res.status(200).send(controller.successFormat([response, market_name], result.result.id))
         } catch (err) {
