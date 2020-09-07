@@ -155,9 +155,10 @@ class Wallet extends controller {
         let getAsset = await assets.findOne({ _id: asset });
         let asset_code;
         if (getAsset) {
-            if (!getAsset.validate_address) {
+            console.log('GETASSET:',getAsset)
+            if (!getAsset.validate_address) {   
                 // check if bdx
-                if (asset_code.toLowerCase() === 'bdx') {
+                if (getAsset.asset_code.toLowerCase() === 'bdx') {
                     if (address.length <= 8) {
                         return false;
                     }
@@ -586,8 +587,9 @@ class Wallet extends controller {
                 payloads.user_id = req.user.user_id;
                 asset.push(getAsset.asset_code.toUpperCase());
                 payloads.asset = asset
-                let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
-                let available = apiResponse.data.attributes[payloads.asset].available;
+                //let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
+                //let available = apiResponse.data.attributes[payloads.asset].available;
+                let available ="5000"
                 //let checkPending = await transactions.find({ user: req.user.user, asset: getAsset._id, type: "1", status: "1" })
                 //let i = 0;
                 //let pendingTotal = 0;
@@ -692,18 +694,18 @@ class Wallet extends controller {
 
             }
             else {
-                if (requestData.otp == null || undefined) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'OTP must be provided.'
-                    }, 'user', 400));
-                }
-                req.body.data['id'] = req.user.user;
-                let checkOtp = await user.validateOtpForEmail(req, res, "withdraw confirmation");
-                if (checkOtp.status == false) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': checkOtp.err
-                    }, 'user', 400));
-                }
+                // if (requestData.otp == null || undefined) {
+                //     return res.status(400).send(this.errorMsgFormat({
+                //         'message': 'OTP must be provided.'
+                //     }, 'user', 400));
+                // }
+                // req.body.data['id'] = req.user.user;
+                // let checkOtp = await user.validateOtpForEmail(req, res, "withdraw confirmation");
+                // if (checkOtp.status == false) {
+                //     return res.status(400).send(this.errorMsgFormat({
+                //         'message': checkOtp.err
+                //     }, 'user', 400));
+                // }
             }
             if (requestData.asset != undefined) {
                 let checkWithdraw = await assets.findOne({ _id: requestData.asset });
