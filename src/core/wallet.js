@@ -155,9 +155,9 @@ class Wallet extends controller {
         let getAsset = await assets.findOne({ _id: asset });
         let asset_code;
         if (getAsset) {
-            if (!getAsset.validate_address) {
+            if (!getAsset.validate_address) {   
                 // check if bdx
-                if (asset_code.toLowerCase() === 'bdx') {
+                if (getAsset.asset_code.toLowerCase() === 'bdx') {
                     if (address.length <= 8) {
                         return false;
                     }

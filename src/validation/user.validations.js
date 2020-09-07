@@ -1,4 +1,4 @@
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 
 exports.loginValidation = (req) => {
     let schema = Joi.object().keys(Object.assign({

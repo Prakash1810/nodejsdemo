@@ -37,14 +37,14 @@ const assetsSchema = new mongoose.Schema({
     status: { type: Number, default: 2 },  // 1 => Pending   2 => list 
     reason_for_deposit: { type: String, default: null },
     reason_for_withdraw: { type: String, default: null },
-    markets: mongoose.Schema.Types.Mixed,
+    markets: { type: mongoose.Schema.Types.Mixed },
     payment_id: { type: Boolean, default: false },
     type: { type: String, default: null },
     maitenance: { type: Boolean, default: false },
     precision: { type: Number },
     withdraw_fee_percentage: { type: Number },
     automatic_withdrawal: { type: Boolean },
-    validate_address:{type:Boolean}
+    validate_address: { type: Boolean }
 
 });
 
