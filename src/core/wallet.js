@@ -943,7 +943,7 @@ class Wallet extends controller {
                             is_deleted: false
                         }).populate({
                             path: 'asset',
-                            select: 'asset_name asset_code automatic_withdrawal token autoApproved'
+                            select: 'asset_name asset_code automatic_withdrawal token auto_approved'
                         })
                         // if (transactionDetials.asset.automatic_withdrawal) {
                         //     const result = await apiServices.okexRequest()
@@ -965,7 +965,7 @@ class Wallet extends controller {
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
-                        if (transactionDetials.asset.autoApproved) {
+                        if (transactionDetials.asset.auto_approved) {
                             transactionDetials.status = "4";
 
                         } else {
