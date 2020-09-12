@@ -155,7 +155,7 @@ class Wallet extends controller {
         let getAsset = await assets.findOne({ _id: asset });
         let asset_code;
         if (getAsset) {
-            if (!getAsset.validate_address) {   
+            if (!getAsset.validate_address) {
                 // check if bdx
                 if (getAsset.asset_code.toLowerCase() === 'bdx') {
                     if (address.length <= 8) {
@@ -171,7 +171,7 @@ class Wallet extends controller {
             else {
                 asset_code = getAsset.asset_code;
             }
-            
+
             return coinAddressValidator.validate(address, asset_code.toLowerCase());
         } else {
             return false;
@@ -943,7 +943,7 @@ class Wallet extends controller {
                             is_deleted: false
                         }).populate({
                             path: 'asset',
-                            select: 'asset_name asset_code automatic_withdrawal token'
+                            select: 'asset_name asset_code automatic_withdrawal token auto_approved'
                         })
                         // if (transactionDetials.asset.automatic_withdrawal) {
                         //     const result = await apiServices.okexRequest()
@@ -965,7 +965,7 @@ class Wallet extends controller {
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
-                        if (transactionDetials.asset.token == 'ETH' && transactionDetials.asset.asset_code != 'ETH') {
+                        if (transactionDetials.asset.auto_approved) {
                             transactionDetials.status = "4";
 
                         } else {
