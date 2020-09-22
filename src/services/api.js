@@ -257,6 +257,7 @@ class Api extends Controller {
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
+                            data[k].min_amount = (getMarket[j].min_amount == "0") ? data[k].min_amount : getMarket[j].min_amount;
                             data[k].money_prec = (getMarket[j].money_prec == 0) ? data[k].money_prec : getMarket[j].money_prec;
                             data[k].stock_prec = (getMarket[j].stock_prec == 0) ? data[k].stock_prec : getMarket[j].stock_prec;
                             data[k].q = getMarket[j].q;
@@ -301,6 +302,7 @@ class Api extends Controller {
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
+                            data[k].min_amount = (getMarket[j].min_amount == "0") ? data[k].min_amount : getMarket[j].min_amount;
                             data[k].money_prec = (getMarket[j].money_prec == 0) ? data[k].money_prec : getMarket[j].money_prec;
                             data[k].stock_prec = (getMarket[j].stock_prec == 0) ? data[k].stock_prec : getMarket[j].stock_prec;
                             data[k].q = getMarket[j].q;
