@@ -111,7 +111,7 @@ router.get('/reset-password/:hash', (req, res) => {
 });
 
 
-router.patch('/reset-password',async (req, res) => {
+router.patch('/reset-password', async (req, res) => {
     try {
         await utils.passwordDecryption(req.body.data.attributes, res);
         let { error } = resetPasswordValidation(req.body.data.attributes);
@@ -127,7 +127,7 @@ router.patch('/reset-password',async (req, res) => {
     }
 });
 
-router.patch('/change-password', auth, info, async(req, res) => {
+router.patch('/change-password', auth, info, async (req, res) => {
     try {
         await utils.passwordDecryption(req.body.data.attributes, res);
         let { error } = changePasswordValidation(req.body.data.attributes);
@@ -734,6 +734,26 @@ router.get('/market/pairs/:asset', async (req, res) => {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
         }, 'marketlist', 500));
+    }
+});
+
+router.get('/detectionuser', async (req, res) => {
+    try {
+        await user.tradeFeeDetectionUser(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'user', 500));
+    }
+});
+
+router.get('/removetradefee', async (req, res) => {
+    try {
+        await user.removeTakerMakerFee(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'user', 500));
     }
 });
 

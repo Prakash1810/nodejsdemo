@@ -137,9 +137,7 @@ class User extends controller {
                 referral_code: code,
                 referrer_code: result.referrer_code,
                 created_date: result.created_date,
-                user_id: inc.login_seq,
-                taker_fee: (await fee.findOne({ config: 'takerFeeRate' })).value,
-                maker_fee: (await fee.findOne({ config: 'makerFeeRate' })).value
+                user_id: inc.login_seq
             });
             let user = await users.create(userCreate);
             console.log("create:", user)
@@ -490,7 +488,8 @@ class User extends controller {
         let tokens = await this.storeToken(result, loginHistory._id, take, mobileId);
         await deviceWhitelist.findOneAndUpdate({ user: result._id }, { last_login_ip: attributes.ip, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
         await users.findOneAndUpdate({ _id: result._id }, { last_login_time: moment().format('YYYY-MM-DD HH:mm:ss') });
-
+        let takerFee = await fee.findOne({ config: 'takerFeeRate' });
+        let makerFee = await fee.findOne({ config: 'makerFeeRate' });
         let responseData = Object.assign({}, {
             "apiKey": result.api_key,
             "info": tokens.infoToken,
@@ -502,8 +501,8 @@ class User extends controller {
             "anti_spoofing_code": result.anti_spoofing ? result.anti_spoofing_code : null,
             'white_list_address': result.white_list_address,
             "withdraw": result.withdraw,
-            "taker_fee": Number(result.taker_fee) * 100,
-            "maker_fee": Number(result.maker_fee) * 100,
+            "taker_fee": (result.taker_fee_detection_percentage) ? (takerFee.value - (takerFee.value * Number(result.taker_fee_detection_percentage) / 100)) : takerFee.value,
+            "maker_fee": (result.maker_fee_detection_percentage) ? (makerFee.value - (makerFee.value * Number(result.maker_fee_detection_percentage) / 100)) : makerFee.value,
             "kyc_verified": result.kyc_verified,
             "trade": result.trade,
             "expiresIn": 300000,
@@ -2480,7 +2479,8 @@ class User extends controller {
             let result = await users.findOne({ "user_id": user });
             let tokens = await managementToken.findOne({ "user": result._id, "type_for": "token" }).sort({ "_id": -1 });
             let info = await managementToken.findOne({ "user": result._id, "type_for": "info-token" }).sort({ "_id": -1 });
-
+            let takerFee = await fee.findOne({ config: 'takerFeeRate' });
+            let makerFee = await fee.findOne({ config: 'makerFeeRate' });
             let response = Object.assign({}, {
                 "apiKey": result.api_key,
                 "info": info.infoToken,
@@ -2491,8 +2491,8 @@ class User extends controller {
                 "anti_spoofing_code": result.anti_spoofing ? result.anti_spoofing_code : null,
                 'white_list_address': result.white_list_address,
                 "withdraw": result.withdraw,
-                "taker_fee": Number(result.taker_fee) * 100,
-                "maker_fee": Number(result.maker_fee) * 100,
+                "taker_fee": (result.taker_fee_detection_percentage) ? (takerFee.value - (takerFee.value * Number(result.taker_fee_detection_percentage) / 100)) : takerFee.value,
+                "maker_fee": (result.maker_fee_detection_percentage) ? (makerFee.value - (makerFee.value * Number(result.maker_fee_detection_percentage) / 100)) : makerFee.value,
                 "kyc_verified": result.kyc_verified,
                 "trade": result.trade,
                 "referral_code": result.referral_code,
@@ -2673,7 +2673,24 @@ class User extends controller {
             return res.status(500).send(this.errorMsgFormat({
                 'message': error.message
             }, 'users', 500));
+        }
+    }
 
+    async tradeFeeDetectionUser(req, res) {
+        try {
+            let result = await users.find({ taker_fee: { $lte: 0.01 }, maker_fee: { $lte: 0.01 } }).select('email taker_fee maker_fee');
+            return res.status(200).send(this.successFormat(result, '', 'market'));
+        } catch (error) {
+            return res.status(200).send(this.successFormat(error.message, '', 'market'));
+        }
+    }
+
+    async removeTakerMakerFee(req, res) {
+        try {
+            await users.update({}, { $unset: { taker_fee: 1, maker_fee: 1 } }, { multi: true });
+            return res.status(200).send(this.successFormat('Scirpt finished', '', 'market'));
+        } catch (error) {
+            return res.status(200).send(this.successFormat(error.message, '', 'market'));
         }
     }
 }
