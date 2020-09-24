@@ -22,6 +22,7 @@ const Utils = require('../helpers/utils');
 const utils = new Utils();
 const redis = helpers.redisConnection();
 const orders = require('../db/orders');
+const fee = require('../db/matching-engine-config');
 class Api extends Controller {
 
     async sendEmailNotification(data, res) {
@@ -360,7 +361,7 @@ class Api extends Controller {
                 let markets = [];
                 let k = 0;
                 while (k < data.length) {
-                    
+
                     let assetUrl = await assets.findOne({ asset_code: data[k].stock });
                     data[k].logo_url = assetUrl.logo_url;
                     if (pairs[i] == data[k].money) {
@@ -551,6 +552,8 @@ class Api extends Controller {
     async order(req, res, type) {
         req.body.data.attributes.user_id = Number(req.user.user_id);
         let data = req.body.data.attributes;
+        let takerFee = await fee.findOne({ config: 'takerFeeRate' });
+        let makerFee = await fee.findOne({ config: 'makerFeeRate' });
         let check = await market.findOne({ market_name: data.market });
         let checkUser = await users.findOne({ _id: req.user.user });
         if (!checkUser.trade) {
@@ -568,11 +571,11 @@ class Api extends Controller {
                     message: 'The order you have placed is lesser than the minimum price'
                 }, 'order-matching', 400)
             }
-            req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
-            req.body.data.attributes.makerFeeRate = checkUser.maker_fee;
+            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100) : takerFee.value;
+            req.body.data.attributes.makerFeeRate = (checkUser.maker_fee_detection_percentage) ? makerFee.value - (makerFee.value * Number(result.maker_fee_detection_percentage) / 100) : makerFee.value;
             await this.okexInput(req, res, data, 'limit', check);
         } else {
-            req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
+            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100) : takerFee.value;
             await this.okexInput(req, res, data, 'market', check)
         }
 
