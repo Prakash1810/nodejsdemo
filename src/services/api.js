@@ -225,35 +225,43 @@ class Api extends Controller {
                     'message': "Market could not be found."
                 }, 'users', 404));
             }
-            _.map(getMarket, async function (market) {
+            let q = 0;
+            while (q < getMarket.length) {
                 let checkedFavorite = await favourite.findOne({
                     user: isChecked.result.user, market: {
                         $in: [
-                            market._id
+                            getMarket[q]._id
                         ]
                     }
-                });
+                })
                 if (checkedFavorite) {
-                    markets.push(market.market_name);
+                    markets.push(getMarket[q].market_name);
                 }
-
-            })
+                q++;
+            }
             let axiosResponse = await axios.get(
-
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`)
             const result = axiosResponse.data;
             let data = result.result.result;
             if (result.status) {
-                _.map(markets, function (noMarkets) {
-                    _.map(data, function (res) {
-                        if (res.name === noMarkets) {
-                            res.is_favourite = true;
-                        } else {
-                            res.is_favourite = false;
+                let i = 0;
+                while (i < markets.length) {
+                    let j = 0;
+                    while (j < data.length) {
+                        if (data[j].name == markets[i]) {
+                            data[j].is_favourite = true;
                         }
-                    })
-                })
-
+                        j++;
+                    }
+                    i++;
+                }
+                let z = 0;
+                while (z < data.length) {
+                    if (!data[z].is_favourite) {
+                        data[z].is_favourite = false
+                    }
+                    z++;
+                }
                 //add q in response 
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
