@@ -579,11 +579,11 @@ class Api extends Controller {
                     message: 'The order you have placed is lesser than the minimum price'
                 }, 'order-matching', 400)
             }
-            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100) : takerFee.value;
-            req.body.data.attributes.makerFeeRate = (checkUser.maker_fee_detection_percentage) ? makerFee.value - (makerFee.value * Number(result.maker_fee_detection_percentage) / 100) : makerFee.value;
+            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? (takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100)).toString() : (takerFee.value).toString();
+            req.body.data.attributes.makerFeeRate = (checkUser.maker_fee_detection_percentage) ? (makerFee.value - (makerFee.value * Number(checkUser.maker_fee_detection_percentage) / 100)).toString() : (makerFee.value).toString();
             await this.okexInput(req, res, data, 'limit', check);
         } else {
-            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100) : takerFee.value;
+            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? (takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100)).toString() : (takerFee.value).toString();
             await this.okexInput(req, res, data, 'market', check)
         }
 
