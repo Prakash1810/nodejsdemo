@@ -69,7 +69,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance withdraw_fee_percentage', query, async (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance withdraw_fee_percentage precision', query, async (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -415,12 +415,12 @@ class Wallet extends controller {
         let payloads = {},
             assetNames = [], assetCode = [],
             asset = [];
-        let collectOfAssetName = {};
+        let collectOfAssetName = {}, noofAsset;
         payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
             payloads.asset = asset;
-            let noofAsset = await assets.findOne({ asset_code: req.query.asset_code });
+            noofAsset = await assets.findOne({ asset_code: req.query.asset_code });
             if (noofAsset) {
                 collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
                 assetCode.push(noofAsset.asset_code);
@@ -433,7 +433,7 @@ class Wallet extends controller {
             }
         } else {
 
-            let noofAsset = await assets.find({});
+            noofAsset = await assets.find({});
             _.map(noofAsset, function (asset) {
                 collectOfAssetName[asset.asset_code] = asset.asset_name.toLowerCase();
                 assetCode.push(asset.asset_code);
@@ -452,10 +452,17 @@ class Wallet extends controller {
         // let marketResponse = await apiServices.marketPrice(assetNames);
         let marketResponse = await apiServices.marketPriceGetting(assetNames, assetCode, res);
         console.log("market:", marketResponse)
-        let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
+        let formatedResponse = await this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
+        await this.addPrecision(formatedResponse, noofAsset)
         return res.status(200).json(this.successFormat({
             "data": formatedResponse, sum
         }, null, 'asset-balance', 200));
+    }
+
+    addPrecision(formatedResponse, asset) {
+        for (let i = 0; i < asset.length; i++) {
+            (formatedResponse[asset[i].asset_code]) ? formatedResponse[asset[i].asset_code]['precision'] = asset[i].precision : ''
+        }
     }
 
     currencyConversion(matchResponse, marketResponse, assetsJson) {
