@@ -1000,7 +1000,7 @@ class Wallet extends controller {
                                 transactionDetials.height = result.block_num;
                                 transactionDetials.tx_hash = result._id
                                 transactionDetials.txtime = new Date().valueOf()
-                                transactionDetials.status = "1";
+                                transactionDetials.status = "2";
                             });
                         }
                         else {
