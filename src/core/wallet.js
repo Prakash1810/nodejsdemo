@@ -980,7 +980,7 @@ class Wallet extends controller {
                         else if (transactionDetials.asset.asset_code == 'BLURT') {
 
                             blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
-                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetials.address, `${transactionDetials.amount} BLURT`, 'AutomaticWithdrawTest', function (err, result) {
+                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetials.address, `${transactionDetials.amount} BLURT`, 'AutomaticWithdrawTest', async function (err, result) {
                                 // console.log(err, result);
                                 // console.log(result.operations[0][1])
                                 if (err != null) {
