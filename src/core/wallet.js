@@ -992,15 +992,16 @@ class Wallet extends controller {
                                         "change": `${transaction.amount + transaction.fee}`,
                                         "detial": {}
                                     }
-                                    let response = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
-                                        transactionDetials.status = "3";
-                                    }
+                                        transactionDetials.status = "3";                                    }
+                                } else {
+                                    transactionDetials.height = result.block_num;
+                                    transactionDetials.tx_hash = `${result.block_num}/${result._id}`
+                                    transactionDetials.txtime = new Date().valueOf()
+                                    transactionDetials.status = "2";
                                 }
-                                transactionDetials.height = result.block_num;
-                                transactionDetials.tx_hash = `${result.block_num}/${result._id}`
-                                transactionDetials.txtime = new Date().valueOf()
-                                transactionDetials.status = "2";
+
                             });
                         }
                         else {
