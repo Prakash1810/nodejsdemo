@@ -131,18 +131,11 @@ class Wallet extends controller {
                 return res.status(200).json(this.successFormat({
                     "message": `Address has been created for ${data.coin}.`
                 }, asset, 'address'));
-
             } else {
-                if (isChecked.asset_code == 'TREEP') {
-                    return res.status(200).json(this.successFormat({
-                        'asset_code': isChecked.asset_code,
-                        'address': getAddress.address,
-                        'paymentid': getAddress.paymentid
-                    }, asset, 'address'));
-                }
                 return res.status(200).json(this.successFormat({
-                    'asset_code': getAddress.asset_code,
-                    'address': getAddress.address
+                    'asset_code': isChecked.asset_code,
+                    'address': getAddress.address,
+                    'paymentid': (getAddress.paymentid) ? getAddress.paymentid : null
                 }, asset, 'address'));
             }
         } else {
@@ -994,7 +987,8 @@ class Wallet extends controller {
                                     }
                                     await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
-                                        transactionDetials.status = "3";                                    }
+                                        transactionDetials.status = "3";
+                                    }
                                 } else {
                                     transactionDetials.height = result.block_num;
                                     transactionDetials.tx_hash = `${result.block_num}/${result._id}`
