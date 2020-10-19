@@ -18,6 +18,7 @@ const helpers = require('../helpers/helper.functions');
 const discount = require("../db/withdraw-discount");
 const { IncomingWebhook } = require('@slack/webhook');
 const assetDetails = require('../db/asset-details');
+const blurt = require('@blurtfoundation/blurtjs');
 // const Fawn = require("fawn");
 
 // Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
@@ -130,18 +131,11 @@ class Wallet extends controller {
                 return res.status(200).json(this.successFormat({
                     "message": `Address has been created for ${data.coin}.`
                 }, asset, 'address'));
-
             } else {
-                if (isChecked.asset_code == 'TREEP') {
-                    return res.status(200).json(this.successFormat({
-                        'asset_code': isChecked.asset_code,
-                        'address': getAddress.address,
-                        'paymentid': getAddress.paymentid
-                    }, asset, 'address'));
-                }
                 return res.status(200).json(this.successFormat({
-                    'asset_code': getAddress.asset_code,
-                    'address': getAddress.address
+                    'asset_code': isChecked.asset_code,
+                    'address': getAddress.address,
+                    'paymentid': (getAddress.paymentid) ? getAddress.paymentid : null
                 }, asset, 'address'));
             }
         } else {
@@ -975,9 +969,39 @@ class Wallet extends controller {
                         if (transactionDetials.asset.auto_approved) {
                             transactionDetials.status = "4";
 
-                        } else {
+                        }
+                        else if (transactionDetials.asset.asset_code == 'BLURT') {
+
+                            blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
+                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetials.address, `${transactionDetials.amount} BLURT`, 'AutomaticWithdrawTest', async function (err, result) {
+                                // console.log(err, result);
+                                // console.log(result.operations[0][1])
+                                if (err != null) {
+                                    let payloads = {
+                                        "user_id": code.user_id,
+                                        "asset": "BLURT",
+                                        "business": "deposit",
+                                        "business_id": Math.floor(Math.random() * Math.floor(10000000)),
+                                        "change": `${transaction.amount + transaction.fee}`,
+                                        "detial": {}
+                                    }
+                                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                                    if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
+                                        transactionDetials.status = "3";
+                                    }
+                                } else {
+                                    transactionDetials.height = result.block_num;
+                                    transactionDetials.tx_hash = `${result.block_num}/${result._id}`
+                                    transactionDetials.txtime = new Date().valueOf()
+                                    transactionDetials.status = "2";
+                                }
+
+                            });
+                        }
+                        else {
                             transactionDetials.status = "1";
                         }
+
                         transactionDetials.updated_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await transactionDetials.save();
                         await this.sendMessage(transactionDetials)
