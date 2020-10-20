@@ -132,17 +132,9 @@ class Wallet extends controller {
                 return res.status(200).json(this.successFormat({
                     "message": `Address has been created for ${data.coin}.`
                 }, asset, 'address'));
-
             } else {
-                // if (isChecked.asset_code == 'TREEP') {
-                //     return res.status(200).json(this.successFormat({
-                //         'asset_code': isChecked.asset_code,
-                //         'address': getAddress.address,
-                //         'paymentid': getAddress.paymentid
-                //     }, asset, 'address'));
-                // }
                 return res.status(200).json(this.successFormat({
-                    'asset_code': getAddress.asset_code,
+                    'asset_code': isChecked.asset_code,
                     'address': getAddress.address,
                     'paymentid': (getAddress.paymentid) ? getAddress.paymentid : null
                 }, asset, 'address'));
