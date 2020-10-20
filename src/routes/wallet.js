@@ -17,6 +17,16 @@ router.get('/assets', (req, res) => {
     }
 });
 
+router.get('/blurt/deposit', (req, res) => {
+    try {
+        return wallet.blurtGetDeposit(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'wallet', 500));
+    }
+});
+
 router.post('/asset-address', info, auth, (req, res) => {
     try {
         return wallet.getAssetAddress(req, res);
