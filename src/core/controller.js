@@ -44,10 +44,7 @@ class Controller {
             }
         };
     }
-    payload(num){
-        return num
-    }
-    
+
     responseData(hash, amount, address, status, user_id, memo, asset, height,time) {
         let data = {
             tx_hash: `${height}/${hash}`,
