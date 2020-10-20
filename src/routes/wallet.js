@@ -181,5 +181,14 @@ router.post('/address/validation', (req, res) => {
         }, 'wallet', 500));
     }
 })
+router.get('/script', async (req, res) => {
+    try {
+        await wallet.script(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'user', 500));
+    }
+});
 
 module.exports = router;

@@ -1202,6 +1202,11 @@ class Wallet extends controller {
     }
     async blurtGetDeposit(req, res) {
         try {
+            if (!req.query.limit) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': `limit is required`
+                }, 'withdraw', 400));
+            }
             const subController = this;
             blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
             blurt.api.getAccountHistory("beldex-hot", -1, Number(req.query.limit), async function (err, result) {
@@ -1209,7 +1214,8 @@ class Wallet extends controller {
                 transfers.forEach(async (tx) => {
                     const transfer = tx[1].op[1];
                     const { amount, memo, to } = transfer;
-                    let date = new Date().valueOf()
+                    let getDate = new Date(tx[1].timestamp).valueOf()
+                    let date = Math.floor(getDate / 1000);
                     let data = {
                         transaction_id: tx[1].trx_id,
                         block_num: tx[1].block
@@ -1237,7 +1243,7 @@ class Wallet extends controller {
                                     'message': checkEngine.error
                                 }, 'withdraw', 400));
                             }
-                        }eck 
+                        }
 
                     }
                 });
@@ -1277,6 +1283,21 @@ class Wallet extends controller {
             return { status: false, error: err.message }
         }
 
+    }
+
+    async script(req, res) {
+        let getData = await transactions.find({ asset: '5f8a2a47ce55760006bb9570' })
+        let i = 0;
+        while (i < getData.length) {
+            let getDate = new Date(getData[i].date).valueOf()
+            let date = Math.floor(getDate / 1000);
+            getData.txtime = date;
+            getData.save()
+            i++;
+        }
+        return res.status(200).send(this.successFormat({
+            'message': "Success"
+        }, 'withdraw', 200));
     }
 
 }
