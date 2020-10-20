@@ -15,6 +15,7 @@ const mongoose = require('mongoose');
 const configs = require('../db/config');
 const rewards = require('../db/reward-history');
 const helpers = require('../helpers/helper.functions');
+const redis = helpers.redisConnection()
 const discount = require("../db/withdraw-discount");
 const { IncomingWebhook } = require('@slack/webhook');
 const assetDetails = require('../db/asset-details');
@@ -1190,6 +1191,105 @@ class Wallet extends controller {
             return { status: false, error: error }
         }
 
+    }
+    async blurtGetDeposit(req, res) {
+        try {
+            if (!req.query.limit) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': `limit is required`
+                }, 'withdraw', 400));
+            }
+            const subController = this;
+            blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
+            blurt.api.getAccountHistory("beldex-hot", -1, Number(req.query.limit), async function (err, result) {
+                const transfers = result.filter(tx => tx[1].op[0] === 'transfer');
+                transfers.forEach(async (tx) => {
+                    const transfer = tx[1].op[1];
+                    const { amount, memo, to } = transfer;
+                    let getDate = new Date(tx[1].timestamp).valueOf()
+                    let date = Math.floor(getDate / 1000);
+                    let data = {
+                        transaction_id: tx[1].trx_id,
+                        block_num: tx[1].block
+                    }
+                    if (to == process.env.BLURT_TO) {
+                        let check = await userAddress.findOne({ paymentid: memo, asset: process.env.ASSET_ID })
+                            .populate({
+                                path: 'asset',
+                                select: 'asset_name asset_code _id '
+                            })
+                            .populate({
+                                path: 'user',
+                                select: 'user_id _id'
+                            })
+
+                        let getTransaction = await redis.get(`${check.asset.asset_code} : ${check.user.user_id} :txn :${data.transaction_id}`)
+                        if (getTransaction == null && check) {
+                            let changeAmount = amount.substr(0, amount.indexOf(" "));
+                            let redisResponse = await subController.redisPayload(check.user.user_id, data.transaction_id, to, changeAmount, data.block_num, date, check.user._id, check.asset._id)
+                            await redis.set(`${check.asset.asset_code} : ${check.user.user_id} :txn :${data.transaction_id}`, data.transaction_id);
+                            await redis.rpush(`${check.asset.asset_code}:address:public:${check.user._id}`, JSON.stringify(redisResponse))
+                            let checkEngine = await subController.balanceUpdate(changeAmount, check.asset, check.user, data, to, date);
+                            if (!checkEngine.status) {
+                                return res.status(400).send(subController.errorMsgFormat({
+                                    'message': checkEngine.error
+                                }, 'withdraw', 400));
+                            }
+                        }
+
+                    }
+                });
+            });
+            return res.status(200).send(this.errorMsgFormat({
+                'message': "Balance Update to Matching Engine"
+            }, 'withdraw', 200));
+
+        }
+        catch (error) {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': error.message
+            }, 'withdraw', 400));
+        }
+    }
+    async balanceUpdate(amount, asset, user, result, to, time) {
+        try {
+            let payloads = Object.assign({}, {
+                "user_id": user.user_id,
+                "asset": asset.asset_code,
+                "business": "deposit",
+                "business_id": new Date().valueOf(),
+                "change": amount.toString(),
+                "detial": {}
+            });
+            let checkStatus = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), null, 'data');
+            if (checkStatus.status) {
+
+                let response = await this.responseData(result.transaction_id, Number(amount), to, '2', user.user_id, user._id, asset._id, result.block_num, time)
+                await new transaction(response).save();
+                return { status: true }
+
+            }
+            return { status: false, error: "Matching Engine Server Problem!" }
+        }
+        catch (err) {
+            return { status: false, error: err.message }
+        }
+
+    }
+
+    async script(req, res) {
+        let getData = await transactions.find({ asset: '5f8a2a47ce55760006bb9570' })
+        let i = 0;
+        while (i < getData.length) {
+            let getDate = new Date(getData[i].date).valueOf()
+            let date = Math.floor(getDate / 1000);
+            getData.txtime = date;
+            getData.save()
+            i++;
+        }
+        return res.status(200).send(this.successFormat({
+            'message': "Success"
+        }, 'withdraw', 200));
     }
 
 }
