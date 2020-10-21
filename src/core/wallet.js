@@ -1294,46 +1294,6 @@ class Wallet extends controller {
         }, 'withdraw', 200));
     }
 
-    async script2(req, res) {
-        let getData = await transactions.find({ asset: '5f8a2a47ce55760006bb9570' }).populate({
-            path: 'asset',
-            select: 'asset_name asset_code _id '
-        })
-            .populate({
-                path: 'user',
-                select: 'user_id _id'
-            })
-        let i = 0;
-        while (i < getData.length) {
-            if (getData[i].tx_hash.indexOf('/') == -1) {
-                let checkRedis = await redis.get(`${getData[i].asset.asset_code}:${getData[i].user.user_id}:txn:${getData[i].tx_hash}`)
-                if (checkRedis == null) {
-                    let getDate = new Date(getData[i].date).valueOf()
-                    let date = Math.floor(getDate / 1000);
-                    let redisResponse = await this.redisPayload(getData[i].user.user_id, getData[i].tx_hash, getData[i].address, getData[i].amount, getData[i].height, date, getData[i].user._id, getData[i].asset._id)
-                    let setKey = await redis.set(`${getData[i].asset.asset_code}:${getData[i].user.user_id}:txn:${getData[i].tx_hash}`, getData[i].tx_hash);
-                    console.log('Key:', setKey)
-                    await redis.rpush(`${getData[i].asset.asset_code}:address:public:${getData[i].user._id}`, JSON.stringify(redisResponse))
-                }
-            } else {
-                getData[i].tx_hash = getData[i].tx_hash.substring(getData[i].tx_hash.indexOf("/") + 1, getData[i].tx_hash.length);
-                let checkRedis = await redis.get(`${getData[i].asset.asset_code}:${getData[i].user.user_id}:txn:${getData[i].tx_hash}`)
-                if (checkRedis == null) {
-                    let getDate = new Date(getData[i].date).valueOf()
-                    let date = Math.floor(getDate / 1000);
-                    let redisResponse = await this.redisPayload(getData[i].user.user_id, getData[i].tx_hash, getData[i].address, getData[i].amount, getData[i].height, date, getData[i].user._id, getData[i].asset._id)
-                    let setWithKey = await redis.set(`${getData[i].asset.asset_code}:${getData[i].user.user_id}:txn:${getData[i].tx_hash}`, getData[i].tx_hash);
-                    console.log('Key1:', setWithKey)
-                    await redis.rpush(`${getData[i].asset.asset_code}:address:public:${getData[i].user._id}`, JSON.stringify(redisResponse))
-
-                }
-            }
-            i++;
-        }
-        res.send('Success').status(200)
-    }
-
-
 
 }
 
