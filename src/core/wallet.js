@@ -1195,6 +1195,7 @@ class Wallet extends controller {
     }
     async blurtGetDeposit(req, res) {
         try {
+            console.log("heelo")
             if (!req.query.limit) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': `limit is required`
@@ -1203,10 +1204,13 @@ class Wallet extends controller {
             const subController = this;
             blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
             blurt.api.getAccountHistory("beldex-hot", -1, Number(req.query.limit), async function (err, result) {
+                console.log('Result:', result)
                 const transfers = result.filter(tx => tx[1].op[0] === 'transfer');
                 transfers.forEach(async (tx) => {
+
                     const transfer = tx[1].op[1];
                     const { amount, memo, to } = transfer;
+                    console.log("Transfer:", transfer)
                     let getDate = new Date(tx[1].timestamp).valueOf()
                     let date = Math.floor(getDate / 1000);
                     let data = {
@@ -1214,6 +1218,8 @@ class Wallet extends controller {
                         block_num: tx[1].block
                     }
                     if (to == process.env.BLURT_TO) {
+                        console.log("Memo:", memo);
+                        console.log("Env:", process.env.ASSET_ID)
                         let check = await userAddress.findOne({ paymentid: memo, asset: process.env.ASSET_ID })
                             .populate({
                                 path: 'asset',
@@ -1223,19 +1229,21 @@ class Wallet extends controller {
                                 path: 'user',
                                 select: 'user_id _id'
                             })
-
-                        let getTransaction = await redis.get(`${check.asset.asset_code}:${check.user.user_id}:txn:${data.transaction_id}`)
-                        if (getTransaction == null && check) {
-                            let changeAmount = amount.substr(0, amount.indexOf(" "));
-                            let redisResponse = await subController.redisPayload(check.user.user_id, data.transaction_id, to, changeAmount, data.block_num, date, check.user._id, check.asset._id)
-                            let setKey = await redis.set(`${check.asset.asset_code}:${check.user.user_id}:txn:${data.transaction_id}`, data.transaction_id);
-                            console.log("SetKey:", setKey)
-                            await redis.rpush(`${check.asset.asset_code}:address:public:${check.user._id}`, JSON.stringify(redisResponse))
-                            let checkEngine = await subController.balanceUpdate(changeAmount, check.asset, check.user, data, to, date);
-                            if (!checkEngine.status) {
-                                return res.status(400).send(subController.errorMsgFormat({
-                                    'message': checkEngine.error
-                                }, 'withdraw', 400));
+                        console.log("ChecK:", check)
+                        if (check != null) {
+                            let getTransaction = await redis.get(`${check.asset.asset_code}:${check.user.user_id}:txn:${data.transaction_id}`)
+                            if (getTransaction == null) {
+                                let changeAmount = amount.substr(0, amount.indexOf(" "));
+                                let redisResponse = await subController.redisPayload(check.user.user_id, data.transaction_id, to, changeAmount, data.block_num, date, check.user._id, check.asset._id)
+                                let setKey = await redis.set(`${check.asset.asset_code}:${check.user.user_id}:txn:${data.transaction_id}`, data.transaction_id);
+                                console.log("SetKey:", setKey)
+                                await redis.rpush(`${check.asset.asset_code}:address:public:${check.user._id}`, JSON.stringify(redisResponse))
+                                let checkEngine = await subController.balanceUpdate(changeAmount, check.asset, check.user, data, to, date);
+                                if (!checkEngine.status) {
+                                    return res.status(400).send(subController.errorMsgFormat({
+                                        'message': checkEngine.error
+                                    }, 'withdraw', 400));
+                                }
                             }
                         }
 
