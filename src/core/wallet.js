@@ -1244,6 +1244,15 @@ class Wallet extends controller {
                                         'message': checkEngine.error
                                     }, 'withdraw', 400));
                                 }
+                                let serviceData = Object.assign({}, {
+                                    "subject": `Deposit Success`,
+                                    "email_for": "deposit-notification",
+                                    "amt":changeAmount,
+                                    "coin": check.asset.asset_code,
+                                    "user_id": check.user._id
+                                });
+                                await apiServices.sendEmailNotification(serviceData,res)
+                                return;
                             }
                         }
 
