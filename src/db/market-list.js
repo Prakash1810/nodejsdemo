@@ -16,8 +16,10 @@ const schema = new mongoose.Schema({
     q_kline: { type: Boolean, default: true },
 
     is_active: { type: Boolean, default: true },
-    disable_trade: { type: Boolean, default: false }
-
+    disable_trade: { type: Boolean, default: false },
+    stock_prec: { type: Number, default: 0 },
+    money_prec: { type: Number, default: 0 },
+    min_amount: { type: String, default: "0" }
 })
 
 let marketList = mongoose.model('market-list', schema);

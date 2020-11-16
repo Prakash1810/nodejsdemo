@@ -22,6 +22,7 @@ const Utils = require('../helpers/utils');
 const utils = new Utils();
 const redis = helpers.redisConnection();
 const orders = require('../db/orders');
+const fee = require('../db/matching-engine-config');
 class Api extends Controller {
 
     async sendEmailNotification(data, res) {
@@ -229,39 +230,50 @@ class Api extends Controller {
                     'message': "Market could not be found."
                 }, 'users', 404));
             }
-            _.map(getMarket, async function (market) {
+            let q = 0;
+            while (q < getMarket.length) {
                 let checkedFavorite = await favourite.findOne({
                     user: isChecked.result.user, market: {
                         $in: [
-                            market._id
+                            getMarket[q]._id
                         ]
                     }
-                });
+                })
                 if (checkedFavorite) {
-                    markets.push(market.market_name);
+                    markets.push(getMarket[q].market_name);
                 }
-
-            })
+                q++;
+            }
             let axiosResponse = await axios.get(
-
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`)
             const result = axiosResponse.data;
             let data = result.result.result;
             if (result.status) {
-                _.map(markets, function (noMarkets) {
-                    _.map(data, function (res) {
-                        if (res.name === noMarkets) {
-                            res.is_favourite = true;
-                        } else {
-                            res.is_favourite = false;
+                let i = 0;
+                while (i < markets.length) {
+                    let j = 0;
+                    while (j < data.length) {
+                        if (data[j].name == markets[i]) {
+                            data[j].is_favourite = true;
                         }
-                    })
-                })
-
+                        j++;
+                    }
+                    i++;
+                }
+                let z = 0;
+                while (z < data.length) {
+                    if (!data[z].is_favourite) {
+                        data[z].is_favourite = false
+                    }
+                    z++;
+                }
                 //add q in response 
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
+                            data[k].min_amount = (getMarket[j].min_amount == "0") ? data[k].min_amount : getMarket[j].min_amount;
+                            data[k].money_prec = (getMarket[j].money_prec == 0) ? data[k].money_prec : getMarket[j].money_prec;
+                            data[k].stock_prec = (getMarket[j].stock_prec == 0) ? data[k].stock_prec : getMarket[j].stock_prec;
                             data[k].q = getMarket[j].q;
                             data[k].disable_trade = getMarket[j].disable_trade;
                             if (getMarket[j].q == true) {
@@ -304,6 +316,9 @@ class Api extends Controller {
                 for (let k = 0; k < data.length; k++) {
                     for (let j = 0; j < getMarket.length; j++) {
                         if (data[k].name == getMarket[j].market_name) {
+                            data[k].min_amount = (getMarket[j].min_amount == "0") ? data[k].min_amount : getMarket[j].min_amount;
+                            data[k].money_prec = (getMarket[j].money_prec == 0) ? data[k].money_prec : getMarket[j].money_prec;
+                            data[k].stock_prec = (getMarket[j].stock_prec == 0) ? data[k].stock_prec : getMarket[j].stock_prec;
                             data[k].q = getMarket[j].q;
                             data[k].disable_trade = getMarket[j].disable_trade;
                             if (getMarket[j].q == true) {
@@ -357,13 +372,17 @@ class Api extends Controller {
             })
             for (var i = 0; i < pairs.length; i++) {
                 let markets = [];
-                _.map(data, function (result) {
-                    if (pairs[i] == result.money) {
-                        markets.push(result);
-                    }
+                let k = 0;
+                while (k < data.length) {
 
-                })
-                response.push({ [pairs[i]]: markets })
+                    let assetUrl = await assets.findOne({ asset_code: data[k].stock });
+                    data[k].logo_url = assetUrl.logo_url;
+                    if (pairs[i] == data[k].money) {
+                        markets.push(data[k]);
+                    }
+                    k++;
+                }
+                response.push({ [pairs[i]]: markets });
             }
             return res.status(200).send(controller.successFormat([response, market_name], result.result.id))
         } catch (err) {
@@ -462,8 +481,16 @@ class Api extends Controller {
                 };
                 let assetName = assetNames[i];
                 response[assetName] = value;
+            } else if (assetNames[i] == 'prediqt') {
+                let PQTMarket = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "PQTUSDT" }), res, 'data');
+                let value = {
+                    "btc": usd / PQTMarket.data.attributes,
+                    "usd": PQTMarket.data.attributes
+                };
+                let assetName = assetNames[i];
+                response[assetName] = value;
             } else {
-                let coinCode = (assetCode[i] + 'BTC');
+                let coinCode = (assetCode[i] === 'IDRT') ? ('BTC' + assetCode[i]) : (assetCode[i] + 'BTC');
                 let marketLast = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": coinCode }), res, 'data');
                 let btcValue = marketLast.data.attributes;
                 let value = {
@@ -538,6 +565,8 @@ class Api extends Controller {
     async order(req, res, type) {
         req.body.data.attributes.user_id = Number(req.user.user_id);
         let data = req.body.data.attributes;
+        let takerFee = await fee.findOne({ config: 'takerFeeRate' });
+        let makerFee = await fee.findOne({ config: 'makerFeeRate' });
         let check = await market.findOne({ market_name: data.market });
         let checkUser = await users.findOne({ _id: req.user.user });
         if (!checkUser.trade) {
@@ -555,11 +584,11 @@ class Api extends Controller {
                     message: 'The order you have placed is lesser than the minimum price'
                 }, 'order-matching', 400)
             }
-            req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
-            req.body.data.attributes.makerFeeRate = checkUser.maker_fee;
+            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? (takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100)).toString() : (takerFee.value).toString();
+            req.body.data.attributes.makerFeeRate = (checkUser.maker_fee_detection_percentage) ? (makerFee.value - (makerFee.value * Number(checkUser.maker_fee_detection_percentage) / 100)).toString() : (makerFee.value).toString();
             await this.okexInput(req, res, data, 'limit', check);
         } else {
-            req.body.data.attributes.takerFeeRate = checkUser.taker_fee;
+            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? (takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100)).toString() : (takerFee.value).toString();
             await this.okexInput(req, res, data, 'market', check)
         }
 
@@ -665,6 +694,17 @@ class Api extends Controller {
         }, null, 'api', 200));
     }
 
+    async okexRequest() {
+        try {
+            const timestamp = await utils.getTime();
+            const authClient = new AuthenticatedClient(process.env.WITHDRAWAL_HTTPKEY, process.env.WITHDRAWAL_HTTPSECRET, process.env.PASSPHRASE, timestamp.epoch);
+            return { status: true, result: authClient }
+        }
+        catch (err) {
+            return { status: false, error: err.message }
+        }
+
+    }
 }
 
 module.exports = new Api();

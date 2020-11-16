@@ -7,6 +7,7 @@ const transactionSchema = mongoose.Schema({
     type: String,
     amount: Number,
     tx_hash: { type: String, default: null },
+    txtime:{ type: Number, default: 0, index: true },
     fee: { type: Number, default: 0, index: true },
     final_amount: { type: Number, default: 0, index: true },
     status: { type: String, default: 0, index: true }, // 1 => Pending / 2 => Success / 3 => Failure / 4 => Waiting for an approval 
@@ -17,7 +18,8 @@ const transactionSchema = mongoose.Schema({
     },
     updated_date: Date,
     is_deleted: { type: Boolean, default: false },
-    payment_id: { type: String }
+    payment_id: { type: String },
+    height: { type: Number },
 
 });
 

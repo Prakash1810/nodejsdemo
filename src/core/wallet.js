@@ -15,9 +15,12 @@ const mongoose = require('mongoose');
 const configs = require('../db/config');
 const rewards = require('../db/reward-history');
 const helpers = require('../helpers/helper.functions');
+const redis = helpers.redisConnection()
 const discount = require("../db/withdraw-discount");
 const { IncomingWebhook } = require('@slack/webhook');
 const assetDetails = require('../db/asset-details');
+const blurt = require('@blurtfoundation/blurtjs');
+require('dotenv').config()
 // const Fawn = require("fawn");
 
 // Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
@@ -69,7 +72,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance', query, async (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance withdraw_fee_percentage precision', query, async (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -130,18 +133,11 @@ class Wallet extends controller {
                 return res.status(200).json(this.successFormat({
                     "message": `Address has been created for ${data.coin}.`
                 }, asset, 'address'));
-
             } else {
-                if (isChecked.asset_code == 'TREEP') {
-                    return res.status(200).json(this.successFormat({
-                        'asset_code': isChecked.asset_code,
-                        'address': getAddress.address,
-                        'paymentid': getAddress.paymentid
-                    }, asset, 'address'));
-                }
                 return res.status(200).json(this.successFormat({
-                    'asset_code': getAddress.asset_code,
-                    'address': getAddress.address
+                    'asset_code': isChecked.asset_code,
+                    'address': getAddress.address,
+                    'paymentid': (getAddress.paymentid) ? getAddress.paymentid : null
                 }, asset, 'address'));
             }
         } else {
@@ -155,22 +151,23 @@ class Wallet extends controller {
         let getAsset = await assets.findOne({ _id: asset });
         let asset_code;
         if (getAsset) {
-            if (getAsset.token != null && getAsset.token != undefined) {
-                if (getAsset.asset_code === 'TREEP') {
+            if (!getAsset.validate_address) {
+                // check if bdx
+                if (getAsset.asset_code.toLowerCase() === 'bdx') {
+                    if (address.length <= 8) {
+                        return false;
+                    }
                     return true;
                 }
+                return true;
+            }
+            if (getAsset.token != null && getAsset.token != undefined) {
                 asset_code = getAsset.token;
             }
             else {
                 asset_code = getAsset.asset_code;
             }
-            // check if bdx
-            if (asset_code.toLowerCase() === 'bdx') {
-                if (address.length <= 8) {
-                    return false;
-                }
-                return true;
-            }
+
             return coinAddressValidator.validate(address, asset_code.toLowerCase());
         } else {
             return false;
@@ -414,12 +411,12 @@ class Wallet extends controller {
         let payloads = {},
             assetNames = [], assetCode = [],
             asset = [];
-        let collectOfAssetName = {};
+        let collectOfAssetName = {}, noofAsset;
         payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
             payloads.asset = asset;
-            let noofAsset = await assets.findOne({ asset_code: req.query.asset_code });
+            noofAsset = await assets.findOne({ asset_code: req.query.asset_code });
             if (noofAsset) {
                 collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
                 assetCode.push(noofAsset.asset_code);
@@ -432,7 +429,7 @@ class Wallet extends controller {
             }
         } else {
 
-            let noofAsset = await assets.find({});
+            noofAsset = await assets.find({});
             _.map(noofAsset, function (asset) {
                 collectOfAssetName[asset.asset_code] = asset.asset_name.toLowerCase();
                 assetCode.push(asset.asset_code);
@@ -451,10 +448,17 @@ class Wallet extends controller {
         // let marketResponse = await apiServices.marketPrice(assetNames);
         let marketResponse = await apiServices.marketPriceGetting(assetNames, assetCode, res);
         console.log("market:", marketResponse)
-        let formatedResponse = this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
+        let formatedResponse = await this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
+        await this.addPrecision(formatedResponse, noofAsset)
         return res.status(200).json(this.successFormat({
             "data": formatedResponse, sum
         }, null, 'asset-balance', 200));
+    }
+
+    addPrecision(formatedResponse, asset) {
+        for (let i = 0; i < asset.length; i++) {
+            (formatedResponse[asset[i].asset_code]) ? formatedResponse[asset[i].asset_code]['precision'] = asset[i].precision : ''
+        }
     }
 
     currencyConversion(matchResponse, marketResponse, assetsJson) {
@@ -817,19 +821,25 @@ class Wallet extends controller {
         let amount = Number(responseAmount);
         let asset = await assets.findById(data.asset);
         let checkDiscount = await discount.findOne({ user: data.user, asset_code: asset.asset_code, is_active: true });
-        let fee = checkDiscount ? asset.withdrawal_fee - (asset.withdrawal_fee * (checkDiscount.discount / 100)) : asset.withdrawal_fee
+        let withdrawal_fee = asset.withdrawal_fee;
         let transaction = _.pick(data, ['user', 'asset', 'address', 'type', 'amount', 'final_amount', 'status', 'date', 'is_deleted', 'payment_id']);
-        let bal = amount - transaction.amount;
-        if ((bal - fee) >= 0) {
-            transaction.fee = fee
-            transaction.amount = transaction.amount
+        if (asset.withdraw_fee_percentage) {
+            withdrawal_fee = transaction.amount * asset.withdraw_fee_percentage / 100;
         }
-        else {
-            let remaningFee = fee - bal;
-            transaction.fee = fee
-            transaction.amount = transaction.amount - remaningFee;
-        }
-        transaction.amount = await this.precisionAmount(transaction.amount,asset.precision);
+        let fee = checkDiscount ? withdrawal_fee - (withdrawal_fee * (checkDiscount.discount / 100)) : withdrawal_fee;
+        // let bal = amount - transaction.amount;
+        // if ((bal - fee) >= 0) {
+        //     transaction.fee = fee
+        //     transaction.amount = transaction.amount
+        // }
+        // else {
+        //     let remaningFee = fee - bal;
+        //     transaction.fee = fee
+        //     transaction.amount = transaction.amount - remaningFee;
+        // }
+        transaction.fee = fee;
+        transaction.amount = transaction.amount - fee;
+        transaction.amount = await this.precisionAmount(transaction.amount, asset.precision);
         let transactionId = await new transactions(transaction).save();
         let beldexData = {
             user: new mongoose.Types.ObjectId(transaction.user),
@@ -930,23 +940,72 @@ class Wallet extends controller {
                     let response = await this.updateWithdrawRequest(notify, req, res);
 
                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
-
-                        notify.status = 2;
-                        notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
-                        await notify.save();
-                        let transactionDetials = await transactions.findOneAndUpdate({
+                        let transactionDetials = await transactions.findOne({
                             _id: notify.notify_data.transactions,
                             user: code.user,
                             is_deleted: false
-                        }, {
-                            $set: {
-                                status: "1",
-                                updated_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                            }
                         }).populate({
                             path: 'asset',
-                            select: 'asset_name asset_code'
+                            select: 'asset_name asset_code automatic_withdrawal token auto_approved'
                         })
+                        // if (transactionDetials.asset.automatic_withdrawal) {
+                        //     const result = await apiServices.okexRequest()
+                        //     if (!result.status) {
+                        //         return res.status(400).json(this.errorMsgFormat({
+                        //             "message": result.error
+                        //         }, 'withdraw'))
+                        //     }
+                        //     let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
+                        //     if (okexFee.length != 0) {
+                        //         let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee[0], result.result)
+                        //         if (!putWallet.status) {
+                        //             return res.status(400).json(this.errorMsgFormat({
+                        //                 "message": putWallet.error
+                        //             }, 'withdraw'));
+                        //         }
+                        //     }
+                        // }
+                        notify.status = 2;
+                        notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
+                        await notify.save();
+                        if (transactionDetials.asset.auto_approved) {
+                            transactionDetials.status = "4";
+
+                        }
+                        else if (transactionDetials.asset.asset_code == 'BLURT') {
+
+                            blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
+                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetials.address, `${transactionDetials.amount} BLURT`, 'AutomaticWithdrawTest', async function (err, result) {
+                                // console.log(err, result);
+                                // console.log(result.operations[0][1])
+                                if (err != null) {
+                                    let payloads = {
+                                        "user_id": code.user_id,
+                                        "asset": "BLURT",
+                                        "business": "deposit",
+                                        "business_id": Math.floor(Math.random() * Math.floor(10000000)),
+                                        "change": `${transaction.amount + transaction.fee}`,
+                                        "detial": {}
+                                    }
+                                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                                    if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
+                                        transactionDetials.status = "3";
+                                    }
+                                } else {
+                                    transactionDetials.height = result.block_num;
+                                    transactionDetials.tx_hash = `${result.block_num}/${result._id}`
+                                    transactionDetials.txtime = new Date().valueOf()
+                                    transactionDetials.status = "2";
+                                }
+
+                            });
+                        }
+                        else {
+                            transactionDetials.status = "1";
+                        }
+
+                        transactionDetials.updated_date = moment().format('YYYY-MM-DD HH:mm:ss')
+                        await transactionDetials.save();
                         await this.sendMessage(transactionDetials)
                         return res.status(200).json(this.successFormat({
                             "message": "Your withdrawal request has been confirmed."
@@ -1105,6 +1164,153 @@ class Wallet extends controller {
             }, 'withdraw', 400));
         }
     }
+
+    async getWithdawalFee(client, asset) {
+        const authClient = client
+        let response = await authClient.account().getWithdrawalFee(asset.toLowerCase());
+        return response;
+    }
+
+    async okexAutoWithdraw(pendingDetials, filterFee, client) {
+        try {
+            const authClient = client;
+            let payload = Object.assign({}, {
+                "amount": pendingDetials.amount,
+                "fee": filterFee.min_fee,
+                "trade_pwd": process.env.OKEX_TRADEPWD,
+                "destination": 4,
+                "currency": filterFee.currency.toLowerCase(),
+                "to_address": process.env[`${pendingDetials.asset.asset_code}_TOADDRESS`]
+            })
+            console.log('Payload:', payload)
+            let response = await authClient.account().postWithdrawal(payload);
+            if (response.status) {
+                return { status: true }
+            }
+            return { status: false, error: "Something went wrong" }
+        } catch (error) {
+            return { status: false, error: error }
+        }
+
+    }
+    async blurtGetDeposit(req, res) {
+        try {
+            console.log("heelo")
+            if (!req.query.limit) {
+                return res.status(400).send(this.errorMsgFormat({
+                    'message': `limit is required`
+                }, 'withdraw', 400));
+            }
+            const subController = this;
+            blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
+            blurt.api.getAccountHistory("beldex-hot", -1, Number(req.query.limit), async function (err, result) {
+                console.log('Result:', result)
+                const transfers = result.filter(tx => tx[1].op[0] === 'transfer');
+                transfers.forEach(async (tx) => {
+
+                    const transfer = tx[1].op[1];
+                    const { amount, memo, to } = transfer;
+                    console.log("Transfer:", transfer)
+                    let getDate = new Date(tx[1].timestamp).valueOf()
+                    let date = Math.floor(getDate / 1000);
+                    let data = {
+                        transaction_id: tx[1].trx_id,
+                        block_num: tx[1].block
+                    }
+                    if (to == process.env.BLURT_TO) {
+                        console.log("Memo:", memo);
+                        console.log("Env:", process.env.ASSET_ID)
+                        let check = await userAddress.findOne({ paymentid: memo, asset: process.env.ASSET_ID })
+                            .populate({
+                                path: 'asset',
+                                select: 'asset_name asset_code _id '
+                            })
+                            .populate({
+                                path: 'user',
+                                select: 'user_id _id'
+                            })
+                        console.log("ChecK:", check)
+                        if (check != null) {
+                            let getTransaction = await redis.get(`${check.asset.asset_code}:${check.user.user_id}:txn:${data.transaction_id}`)
+                            if (getTransaction == null) {
+                                let changeAmount = amount.substr(0, amount.indexOf(" "));
+                                let redisResponse = await subController.redisPayload(check.user.user_id, data.transaction_id, to, changeAmount, data.block_num, date, check.user._id, check.asset._id)
+                                let setKey = await redis.set(`${check.asset.asset_code}:${check.user.user_id}:txn:${data.transaction_id}`, data.transaction_id);
+                                console.log("SetKey:", setKey)
+                                await redis.rpush(`${check.asset.asset_code}:address:public:${check.user._id}`, JSON.stringify(redisResponse))
+                                let checkEngine = await subController.balanceUpdate(changeAmount, check.asset, check.user, data, to, date);
+                                if (!checkEngine.status) {
+                                    return res.status(400).send(subController.errorMsgFormat({
+                                        'message': checkEngine.error
+                                    }, 'withdraw', 400));
+                                }
+                                let serviceData = Object.assign({}, {
+                                    "subject": `Deposit Success`,
+                                    "email_for": "deposit-notification",
+                                    "amt":changeAmount,
+                                    "coin": check.asset.asset_code,
+                                    "user_id": check.user._id
+                                });
+                                await apiServices.sendEmailNotification(serviceData,res)
+                                return;
+                            }
+                        }
+
+                    }
+                });
+            });
+            return res.status(200).send(this.errorMsgFormat({
+                'message': "Balance Update to Matching Engine"
+            }, 'withdraw', 200));
+
+        }
+        catch (error) {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': error.message
+            }, 'withdraw', 400));
+        }
+    }
+    async balanceUpdate(amount, asset, user, result, to, time) {
+        try {
+            let payloads = Object.assign({}, {
+                "user_id": user.user_id,
+                "asset": asset.asset_code,
+                "business": "deposit",
+                "business_id": new Date().valueOf(),
+                "change": amount.toString(),
+                "detial": {}
+            });
+            let checkStatus = await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), null, 'data');
+            if (checkStatus.status) {
+
+                let response = await this.responseData(result.transaction_id, Number(amount), to, '2', user.user_id, user._id, asset._id, result.block_num, time)
+                await new transaction(response).save();
+                return { status: true }
+
+            }
+            return { status: false, error: "Matching Engine Server Problem!" }
+        }
+        catch (err) {
+            return { status: false, error: err.message }
+        }
+
+    }
+
+    async script(req, res) {
+        let getData = await transactions.find({ asset: '5f8a2a47ce55760006bb9570' })
+        let i = 0;
+        while (i < getData.length) {
+            let getDate = new Date(getData[i].date).valueOf()
+            let date = Math.floor(getDate / 1000);
+            getData[i].txtime = date;
+            getData[i].save()
+            i++;
+        }
+        return res.status(200).send(this.successFormat({
+            'message': "Success"
+        }, 'withdraw', 200));
+    }
+
 
 }
 

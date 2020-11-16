@@ -51,7 +51,9 @@ const usersSchema = mongoose.Schema({
     api_key: { type: String, default: null, index: true },
     currency_code: { type: String, index: true },
     last_login_time: { type: Date },
-    last_logout_time: { type: Date }
+    last_logout_time: { type: Date },
+    taker_fee_detection_percentage: { type: Number },
+    maker_fee_detection_percentage: { type: Number }
 }, {
     timestamps: { createdAt: 'created_date', updatedAt: 'modified_date_time' }
 });
