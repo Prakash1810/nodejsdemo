@@ -470,16 +470,16 @@ class Wallet extends controller {
                 [result]: Object.assign({
                     'available': {
                         'balance': Number(matchResponse[result].available),
-                        'btc': Number(matchResponse[result].available) * btc,
-                        'usd': Number(matchResponse[result].available) * usd
+                        'btc': Number((matchResponse[result].available) * btc).toFixed(8),
+                        'usd': Number((matchResponse[result].available) * usd).toFixed(2)
                     },
                     'freeze': {
                         'balance': Number(matchResponse[result].freeze),
-                        'btc': Number(matchResponse[result].freeze) * btc,
-                        'usd': Number(matchResponse[result].freeze) * usd
+                        'btc': Number((matchResponse[result].freeze) * btc).toFixed(8),
+                        'usd': Number((matchResponse[result].freeze) * usd).toFixed(2)
                     },
                 })
-            })
+            });
             //    let formatedAssetBalnce[result] = Object.assign({},{
             //         'available': {
             //             'balance': Number(matchResponse[result].available),
@@ -493,7 +493,6 @@ class Wallet extends controller {
             //         },
             //     })
         }
-
         return formatedAssetBalnce;
     }
 
