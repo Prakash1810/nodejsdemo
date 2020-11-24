@@ -470,13 +470,13 @@ class Api extends Controller {
             if (assetNames[i] == 'bitcoin') {
                 value = {
                     "btc": 1,
-                    "usd": Number(usd).toFixed(2)
+                    "usd": usd
                 };
                 let assetName = assetNames[i];
                 response[assetName] = value;
             } else if (assetNames[i] == 'tether') {
                 value = {
-                    "btc": (1 / usd).toFixed(8),
+                    "btc": 1 / usd,
                     "usd": 1
                 };
                 let assetName = assetNames[i];
@@ -484,8 +484,8 @@ class Api extends Controller {
             } else if (assetNames[i] == 'prediqt') {
                 let PQTMarket = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "PQTUSDT" }), res, 'data');
                 let value = {
-                    "btc": Number(PQTMarket.data.attributes / usd).toFixed(8),
-                    "usd": Number(PQTMarket.data.attributes).toFixed(2)
+                    "btc": PQTMarket.data.attributes / usd,
+                    "usd": PQTMarket.data.attributes
                 };
                 let assetName = assetNames[i];
                 response[assetName] = value;
@@ -494,8 +494,8 @@ class Api extends Controller {
                 let marketLast = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": coinCode }), res, 'data');
                 let btcValue = marketLast.data.attributes;
                 let value = {
-                    "btc": Number(btcValue).toFixed(8) || 0,
-                    "usd": Number(btcValue * usd).toFixed(2) || 0
+                    "btc": btcValue,
+                    "usd": btcValue * usd
                 };
                 let assetName = assetNames[i];
                 response[assetName] = value;
