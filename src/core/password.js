@@ -127,8 +127,7 @@ class Password extends Controller {
                         } else {
                             return res.status(200).send(this.successFormat({
                                 'message': 'The password reset link has been validated.',
-                                "google_auth": result.google_auth,
-                                "sms_auth": result.sms_auth
+                                "google_auth": result.google_auth
                             }, result._id));
                         }
                     });
