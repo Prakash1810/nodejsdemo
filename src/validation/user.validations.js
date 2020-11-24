@@ -78,6 +78,7 @@ exports.forgetPasswordValidation = (req) => {
 exports.resetPasswordValidation = (req) => {
     let schema = Joi.object().keys(Object.assign({
         otp: Joi.string(),
+        g2f_code: Joi.string(),
         password: Joi.string().required().min(8).max(20).regex(/^(?=.*[A-Z])(?=.*\d).{8,20}$/).error(errors => {
             errors.forEach(err => {
                 switch (err.code) {
