@@ -126,7 +126,8 @@ class Password extends Controller {
                             }));
                         } else {
                             return res.status(200).send(this.successFormat({
-                                'message': 'The password reset link has been validated.'
+                                'message': 'The password reset link has been validated.',
+                                "google_auth": result.google_auth
                             }, result._id));
                         }
                     });
@@ -159,20 +160,35 @@ class Password extends Controller {
             return;
         }
         let data = req.body.data.attributes;
+        const checkPassword = await Users.findById({ _id: req.body.data.id });
         if (type === 'reset') {
-            if (data.otp == null || undefined) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': 'OTP is required.'
-                }, 'user', 400));
-            }
-            let checkOtp = await user.validateOtpForEmail(req, res, "reset-password");
-            if (checkOtp.status == false) {
-                return res.status(400).send(this.errorMsgFormat({
-                    'message': checkOtp.err
-                }, 'user', 400));
+            if (checkPassword.google_auth) {
+                if (!data.g2f_code) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Google authentication code must be provided.'
+                    }, 'user', 400));
+                }
+                let check = await user.postVerifyG2F(req, res, 'boolean');
+                if (check.status == false) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'The google authentication code you entered is incorrect.'
+                    }, '2factor', 400));
+                }
+
+            } else {
+                if (data.otp == null || undefined) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'OTP is required.'
+                    }, 'user', 400));
+                }
+                let checkOtp = await user.validateOtpForEmail(req, res, "reset-password");
+                if (checkOtp.status == false) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': checkOtp.err
+                    }, 'user', 400));
+                }
             }
         }
-        const checkPassword = await Users.findById({ _id: req.body.data.id });
         let comparePassword = await bcrypt.compare(data.password, checkPassword.password);
         if (comparePassword) {
             return res.status(400).send(this.successFormat({
