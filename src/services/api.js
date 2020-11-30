@@ -409,10 +409,10 @@ class Api extends Controller {
         const result = axiosResponse.data;
         if (result.status) {
             let value = result.result.result;
-            if (allOrderCancel == 'allOrderCancel') {
-                return value;
-            }
             if (type === 'json') {
+                if (allOrderCancel == 'allOrderCancel') {
+                    return value;
+                }
                 if (path == 'order/put-limit') {
                     let data = {};
                     data = value;
