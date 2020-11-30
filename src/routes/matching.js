@@ -345,7 +345,7 @@ router.post('/market/kline', async (req, res) => {
 
 router.post('/all/orders/cancel', info, auth, async (req, res) => {
     try {
-        await matching.allOrdersCancel(req, res, req.user.user_id, 'allCancel');
+        await matching.allOrdersCancel(req, res, req.user.user_id, 'allOrderCancel');
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
