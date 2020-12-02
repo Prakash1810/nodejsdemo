@@ -393,7 +393,7 @@ class Api extends Controller {
 
     }
 
-    async matchingEngineRequest(method, path, input, res, type = 'json', liquidity) {
+    async matchingEngineRequest(method, path, input, res, type = 'json', liquidity, allOrderCancel) {
         let source = " ";
         let data = null;
         if (path == 'order/cancel') {
@@ -410,6 +410,9 @@ class Api extends Controller {
         if (result.status) {
             let value = result.result.result;
             if (type === 'json') {
+                if (allOrderCancel == 'allOrderCancel') {
+                    return value;
+                }
                 if (path == 'order/put-limit') {
                     let data = {};
                     data = value;
@@ -675,7 +678,6 @@ class Api extends Controller {
                 user_id: user
             });
             let data = this.requestDataFormat(orderPendingRequest);
-
             let orderdetails = await this.matchingEngineRequest('post', 'order/pending', data, res, 'json', marketList[i], type);
             let j = 0;
             while (j < orderdetails.total) {
