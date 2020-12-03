@@ -62,7 +62,7 @@ class Wallet extends controller {
         // Find some documents
         assets.countDocuments({
             is_suspend: false
-        }, async (err, totalCount) => {
+        }, async(err, totalCount) => {
             if (err) {
                 return res.status(200).json(this.successFormat({
                     "data": [],
@@ -72,7 +72,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance withdraw_fee_percentage precision', query, async (err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance withdraw_fee_percentage precision', query, async(err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -163,8 +163,7 @@ class Wallet extends controller {
             }
             if (getAsset.token != null && getAsset.token != undefined) {
                 asset_code = getAsset.token;
-            }
-            else {
+            } else {
                 asset_code = getAsset.asset_code;
             }
 
@@ -196,8 +195,7 @@ class Wallet extends controller {
                 }, '2factor', 400));
             }
 
-        }
-        else {
+        } else {
             if (requestData.otp == null || undefined) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'OTP must be provided.'
@@ -259,12 +257,12 @@ class Wallet extends controller {
 
             // find and update the reccord
             await withdrawAddress.findOneAndUpdate({
-                _id: req.body.data.id
-            }, {
-                $set: {
-                    is_whitelist: requestData.is_whitelist
-                }
-            })
+                    _id: req.body.data.id
+                }, {
+                    $set: {
+                        is_whitelist: requestData.is_whitelist
+                    }
+                })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'The changes you made were saved successfully.'
@@ -288,12 +286,12 @@ class Wallet extends controller {
 
             // find and update the reccord
             await withdrawAddress.findOneAndUpdate({
-                _id: ID
-            }, {
-                $set: {
-                    is_deleted: true
-                }
-            })
+                    _id: ID
+                }, {
+                    $set: {
+                        is_deleted: true
+                    }
+                })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'Your request was successfully completed.'
@@ -409,9 +407,11 @@ class Wallet extends controller {
 
     async getAssetsBalance(req, res) {
         let payloads = {},
-            assetNames = [], assetCode = [],
+            assetNames = [],
+            assetCode = [],
             asset = [];
-        let collectOfAssetName = {}, noofAsset;
+        let collectOfAssetName = {},
+            noofAsset;
         payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
@@ -421,8 +421,7 @@ class Wallet extends controller {
                 collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
                 assetCode.push(noofAsset.asset_code);
                 assetNames.push(noofAsset.asset_name.toLowerCase());
-            }
-            else {
+            } else {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'Asset could not be found.'
                 }, 'asset-balance', 400));
@@ -430,7 +429,7 @@ class Wallet extends controller {
         } else {
 
             noofAsset = await assets.find({ delist: false });
-            _.map(noofAsset, function (asset) {
+            _.map(noofAsset, function(asset) {
                 collectOfAssetName[asset.asset_code] = asset.asset_name.toLowerCase();
                 assetCode.push(asset.asset_code);
                 assetNames.push(asset.asset_name.toLowerCase());
@@ -450,13 +449,14 @@ class Wallet extends controller {
         let formatedResponse = await this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
         await this.addPrecision(formatedResponse, noofAsset)
         return res.status(200).json(this.successFormat({
-            "data": formatedResponse, sum
+            "data": formatedResponse,
+            sum
         }, null, 'asset-balance', 200));
     }
 
     addPrecision(formatedResponse, asset) {
         for (let i = 0; i < asset.length; i++) {
-            (formatedResponse[asset[i].asset_code]) ? formatedResponse[asset[i].asset_code]['precision'] = asset[i].precision : ''
+            (formatedResponse[asset[i].asset_code]) ? formatedResponse[asset[i].asset_code]['precision'] = asset[i].precision: ''
         }
     }
 
@@ -583,7 +583,8 @@ class Wallet extends controller {
                     type: 'suspend'
                 };
             } else {
-                let payloads = {}, asset = [];
+                let payloads = {},
+                    asset = [];
                 payloads.user_id = req.user.user_id;
                 asset.push(getAsset.asset_code.toUpperCase());
                 payloads.asset = asset
@@ -676,9 +677,7 @@ class Wallet extends controller {
                         'message': 'Payment Id must be provided.'
                     }, 'user', 400));
                 }
-            }
-
-            else if (checkUser.google_auth) {
+            } else if (checkUser.google_auth) {
                 if (!requestData.g2f_code) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Google authentication code must be provided.'
@@ -691,8 +690,7 @@ class Wallet extends controller {
                     }, '2factor', 400));
                 }
 
-            }
-            else {
+            } else {
                 if (requestData.otp == null || undefined) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'OTP must be provided.'
@@ -729,8 +727,7 @@ class Wallet extends controller {
                             '_id': requestData.withdraw_id,
                             'asset': requestData.asset,
                         });
-                    }
-                    else if (requestData.address != null && requestData.address != undefined) {
+                    } else if (requestData.address != null && requestData.address != undefined) {
                         let isValid = await this.coinAddressValidate(requestData.address, requestData.asset);
                         if (isValid !== true) {
                             return res.status(400).send(this.errorMsgFormat({
@@ -785,11 +782,9 @@ class Wallet extends controller {
                         msg = 'Your balance for the selected asset is too low to make a withdrawal.'
                     } else if (validateWithdraw.type === 'suspend') {
                         msg = 'The selected asset has been disabled temporarily. Please contact support for more information.'
-                    }
-                    else if (validateWithdraw.type === 'low-balance') {
+                    } else if (validateWithdraw.type === 'low-balance') {
                         msg = 'Please enter a lesser amount. BDX rewards earned from a referral can be used only for trading.'
-                    }
-                    else if (validateWithdraw.type === 'non-Balance') {
+                    } else if (validateWithdraw.type === 'non-Balance') {
                         msg = 'The request amount is greater than your available balance.'
                     }
 
@@ -938,7 +933,7 @@ class Wallet extends controller {
                     let response = await this.updateWithdrawRequest(notify, req, res);
 
                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
-                        let transactionDetials = await transactions.findOne({
+                        let transactionDetails = await transactions.findOne({
                             _id: notify.notify_data.transactions,
                             user: code.user,
                             is_deleted: false
@@ -946,34 +941,33 @@ class Wallet extends controller {
                             path: 'asset',
                             select: 'asset_name asset_code automatic_withdrawal token auto_approved'
                         })
-                        // if (transactionDetials.asset.automatic_withdrawal) {
-                        //     const result = await apiServices.okexRequest()
-                        //     if (!result.status) {
-                        //         return res.status(400).json(this.errorMsgFormat({
-                        //             "message": result.error
-                        //         }, 'withdraw'))
-                        //     }
-                        //     let okexFee = await this.getWithdawalFee(result.result, transactionDetials.asset.asset_code);
-                        //     if (okexFee.length != 0) {
-                        //         let putWallet = await this.okexAutoWithdraw(transactionDetials, okexFee[0], result.result)
-                        //         if (!putWallet.status) {
-                        //             return res.status(400).json(this.errorMsgFormat({
-                        //                 "message": putWallet.error
-                        //             }, 'withdraw'));
-                        //         }
-                        //     }
-                        // }
+                        if (transactionDetails.asset.automatic_withdrawal) {
+                            const result = await apiServices.okexRequest()
+                            if (!result.status) {
+                                return res.status(400).json(this.errorMsgFormat({
+                                    "message": result.error
+                                }, 'withdraw'))
+                            }
+                            let okexFee = await this.getWithdawalFee(result.result, transactionDetails.asset.asset_code);
+                            if (okexFee.length != 0) {
+                                let putWallet = await this.okexAutoWithdraw(transactionDetails, okexFee[0], result.result)
+                                if (!putWallet.status) {
+                                    return res.status(400).json(this.errorMsgFormat({
+                                        "message": putWallet.error
+                                    }, 'withdraw'));
+                                }
+                            }
+                        }
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
-                        if (transactionDetials.asset.auto_approved) {
-                            transactionDetials.status = "4";
+                        if (transactionDetails.asset.auto_approved) {
+                            transactionDetails.status = "4";
 
-                        }
-                        else if (transactionDetials.asset.asset_code == 'BLURT') {
+                        } else if (transactionDetails.asset.asset_code == 'BLURT') {
 
                             blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
-                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetials.address, `${transactionDetials.amount} BLURT`, 'AutomaticWithdrawTest', async function (err, result) {
+                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetails.address, `${transactionDetails.amount} BLURT`, 'AutomaticWithdrawTest', async function(err, result) {
                                 // console.log(err, result);
                                 // console.log(result.operations[0][1])
                                 if (err != null) {
@@ -982,29 +976,28 @@ class Wallet extends controller {
                                         "asset": "BLURT",
                                         "business": "deposit",
                                         "business_id": Math.floor(Math.random() * Math.floor(10000000)),
-                                        "change": `${transaction.amount + transaction.fee}`,
+                                        "change": `${transactionDetails.amount + transactionDetails.fee}`,
                                         "detial": {}
                                     }
                                     await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
                                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
-                                        transactionDetials.status = "3";
+                                        transactionDetails.status = "3";
                                     }
                                 } else {
-                                    transactionDetials.height = result.block_num;
-                                    transactionDetials.tx_hash = `${result.block_num}/${result._id}`
-                                    transactionDetials.txtime = new Date().valueOf()
-                                    transactionDetials.status = "2";
+                                    transactionDetails.height = result.block_num;
+                                    transactionDetails.tx_hash = `${result.block_num}/${result._id}`
+                                    transactionDetails.txtime = new Date().valueOf()
+                                    transactionDetails.status = "2";
                                 }
 
                             });
-                        }
-                        else {
-                            transactionDetials.status = "1";
+                        } else {
+                            transactionDetails.status = "1";
                         }
 
-                        transactionDetials.updated_date = moment().format('YYYY-MM-DD HH:mm:ss')
-                        await transactionDetials.save();
-                        await this.sendMessage(transactionDetials)
+                        transactionDetails.updated_date = moment().format('YYYY-MM-DD HH:mm:ss')
+                        await transactionDetails.save();
+                        await this.sendMessage(transactionDetails)
                         return res.status(200).json(this.successFormat({
                             "message": "Your withdrawal request has been confirmed."
                         }, 'withdraw'));
@@ -1014,8 +1007,7 @@ class Wallet extends controller {
                             "message": response.data.attributes.message
                         }, 'withdraw'));
                     }
-                }
-                else {
+                } else {
                     await beldexNotification.findOneAndUpdate({ _id: code.code, user: code.user }, { modified_date: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                     return res.status(400).json(this.errorMsgFormat({
                         "message": "This link has expired."
@@ -1028,8 +1020,7 @@ class Wallet extends controller {
                     "message": "Invalid request"
                 }, 'withdraw'));
             }
-        }
-        else {
+        } else {
             return res.status(400).json(this.errorMsgFormat({
                 "message": "Invalid Hash code"
             }, 'withdraw'));
@@ -1068,13 +1059,13 @@ class Wallet extends controller {
         if (ID !== undefined) {
             // find and update the reccord
             await transactions.findOneAndUpdate({
-                _id: ID,
-                status: 4
-            }, {
-                $set: {
-                    is_deleted: true
-                }
-            })
+                    _id: ID,
+                    status: 4
+                }, {
+                    $set: {
+                        is_deleted: true
+                    }
+                })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'Your request was successfully completed.'
@@ -1097,12 +1088,10 @@ class Wallet extends controller {
         if (delist) {
             if (!delist.delist) {
                 return { status: true }
-            }
-            else {
+            } else {
                 return { status: false, err: 'The asset is no longer listed.' }
             }
-        }
-        else {
+        } else {
             return { status: false, err: 'Asset could not be found.' }
         }
 
@@ -1113,7 +1102,7 @@ class Wallet extends controller {
         const url = process.env.SLACK_WEBHOOK_URL;
         const webhook = new IncomingWebhook(url);
         // Send the notification
-        (async () => {
+        (async() => {
             await webhook.send({
                 text: `*New Withdrawal Request*\n\n Date: \`${new Date()}\`\nemail: \`${checkUser.email}\`\nAsset: \`${transaction.asset.asset_code}\`\nAmount: \`${transaction.final_amount}\`\nAmount to Sent: \`${transaction.amount}\`\nFee: \`${transaction.fee}\``
             });
@@ -1201,10 +1190,10 @@ class Wallet extends controller {
             }
             const subController = this;
             blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
-            blurt.api.getAccountHistory("beldex-hot", -1, Number(req.query.limit), async function (err, result) {
+            blurt.api.getAccountHistory("beldex-hot", -1, Number(req.query.limit), async function(err, result) {
                 console.log('Result:', result)
                 const transfers = result.filter(tx => tx[1].op[0] === 'transfer');
-                transfers.forEach(async (tx) => {
+                transfers.forEach(async(tx) => {
 
                     const transfer = tx[1].op[1];
                     const { amount, memo, to } = transfer;
@@ -1261,8 +1250,7 @@ class Wallet extends controller {
                 'message': "Balance Update to Matching Engine"
             }, 'withdraw', 200));
 
-        }
-        catch (error) {
+        } catch (error) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': error.message
             }, 'withdraw', 400));
@@ -1287,8 +1275,7 @@ class Wallet extends controller {
 
             }
             return { status: false, error: "Matching Engine Server Problem!" }
-        }
-        catch (err) {
+        } catch (err) {
             return { status: false, error: err.message }
         }
 
