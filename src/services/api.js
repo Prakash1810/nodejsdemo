@@ -470,38 +470,40 @@ class Api extends Controller {
         let assetPrice = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "BTCUSDT" }), res, 'data');
         let usd = Number(assetPrice.data.attributes);
         while (i < assetNames.length) {
-            if (assetNames[i] == 'bitcoin') {
+            if (assetNames[i] == 'bitcoin' || assetNames[i] == 'tether') {
                 value = {
-                    "btc": 1,
-                    "usd": usd
+                    "btc": (assetNames[i] == 'bitcoin') ? 1 : 1 / usd,
+                    "usd": (assetNames[i] == 'bitcoin') ? usd : 1
                 };
-                let assetName = assetNames[i];
-                response[assetName] = value;
-            } else if (assetNames[i] == 'tether') {
-                value = {
-                    "btc": 1 / usd,
-                    "usd": 1
-                };
-                let assetName = assetNames[i];
-                response[assetName] = value;
-            } else if (assetNames[i] == 'prediqt') {
-                let PQTMarket = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "PQTUSDT" }), res, 'data');
-                let value = {
-                    "btc": PQTMarket.data.attributes / usd,
-                    "usd": PQTMarket.data.attributes
-                };
-                let assetName = assetNames[i];
-                response[assetName] = value;
-            } else {
-                let coinCode = (assetCode[i] === 'IDRT') ? ('BTC' + assetCode[i]) : (assetCode[i] + 'BTC');
-                let marketLast = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": coinCode }), res, 'data');
-                let btcValue = marketLast.data.attributes;
-                let value = {
-                    "btc": btcValue,
-                    "usd": btcValue * usd
-                };
-                let assetName = assetNames[i];
-                response[assetName] = value;
+                response[assetNames[i]] = value;
+            }
+            else {
+                if (assetNames[i] == 'prediqt') {
+                    let PQTMarket = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "PQTUSDT" }), res, 'data');
+                    let value = {
+                        "btc": PQTMarket.data.attributes / usd,
+                        "usd": PQTMarket.data.attributes
+                    };
+                    response[assetNames[i]] = value;
+                } else {
+                    let coinCode = (assetCode[i] === 'IDRT') ? ('BTC' + assetCode[i]) : (assetCode[i] + 'BTC');
+                    let marketLast = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": coinCode }), res, 'data');
+                    let btcValue = marketLast.data.attributes;
+                    let value = {
+                        "btc": btcValue,
+                        "usd": btcValue * usd
+                    };
+                    response[assetNames[i]] = value;
+                    if (marketLast.data.attributes.message) {
+                        if ((marketLast.data.attributes.message).message == 'invalid argument') {
+                            let value = {
+                                "btc": 0,
+                                "usd": 0
+                            };
+                            response[assetNames[i]] = value;
+                        }
+                    }
+                }
             }
             i++;
         }
