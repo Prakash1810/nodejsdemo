@@ -20,7 +20,7 @@ const discount = require("../db/withdraw-discount");
 const { IncomingWebhook } = require('@slack/webhook');
 const assetDetails = require('../db/asset-details');
 const blurt = require('@blurtfoundation/blurtjs');
-require('dotenv').config()
+require('dotenv').config();
 // const Fawn = require("fawn");
 
 // Fawn.init(`mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`);
@@ -416,7 +416,7 @@ class Wallet extends controller {
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
             payloads.asset = asset;
-            noofAsset = await assets.findOne({ asset_code: req.query.asset_code });
+            noofAsset = await assets.findOne({ asset_code: req.query.asset_code, delist: false });
             if (noofAsset) {
                 collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
                 assetCode.push(noofAsset.asset_code);
@@ -429,7 +429,7 @@ class Wallet extends controller {
             }
         } else {
 
-            noofAsset = await assets.find({});
+            noofAsset = await assets.find({ delist: false });
             _.map(noofAsset, function (asset) {
                 collectOfAssetName[asset.asset_code] = asset.asset_name.toLowerCase();
                 assetCode.push(asset.asset_code);
@@ -447,7 +447,6 @@ class Wallet extends controller {
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         // let marketResponse = await apiServices.marketPrice(assetNames);
         let marketResponse = await apiServices.marketPriceGetting(assetNames, assetCode, res);
-        console.log("market:", marketResponse)
         let formatedResponse = await this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
         await this.addPrecision(formatedResponse, noofAsset)
         return res.status(200).json(this.successFormat({
@@ -1246,11 +1245,11 @@ class Wallet extends controller {
                                 let serviceData = Object.assign({}, {
                                     "subject": `Deposit Success`,
                                     "email_for": "deposit-notification",
-                                    "amt":changeAmount,
+                                    "amt": changeAmount,
                                     "coin": check.asset.asset_code,
                                     "user_id": check.user._id
                                 });
-                                await apiServices.sendEmailNotification(serviceData,res)
+                                await apiServices.sendEmailNotification(serviceData, res);
                                 return;
                             }
                         }
