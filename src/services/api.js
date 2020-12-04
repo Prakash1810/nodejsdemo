@@ -224,7 +224,7 @@ class Api extends Controller {
                     message: "Authentication failed. Your request could not be authenticated."
                 }, 'user', 401));
             }
-            let getMarket = await market.find({});
+            let getMarket = await market.find({ is_active: true });
             if (getMarket.length == 0) {
                 return res.status(404).send(controller.errorMsgFormat({
                     'message': "Market could not be found."
@@ -247,7 +247,8 @@ class Api extends Controller {
             let axiosResponse = await axios.get(
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`)
             const result = axiosResponse.data;
-            let data = result.result.result;
+            let response = result.result.result;
+            let data = await this.marketListActiveCheck(getMarket, response);
             if (result.status) {
                 let i = 0;
                 while (i < markets.length) {
@@ -298,13 +299,14 @@ class Api extends Controller {
 
         }
         else {
-            let getMarket = await market.find({});
+            let getMarket = await market.find({ is_active: true });
             let axiosResponse = await axios['get'](
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`);
             let result = axiosResponse.data;
 
             if (result.status) {
-                let data = result.result.result;
+                let response = result.result.result;
+                let data = await this.marketListActiveCheck(getMarket, response);
                 if (type == 'withAdd') {
                     return { status: true, result: data };
                 }
@@ -666,9 +668,14 @@ class Api extends Controller {
     async allOrdersCancel(req, res, user, type) {
         let requestedData = req.body.data.attributes, marketList;
         if (!requestedData.market) {
-            marketList = await market.find({});
+            marketList = await market.find({ is_active: true });
         } else {
-            marketList = await market.find({ market_name: requestedData.market });
+            marketList = await market.find({ market_name: requestedData.market, is_active: true });
+        }
+        if (_.isEmpty(marketList)) {
+            return res.status(400).json(this.errorMsgFormat({
+                "message": 'This market not active.'
+            }, 'api'));
         }
         let i = 0;
         while (i < marketList.length) {
@@ -679,14 +686,12 @@ class Api extends Controller {
                 limit: 10,
                 user_id: user
             });
-            let data = this.requestDataFormat(orderPendingRequest);
-            let orderdetails = await this.matchingEngineRequest('post', 'order/pending', data, res, 'json', marketList[i], type);
+            let orderdetails = await this.matchingEngineRequest('post', 'order/pending', this.requestDataFormat(orderPendingRequest), res, 'json', marketList[i], type);
             let j = 0;
             while (j < orderdetails.total) {
                 let orderCancelRequest = {};
                 Object.assign(orderCancelRequest, { "market": orderdetails.records[j].market, "order_id": orderdetails.records[j].id, user_id: user, "source": orderdetails.records[j].source });
-                let orderCancel = this.requestDataFormat(orderCancelRequest);
-                await this.matchingEngineRequest('post', 'order/cancel', orderCancel, res, 'json', marketList[i], type);
+                await this.matchingEngineRequest('post', 'order/cancel', this.requestDataFormat(orderCancelRequest), res, 'json', marketList[i], type);
                 j++;
             }
             i++;
@@ -708,6 +713,22 @@ class Api extends Controller {
             return { status: false, error: err.message }
         }
 
+    }
+
+    marketListActiveCheck(marketList, matchingEndineResponse) {
+        console.log(marketList.length, matchingEndineResponse.length)
+        let i = 0, response = [];
+        while (i < marketList.length) {
+            let j = 0;
+            while (j < matchingEndineResponse.length) {
+                if (marketList[i].market_name == matchingEndineResponse[j].name) {
+                    response.push(matchingEndineResponse[j]);
+                }
+                j++;
+            }
+            i++;
+        }
+        return response;
     }
 }
 

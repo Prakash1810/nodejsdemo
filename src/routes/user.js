@@ -40,9 +40,8 @@ router.post('/login', async (req, res) => {
         let { error } = await loginValidation(req.body.data.attributes);
         if (error) {
             return res.status(400).send(controller.errorFormat(error, 'users', 400));
-        } else {
-            user.login(req, res);
         }
+        user.login(req, res);
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
