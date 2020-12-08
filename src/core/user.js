@@ -11,7 +11,7 @@ const userTemp = require('../db/user-temp');
 const helpers = require('../helpers/helper.functions');
 const config = require('config');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const controller = require('../core/controller');
 const g2fa = require('2fa');
 const token = require('../db/management-token');
@@ -61,12 +61,10 @@ class User extends controller {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'The verification link has already been used.'
                 }));
-            }
-            else {
+            } else {
                 await mangHash.findOneAndUpdate({ email: userHash.email, hash: req.params.hash, is_active: false, type_for: "registration" }, { is_active: true, count: 1, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
             }
-        }
-        else {
+        } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'The verification link has expired or Hash cannot be found.'
             }));
@@ -91,15 +89,13 @@ class User extends controller {
                     'message': 'The verification link has expired. Please register again.'
                 }));
             }
-        }
-        else {
+        } else {
             if (userTemp.removeUserTemp(userHash.id)) {
                 await accountActive.deleteOne({ email: userHash.email, type_for: 'register' })
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'The verification link has expired. Please register again.'
                 }));
-            }
-            else {
+            } else {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'The verification link has already used may be expired.'
                 }));
@@ -166,8 +162,7 @@ class User extends controller {
                     'message': 'User cannot be found.'
                 }));
             }
-        }
-        catch (err) {
+        } catch (err) {
             return res.status(500).send(this.errorMsgFormat(err))
         }
     }
@@ -216,7 +211,8 @@ class User extends controller {
     }
 
     async storeToken(user, loginHistory, infoToken, mobileDevice) {
-        let refreshToken = null, info = null;
+        let refreshToken = null,
+            info = null;
         if (infoToken != null) {
             info = await this.infoToken(infoToken);
             await new token({
@@ -337,7 +333,7 @@ class User extends controller {
             email: email
         })
 
-            .then(result => {
+        .then(result => {
                 if (result.deletedCount) {
                     return res.status(200).send(this.successFormat({
                         'message': 'account deleted successfully!'
@@ -415,8 +411,7 @@ class User extends controller {
                 'message': "An OTP has been sent to your registered email address."
             }, user))
 
-        }
-        catch (err) {
+        } catch (err) {
             if (typeFor != 'login') {
                 return res.status(500).send(this.errorMsgFormat({
                     'message': err.message
@@ -607,13 +602,11 @@ class User extends controller {
                         delete data.otp;
                         delete data.g2f_code;
                         await this.returnToken(req, res, checkUser, 1, deviceId);
-                    }
-                    else {
+                    } else {
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                         return { status: true }
                     }
-                }
-                else {
+                } else {
                     await otpHistory.findOneAndUpdate({ user_id: id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                     if (typeFor !== 'login') {
                         return { status: false, err: 'OTP has expired.' }
@@ -623,8 +616,7 @@ class User extends controller {
                     }));
 
                 }
-            }
-            else {
+            } else {
                 const lastOtpHistory = await otpHistory.findOne({ user_id: id }).sort({ _id: -1 });
                 if (lastOtpHistory.count == 4) {
                     await redis.set(`BLOCKED_USER:${id}`, true);
@@ -647,8 +639,7 @@ class User extends controller {
                     'message': 'OTP entered is invalid'
                 }));
             }
-        }
-        catch (err) {
+        } catch (err) {
             if (typeFor !== 'login') {
                 return { status: false, err: err.message }
             }
@@ -691,22 +682,19 @@ class User extends controller {
                 return res.status(200).send(this.successFormat({
                     'message': "An OTP has been sent to your registered email address."
                 }, data.user_id))
-            }
-            else {
+            } else {
                 await otpHistory.findOneAndUpdate({ user_id: data.user_id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                 return res.status(400).send(this.errorMsgFormat({
                     'message': `OTP resend request limit has exceeded. Please login again to continue.`
                 }, 'users', 400));
             }
-        }
-        else {
+        } else {
             let isChecked = await this.generatorOtpforEmail(data.user_id, typeFor, res)
             if (isChecked.status) {
                 res.status(200).send(this.successFormat({
                     'message': "An OTP has been sent to your registered email address."
                 }, data.user_id))
-            }
-            else {
+            } else {
                 return res.status(500).send(this.errorMsgFormat({
                     'message': isChecked.error
                 }, 'users', 500));
@@ -922,9 +910,9 @@ class User extends controller {
                 let duration = moment.duration(moment().diff(check.created_date));
                 if (getSeconds > duration.asSeconds()) {
                     deviceMangement.findOne({
-                        browser: deviceHash.data.browser,
-                        user: deviceHash.data.user_id
-                    })
+                            browser: deviceHash.data.browser,
+                            user: deviceHash.data.user_id
+                        })
                         .exec()
                         .then((result) => {
                             if (!result) {
@@ -935,8 +923,7 @@ class User extends controller {
                                 this.updateWhiteListIP(deviceHash, req, res);
                             }
                         });
-                }
-                else {
+                } else {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'This link has expired. Please login to continue.'
                     }));
@@ -946,8 +933,7 @@ class User extends controller {
                     'message': 'Invalid request. Please login to continue.'
                 }));
             }
-        }
-        catch (err) {
+        } catch (err) {
             return res.status(500).send(this.errorMsgFormat({
                 'message': err.message
             }, 'users', 500));
@@ -963,7 +949,7 @@ class User extends controller {
             'user': hash.data.user_id,
         }, {
             verified: hash.data.verified
-        }, async (err, device) => {
+        }, async(err, device) => {
             if (err) {
                 return res.status(404).send(this.errorMsgFormat({
                     'message': 'Invalid request.Please login to continue.'
@@ -1016,8 +1002,7 @@ class User extends controller {
                             'message': 'The google authentication code you entered is incorrect.'
                         }, 'user', 400));
                     }
-                }
-                else {
+                } else {
                     if (requestData.hasOwnProperty('anti_spoofing') || requestData.hasOwnProperty('white_list_address') || requestData.hasOwnProperty('anti_spoofing_code')) {
                         if (!requestData.type) {
                             return res.status(400).send(this.errorMsgFormat({
@@ -1063,8 +1048,7 @@ class User extends controller {
                     return res.status(202).send(this.successFormat({
                         'message': 'The changes you made were saved successfully.'
                     }, null, 'users', 202));
-                }
-                else {
+                } else {
                     if (type == 'withCallPatchSetting' || type == 'disable') {
                         return { status: false, err: 'Invalid request. The changes you made were not saved.' }
                     }
@@ -1101,16 +1085,14 @@ class User extends controller {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Your account has been disabled. Please contact support.',
                     }, 'users', 400));
-                }
-                else {
+                } else {
                     let checked = await this.patchSettings(req, res, 'disable');
                     if (checked.status) {
                         await apiServices.publishNotification(checkActive.user_id, { 'disable': true, 'logout': true });
                         return res.status(202).send(this.successFormat({
                             'message': 'You have disabled your account. If you need assistance, please contact our support team.'
                         }, null, 'users', 202));
-                    }
-                    else {
+                    } else {
                         return res.status(400).send(this.errorMsgFormat({
                             'message': 'Invalid request. The changes you made were not saved.'
                         }, 'users', 400));
@@ -1123,8 +1105,7 @@ class User extends controller {
                 }, 'users', 400));
             }
 
-        }
-        catch (error) {
+        } catch (error) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': error.message
             }, 'users', 400));
@@ -1139,8 +1120,7 @@ class User extends controller {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Your 2factor already created.'
             }));
-        }
-        else {
+        } else {
             let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 16).toLowerCase();
             let auth = authenticators.generateTotpUri(formattedKey, checkUser.email, process.env.G2F_HOST_NAME, 'SHA1', 6, 30);
             return res.status(200).send(this.successFormat({
@@ -1189,8 +1169,7 @@ class User extends controller {
                 return res.status(202).send(this.successFormat({
                     'message': `${(requestedData.google_auth) ? 'You have successfully enable google two factor authentication.' : 'You have successfully disable google two factor authentication.'}`
                 }, null, 'users', 202));
-            }
-            else {
+            } else {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': checked.err
                 }, 'users', 400));
@@ -1245,8 +1224,7 @@ class User extends controller {
             }
             if (userG2fLength === config.get('g2fOldLength.length')) {
                 returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
-            }
-            else {
+            } else {
                 returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code)
                 if (google_secrete_key.length === 20) {
                     if (returnStatus) {
@@ -1254,8 +1232,7 @@ class User extends controller {
                     } else {
                         returnStatus = false;
                     }
-                }
-                else {
+                } else {
                     if (returnStatus) {
                         returnStatus = returnStatus.delta == 0 ? true : false
                     } else {
@@ -1272,11 +1249,9 @@ class User extends controller {
                     delete data.g2f_code;
                     delete data.google_secrete_key;
                     await this.returnToken(req, res, user, 2, req.headers.device)
-                }
-                else if (method == 'setting' || type == 'boolean') {
+                } else if (method == 'setting' || type == 'boolean') {
                     return { status: true };
-                }
-                else {
+                } else {
                     return res.status(202).send(this.successFormat({
                         'status': returnStatus
                     }, null, '2factor', 202));
@@ -1285,8 +1260,7 @@ class User extends controller {
             } else {
                 if (method == 'setting' || type == 'boolean') {
                     return { status: false };
-                }
-                else {
+                } else {
 
                     return res.status(400).send(this.errorMsgFormat({
                         'status': returnStatus,
@@ -1295,8 +1269,7 @@ class User extends controller {
                 }
 
             }
-        }
-        catch (err) {
+        } catch (err) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': err.message
             }, '2factor', 400));
@@ -1432,8 +1405,7 @@ class User extends controller {
                 return res.status(200).send(this.successFormat({
                     'message': 'You have successfully logged out.',
                 }))
-            }
-            else {
+            } else {
                 return res.status(404).send(this.errorMsgFormat({
                     'message': 'User cannot be found'
                 }, 'users', 404))
@@ -1553,8 +1525,7 @@ class User extends controller {
             return res.status(404).send(this.errorMsgFormat({
                 'message': "Markets cannot be found."
             }, 'users', 404));
-        }
-        else {
+        } else {
             await res.status(200).send(this.successFormat(
                 isChecked))
         }
@@ -1578,11 +1549,10 @@ class User extends controller {
                 'message': 'The market has been added to your favourites.',
             }));
         }
-        await new favourite(
-            {
-                user: req.user.user,
-                market: isChecked._id
-            }).save();
+        await new favourite({
+            user: req.user.user,
+            market: isChecked._id
+        }).save();
         return res.status(200).send(this.successFormat({
             'message': 'The market has been added to your favourites.',
         }));
@@ -1629,8 +1599,7 @@ class User extends controller {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': `Your password was recently changed. You cannot make a withdrawal for 24 hours.`
                 }));
-            }
-            else {
+            } else {
                 checkUser.withdraw = true;
                 checkUser.save();
                 return res.status(200).send(this.successFormat({
@@ -1655,8 +1624,7 @@ class User extends controller {
             return res.status(200).send(this.successFormat(
                 result
             ), null, 'user', 200);
-        }
-        else {
+        } else {
             if (type == 'details') {
                 return { status: false, error: `Invalid request.` };
             }
@@ -1882,8 +1850,7 @@ class User extends controller {
             }
 
 
-        }
-        catch (err) {
+        } catch (err) {
             return res.status(500).send(controller.errorMsgFormat({
                 'message': err.message
             }, 'users', 500));
@@ -1943,12 +1910,12 @@ class User extends controller {
         await users.findOneAndUpdate({ _id: data.user }, { kyc_statistics: "PENDING" });
         await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'PENDING', 'logout': false });
         return res.status(200).send(this.successFormat("Kyc details submitted Successfully", null, 'user', 200))
-        // }
-        // else {
-        //     return res.status(400).send(this.errorMsgFormat({
-        //         'message': response.error
-        //     }, 'user', 400));
-        // }
+            // }
+            // else {
+            //     return res.status(400).send(this.errorMsgFormat({
+            //         'message': response.error
+            //     }, 'user', 400));
+            // }
 
     }
 
@@ -1958,8 +1925,7 @@ class User extends controller {
             return res.status(200).send(this.successFormat({
                 'kyc_statistics': checkUser.kyc_statistics
             }, null, 'user', 200));
-        }
-        else {
+        } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'User cannot be found'
             }, 'user', 400));
@@ -2040,10 +2006,12 @@ class User extends controller {
 
         console.log('IP detect', ip)
         let currencyList = await changeCurrency.find({});
-        let currency = [], i = 0;
+        let currency = [],
+            i = 0;
         while (i < currencyList.length) {
             let listAllCurrency = Object.assign({}, {
-                code: currencyList[i].code, currencyName: currencyList[i].currency_name
+                code: currencyList[i].code,
+                currencyName: currencyList[i].currency_name
             });
             currency.push(listAllCurrency);
             i++;
@@ -2150,16 +2118,14 @@ class User extends controller {
                 return res.status(200).send(this.successFormat({
                     'message': `Your ${rewards.reward_asset} rewards has been moved to wallet balance`
                 }, 'reward'));
-            }
-            else {
+            } else {
                 return res.status(400).send(this.errorMsgFormat({
                     message: 'You should verifiy your kyc '
                 }));
             }
 
             //}
-        }
-        else {
+        } else {
             return res.status(400).send(this.errorMsgFormat({
                 message: 'Not enough reward balance for the given asset'
             }));
@@ -2170,7 +2136,9 @@ class User extends controller {
     async tradeBalance(req, res) {
         let userTrade = await trade.findOne({ user: req.user.user, type: 'totalUserAddedTrades' });
 
-        let i = 0, j = 0, sum = 0;
+        let i = 0,
+            j = 0,
+            sum = 0;
         if (userTrade) {
             while (i < userTrade.sell.length) {
                 if (Object.keys(userTrade.sell[i]) == "sixMonth") {
@@ -2244,8 +2212,7 @@ class User extends controller {
             if (checkUserMe.verifications.length == 0) {
                 return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
             }
-        }
-        else {
+        } else {
             await kycDetails.findOneAndUpdate({ user: req.user.user }, { uid: checkUserMe.uid })
             return res.status(200).send(this.successFormat({ "message": "Your documents were successfully uploaded and are under processing, You will receive an email notification regarding status of kyc" }));
         }
@@ -2270,6 +2237,7 @@ class User extends controller {
             select: ('user_id')
         });
         let self = this;
+
         function interval() {
             let k = 0;
             let userBalanace = user[i].balance;
@@ -2399,8 +2367,7 @@ class User extends controller {
             let checkUserVote = await votingUserList.findOne({ user: req.user.user, phase_id: currentPhase._id }).populate('coin_id');
             let coinList = await votingCoinList.find({ phase_id: currentPhase._id });
             return res.status(200).send(this.successFormat({ currentPhase, userVote: (checkUserVote) ? true : false, coin_code: checkUserVote ? checkUserVote.coin_id.coin_code : null, result: coinList }));
-        }
-        catch (error) {
+        } catch (error) {
             res.status(400).send(this.errorMsgFormat({ message: error.message }));
         }
     }
@@ -2435,8 +2402,7 @@ class User extends controller {
                 }
             });
             res.status(200).send(this.successFormat({ message: "successfully voted.", voteCount: votedCoin.number_of_vote + 1, coin_code: votedCoin.coin_code }));
-        }
-        catch (error) {
+        } catch (error) {
             res.status(400).send(this.errorMsgFormat({ message: error.message }));
         }
     }
@@ -2458,7 +2424,8 @@ class User extends controller {
         let lastThirtyDay = new Date(moment().subtract(30, 'days'));
         let today = new Date();
         let data = await tradeVolume.find({ user_id, created_date: { $gte: new Date(lastThirtyDay), $lte: today } });
-        let i = 0, totalVolume = 0;
+        let i = 0,
+            totalVolume = 0;
         while (i < data.length) {
             totalVolume += data[i].btc_volume;
             i++;
@@ -2482,8 +2449,7 @@ class User extends controller {
                 await new resetRequest(data).save();
                 this.generatorOtpforEmail(user_data._id, 'g2f-reset', res)
             }
-        }
-        else {
+        } else {
             return res.status(400).send(this.errorMsgFormat({ message: 'User not found...!' }))
         }
     }
@@ -2553,8 +2519,7 @@ class User extends controller {
             } else {
                 return res.status(400).send(this.errorMsgFormat({ message: 'No market pair found for the chosen asset.' }, 'market'));
             }
-        }
-        catch (error) {
+        } catch (error) {
             return res.status(500).send(this.errorMsgFormat({
                 'message': error.message
             }, 'users', 500));

@@ -3,7 +3,7 @@ const apiServices = require('../services/api');
 const Controller = require('../core/controller');
 const helpers = require('../helpers/helper.functions');
 const config = require('config');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const mangHash = require('../db/management-hash');
 const moment = require('moment');
 const user = require('../core/user');
@@ -25,9 +25,9 @@ class Password extends Controller {
     sendResetLink(req, res) {
 
         Users.findOne({
-            email: req.body.data.attributes.email
-        }).exec()
-            .then(async (user) => {
+                email: req.body.data.attributes.email
+            }).exec()
+            .then(async(user) => {
                 if (!user) {
                     return res.status(400).json(this.errorMsgFormat({ 'message': 'User cannot be found. Please contact support.' }));
                 } else {
@@ -83,8 +83,7 @@ class Password extends Controller {
                 'hash': encryptedHash
             }, user._id));
 
-        }
-        else {
+        } else {
             return res.status(400).send(this.errorMsgFormat({ 'message': 'User cannot be found. Please contact support.' }, 'user', 400));
         }
 
@@ -101,15 +100,12 @@ class Password extends Controller {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'The password reset link has already been used. Please login to continue.'
                 }));
-            }
-            else {
+            } else {
                 req.body.checkHash = checkHash;
                 await this.resetPassword(req, res, 'hash');
 
             }
-        }
-
-        else {
+        } else {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'The password reset link has expired. Please login to continue.'
             }));
@@ -119,7 +115,7 @@ class Password extends Controller {
             if (checkExpired) {
                 Users.findOne({ email: userHash.email, _id: userHash.user })
                     .exec()
-                    .then(async (result) => {
+                    .then(async(result) => {
                         if (!result) {
                             return res.status(400).send(this.errorMsgFormat({
                                 'message': "User cannot be found."
@@ -205,14 +201,13 @@ class Password extends Controller {
 
 
                 // find and update the reccord
-                Users.findByIdAndUpdate(req.body.data.id, { password: hash }, async (err, user) => {
+                Users.findByIdAndUpdate(req.body.data.id, { password: hash }, async(err, user) => {
                     if (user == null) {
                         return res.status(404).send(this.errorMsgFormat({ 'message': 'Invalid user.' }));
                     } else {
 
                         if (type == 'change') {
-                            let serviceData =
-                            {
+                            let serviceData = {
                                 subject: `Beldex Change Password From ${data.email} - ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
                                 email_for: "confirm-password",
                                 email: data.email,
@@ -228,8 +223,7 @@ class Password extends Controller {
                         if (checkHash != null) {
                             await mangHash.findOneAndUpdate({ email: checkHash.email, hash: checkHash.hash, is_active: false, type_for: "reset" }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
                         }
-                        let serviceData =
-                        {
+                        let serviceData = {
                             subject: `Beldex Reset Password  ${moment().format('YYYY-MM-DD HH:mm:ss')}( ${config.get('settings.timeZone')} )`,
                             email_for: "reset-password",
                             email: user.email,
@@ -256,7 +250,7 @@ class Password extends Controller {
         }
         Users.findById(req.body.data.id)
             .exec()
-            .then(async (result) => {
+            .then(async(result) => {
                 let check = null;
                 if (!result) {
                     return res.status(400).send(this.errorMsgFormat({
@@ -277,8 +271,7 @@ class Password extends Controller {
                         }, '2factor', 400));
                     }
 
-                }
-                else {
+                } else {
                     if (requestData.otp == null || undefined) {
                         return res.status(400).send(this.errorMsgFormat({
                             'message': 'OTP must be provided.'

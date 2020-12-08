@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const saltRounds = 10;
 
 const userTempSchema = new mongoose.Schema({
@@ -10,7 +10,7 @@ const userTempSchema = new mongoose.Schema({
     modified_date: { type: Date, default: null },
     is_deleted: { type: Boolean, default: false },
 });
-userTempSchema.pre('save', function (next) {
+userTempSchema.pre('save', function(next) {
     const userTemp = this;
     // only hash the password if it has been modified (or is new)
     if (!userTemp.isModified('password')) return next();
@@ -33,7 +33,7 @@ UserTemp.createIndexes();
 module.exports = UserTemp;
 
 
-module.exports.removeUserTemp = async (id) => {
+module.exports.removeUserTemp = async(id) => {
     return await UserTemp.deleteOne({ _id: id })
         .then(result => {
             if (result.deletedCount) {
