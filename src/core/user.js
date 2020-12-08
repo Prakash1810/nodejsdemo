@@ -49,6 +49,8 @@ const banner = require('../db/banner');
 const tradeVolume = require('../db/user-trade-volumes');
 const resetRequest = require('../db/g2f-reset-request');
 const redis = helpers.redisConnection();
+const userHelper = require('../helpers/user.helpers');
+
 class User extends controller {
 
     async activate(req, res) {
@@ -254,106 +256,76 @@ class User extends controller {
                 message: 'Your request was not encrypted.'
             }));
         }
-
-        users.findOne({ email: data.email })
-            .exec()
-            .then(async(result) => {
-                if (!result) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'User cannot be found, Please register your email.'
-                    }));
-                } else if (!result.is_active) {
-                    return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Your account has been disabled. Please contact support.',
-                    }, 'users', 400));
-                } else if (result.is_active) {
-                    let checkBlockedUserList = await redis.get(`BLOCKED_USER:${result._id}`);
-                    if (checkBlockedUserList) {
-                        return res.status(400).send(this.errorMsgFormat({
-                            'message': 'Due to a previous invalid action, your account was blocked for 6 hours. Try again later or contact support.',
-                        }, 'users', 400));
-                    }
-                    let passwordCompare = bcrypt.compareSync(data.password, result.password);
-                    if (passwordCompare == false) {
-
-                        if (isChecked) {
-                            if (isChecked.count <= config.get('accountActive.hmt')) {
-                                await accountActive.findOneAndUpdate({ email: data.email, type_for: 'login' }, {
-                                    $inc: {
-                                        count: 1
-                                    },
-                                    create_date: timeNow
-                                })
-                            } else {
-                                let date = new Date(isChecked.create_date);
-                                let getSeconds = date.getSeconds() + config.get('accountActive.timeExpiry');
-                                let duration = moment.duration(moment().diff(isChecked.create_date));
-                                if (getSeconds > duration.asSeconds()) {
-                                    if (isChecked.count == config.get('accountActive.check')) {
-                                        await accountActive.findOneAndUpdate({ email: data.email, type_for: 'login' }, {
-                                            $inc: {
-                                                count: 1
-                                            },
-                                            create_date: timeNow
-                                        })
-                                    }
-                                    return res.status(400).send(this.errorMsgFormat({
-                                        'message': 'Your account has been locked due to multiple login attempts. Please try again after 2 hours.'
-                                    }));
-                                } else {
-                                    return res.status(400).send(this.errorMsgFormat({
-                                        'message': 'The password you entered is incorrect.'
-                                    }));
-
-                                }
-
-                            }
-                            if (isChecked.count > config.get('accountActive.limit')) {
-                                return res.status(400).send(this.errorMsgFormat({
-                                    'message': `The email address and password you entered do not match. You have ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's' : ''} left`
-                                }));
-                            }
-                        } else {
-                            await new accountActive({ email: data.email, create_date: timeNow, type_for: 'login' }).save();
+        let result = await users.findOne({ email: data.email });
+        if (!result) {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'User cannot be found, Please register your email.'
+            }));
+        }
+        else if (!result.is_active) {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Your account has been disabled. Please contact support.',
+            }, 'users', 400));
+        }
+        let checkBlockedUserList = await redis.get(`BLOCKED_USER:${result._id}`);
+        if (checkBlockedUserList) {
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'Due to a previous invalid action, your account was blocked for 6 hours. Try again later or contact support.',
+            }, 'users', 400));
+        }
+        let passwordCompare = await bcrypt.compareSync(data.password, result.password);
+        if (!passwordCompare) {
+            if (isChecked) {
+                if (isChecked.count <= config.get('accountActive.hmt')) {
+                    userHelper.accountActiveCountIncrese(data, timeNow);
+                }
+                else {
+                    let checkTime = await userHelper.accountExpiryTimeCheck(isChecked);
+                    if (checkTime.getSeconds > checkTime.duration) {
+                        if (isChecked.count == config.get('accountActive.check')) {
+                            userHelper.accountActiveCountIncrese(data, timeNow);
                         }
-
                         return res.status(400).send(this.errorMsgFormat({
-                            'message': 'The password you entered is incorrect.'
+                            'message': 'Your account has been locked due to multiple login attempts. Please try again after 2 hours.'
                         }));
-                    } else {
-                        if (isChecked) {
-                            if ((config.get('accountActive.check') + 1) == isChecked.count) {
-                                let date = new Date(isChecked.create_date);
-                                let getSeconds = date.getSeconds() + config.get('accountActive.timeExpiry');
-                                let duration = moment.duration(moment().diff(isChecked.create_date));
-                                if (getSeconds > duration.asSeconds()) {
-
-                                    return res.status(400).send(this.errorMsgFormat({
-                                        'message': 'Your account has been locked due to multiple login attempts. Please try again after 2 hours.'
-                                    }));
-                                } else {
-                                    await accountActive.deleteOne({ email: data.email, type_for: 'login' })
-                                        // check that device is already exists or not
-                                    this.checkDevice(req, res, result);
-                                }
-
-                            } else {
-                                await accountActive.deleteOne({ email: data.email, type_for: 'login' })
-                                    // check that device is already exists or not
-                                this.checkDevice(req, res, result);
-                            }
-                        } else {
-                            // check that device is already exists or not
-                            this.checkDevice(req, res, result);
-                        }
-
                     }
-                } else {
                     return res.status(400).send(this.errorMsgFormat({
-                        'message': 'Your account has been disabled. Please contact support.'
+                        'message': 'The password you entered is incorrect.'
                     }));
                 }
-            });
+                if (isChecked.count > config.get('accountActive.limit')) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': `The email address and password you entered do not match. You have ${config.get('accountActive.hmt') - isChecked.count + 1}  attempt${(config.get('accountActive.hmt') - isChecked.count) + 1 > 1 ? 's' : ''} left`
+                    }));
+                }
+            }
+            else {
+                await new accountActive({ email: data.email, create_date: timeNow, type_for: 'login' }).save();
+            }
+            return res.status(400).send(this.errorMsgFormat({
+                'message': 'The password you entered is incorrect.'
+            }));
+        }
+        if (isChecked) {
+            if ((config.get('accountActive.check') + 1) == isChecked.count) {
+                let checkTime = await userHelper.accountExpiryTimeCheck(isChecked);
+                if (checkTime.getSeconds > checkTime.duration) {
+                    return res.status(400).send(this.errorMsgFormat({
+                        'message': 'Your account has been locked due to multiple login attempts. Please try again after 2 hours.'
+                    }));
+                }
+                await accountActive.deleteOne({ email: data.email, type_for: 'login' });
+                // check that device is already exists or not
+                await this.checkDevice(req, res, result);
+            }
+            await accountActive.deleteOne({ email: data.email, type_for: 'login' });
+            // check that device is already exists or not
+            await this.checkDevice(req, res, result);
+        }
+        else {
+            // check that device is already exists or not
+            await this.checkDevice(req, res, result);
+        }
     }
 
     removeUser(email, res) {
@@ -518,166 +490,88 @@ class User extends controller {
     }
 
     async checkDevice(req, res, user) {
-        let userID = user._id;
         let data = req.body.data.attributes;
-        let nonAddressCreatedUser = [],
-            i = 0;
-        let assetCheck = await assets.find({});
-        let userAddressCheck = await userAddress.find({ user: userID });
+        let assetCheck = await assets.find({ delist: false }).select('asset_code');
+        let userAddressCheck = await userAddress.find({ user: user._id });
         if (assetCheck.length !== userAddressCheck.length) {
+            let nonAddressCreatedUser = [], i = 0;
             nonAddressCreatedUser = assetCheck.filter(userAssets => userAddressCheck.every((userAddress) => JSON.stringify(userAddress.asset) !== JSON.stringify(userAssets._id)));
-            while (i < nonAddressCreatedUser.length) {
-                let userAddressGen = Object.assign({}, {
-                    "coin": nonAddressCreatedUser[i].asset_code,
-                    "user_id": user.user_id,
-                    "user": user._id,
-                    "asset": nonAddressCreatedUser[i]._id
-                });
-                await apiServices.axiosAPI(userAddressGen);
-                i++;
-            }
+
+            let userAddressGen = Object.assign({}, {
+                'type': 'nonAddressCreatedAsset',
+                "user_id": user.user_id,
+                "user": user._id,
+                "nonAddressCreatedAsset": nonAddressCreatedUser
+            });
+            apiServices.axiosAPI(userAddressGen);
         };
-
-        let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
-        let count = await deviceWhitelist.countDocuments({ user: userID });
+        let count = await deviceWhitelist.countDocuments({ user: user._id });
         if (count == 0) {
-            let isAuth = await users.findOne({
-                _id: userID,
-                $or: [{
-                        "sms_auth": true
-                    },
-                    {
-                        "google_auth": true
-                    }
-                ]
-            })
-            if (isAuth) {
-                await this.addWhitelist(data, userID, true);
-                res.status(200).send(this.successFormat({
-                    'message': "Your google authentication was successful.",
-                    "google_auth": isAuth.google_auth,
-                    "sms_auth": isAuth.sms_auth,
-
-                }, userID))
-
-            } else {
-                const isChecked = await this.generatorOtpforEmail(userID, "login", res);
-                if (isChecked.status) {
-                    await this.addWhitelist(data, userID, true);
-                    let resData = Object.assign({}, {
-                        'message': "An OTP has been sent to your registered email address.",
-                        'otp': true,
-                        "region": data.region,
-                        "city": data.city,
-                        "ip": data.ip
-                    });
-                    res.status(200).send(this.successFormat(resData, userID))
-                } else {
-                    return res.status(500).send(this.errorMsgFormat({
-                        'message': isChecked.error
-                    }, 'users', 500));
-                }
+            await this.addWhitelist(data, user._id, true);
+            await this.loginResponse(user, data, res);
+        }
+        let result = await deviceWhitelist.findOne({
+            user: user._id,
+            browser: data.browser,
+            region: data.region,
+            city: data.city,
+            os: data.os,
+            is_deleted: false,
+            verified: true,
+        });
+        if (!result) {
+            // insert new device records
+            await this.insertDevice(req, res, user._id);
+            let hashEncryption = Object.assign({}, {
+                "user_id": user._id,
+                "email": data.email,
+                "ip": data.ip,
+                "browser": data.browser,
+                "verified": true
+            });
+            let urlHash = this.encryptHash(hashEncryption);
+            let timeNow = moment().format('YYYY-MM-DD HH:mm:ss');
+            // send email notification
+            let deviceAuthNotification = Object.assign({}, {
+                "subject": `Authorize New Device/Location ${data.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
+                "email_for": "user-authorize",
+                "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
+                "location": `${data.city} ${data.country}`,
+                "ip": data.ip,
+                "hash": urlHash,
+                "user_id": user._id
+            });
+            await apiServices.sendEmailNotification(deviceAuthNotification, res);
+            let check = await mangHash.findOne({ email: data.email, type_for: 'new_authorize_device', is_active: false });
+            if (check) {
+                await mangHash.findOneAndUpdate({ email: data.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
             }
-        } else {
-            let result = await deviceWhitelist.findOne({
-                user: userID,
+            else {
+                await new mangHash({
+                    email: data.email,
+                    type_for: 'new_authorize_device',
+                    hash: urlHash,
+                    created_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                }).save()
+            }
+            let checkWhiteList = await deviceWhitelist.findOne({
+                user: user._id,
                 browser: data.browser,
                 region: data.region,
                 city: data.city,
                 os: data.os,
-                is_deleted: false,
-                verified: true,
+                verified: false,
             });
-            if (!result) {
-                // insert new device records
-                await this.insertDevice(req, res, userID);
-                let hashEncryption = Object.assign({}, {
-                    "user_id": userID,
-                    "email": data.email,
-                    "ip": data.ip,
-                    "browser": data.browser,
-                    "verified": true
-                });
-                let urlHash = this.encryptHash(hashEncryption);
-
-                // send email notification
-                let deviceAuthNotification = Object.assign({}, {
-                    "subject": `Authorize New Device/Location ${data.ip} - ${timeNow} ( ${config.get('settings.timeZone')} )`,
-                    "email_for": "user-authorize",
-                    "device": `${data.browser} ${data.browser_version} ( ${data.os} )`,
-                    "location": `${data.city} ${data.country}`,
-                    "ip": data.ip,
-                    "hash": urlHash,
-                    "user_id": userID
-                });
-                this.sendNotificationForAuthorize(deviceAuthNotification, res)
-                let check = await mangHash.findOne({ email: data.email, type_for: 'new_authorize_device', is_active: false });
-                if (check) {
-                    await mangHash.findOneAndUpdate({ email: data.email, type_for: 'new_authorize_device', is_active: false }, { hash: urlHash, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
-                } else {
-                    await new mangHash({
-                        email: data.email,
-                        type_for: 'new_authorize_device',
-                        hash: urlHash,
-                        created_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                    }).save()
-                }
-                let checkWhiteList = await deviceWhitelist.findOne({
-                    user: userID,
-                    browser: data.browser,
-                    region: data.region,
-                    city: data.city,
-                    os: data.os,
-                    verified: false,
-                });
-                if (!checkWhiteList) {
-                    await this.addWhitelist(data, userID, false);
-                }
-
-                return res.status(401).send(this.errorMsgFormat({
-                    'message': 'Your are logging in from a new device. We have sent a verification link to your registered email. Please check your email and authorize this device to continue.',
-                }, 'users', 401));
-            } else {
-                let isAuth = await users.findOne({
-                    _id: userID,
-                    $or: [{
-                            "sms_auth": true
-                        },
-                        {
-                            "google_auth": true
-                        }
-                    ]
-                })
-                if (isAuth) {
-                    res.status(200).send(this.successFormat({
-                        'message': "Your google authentication was successful.",
-                        "google_auth": isAuth.google_auth,
-                        "sms_auth": isAuth.sms_auth,
-
-                    }, userID))
-
-                } else {
-                    const isChecked = await this.generatorOtpforEmail(userID, "login", res);
-                    if (isChecked.status) {
-                        let responseData = Object.assign({}, {
-                            'message': "An OTP has been sent to your registered email address.",
-                            "region": data.region,
-                            "city": data.city,
-                            "ip": data.ip
-                        });
-                        res.status(200).send(this.successFormat(responseData, userID))
-                    } else {
-                        return res.status(500).send(this.errorMsgFormat({
-                            'message': isChecked.error
-                        }, 'users', 500));
-                    }
-                }
+            if (!checkWhiteList) {
+                await this.addWhitelist(data, user._id, false);
             }
-
+            return res.status(401).send(this.errorMsgFormat({
+                'message': 'Your are logging in from a new device. We have sent a verification link to your registered email. Please check your email and authorize this device to continue.',
+            }, 'users', 401));
         }
-
-
-
+        else {
+            await this.loginResponse(user, data, res);
+        }
     }
 
     async validateOtpForEmail(req, res, typeFor = "login") {
@@ -2648,6 +2542,32 @@ class User extends controller {
         } catch (error) {
             return res.status(200).send(this.successFormat(error.message, '', 'market'));
         }
+    }
+
+    async loginResponse(user, data, res) {
+        let isAuth = (user.sms_auth || user.google_auth) ? true : false;
+        if (isAuth) {
+            return res.status(200).send(this.successFormat({
+                'message': "Your google authentication was successful.",
+                "google_auth": user.google_auth,
+                "sms_auth": user.sms_auth
+            }, user._id));
+        }
+        const isChecked = await this.generatorOtpforEmail(user._id, "login", res);
+        if (isChecked.status) {
+            await this.addWhitelist(data, user._id, true);
+            let resData = Object.assign({}, {
+                'message': "An OTP has been sent to your registered email address.",
+                'otp': true,
+                "region": data.region,
+                "city": data.city,
+                "ip": data.ip
+            });
+            return res.status(200).send(this.successFormat(resData, user._id));
+        }
+        return res.status(500).send(this.errorMsgFormat({
+            'message': isChecked.error
+        }, 'users', 500));
     }
 }
 
