@@ -7,7 +7,7 @@ const password = require('../core/password');
 const moment = require('moment');
 const mangHash = require('../db/management-hash');
 const config = require('config');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const accountActive = require('../db/account-active');
 const users = require('../db/users');
 
@@ -28,8 +28,7 @@ class Registration extends Controller {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Your registration was not completed since you are using an invalid/blocked domain'
                     }));
-                }
-                else if (!check.dns || check.temporary) {
+                } else if (!check.dns || check.temporary) {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Your registration was not completed since you are using an invalid/blocked domain'
                     }));
@@ -41,15 +40,13 @@ class Registration extends Controller {
                     if (isChecked) {
 
                         if (isChecked.count < config.get('accountActiveRegister.hmt')) {
-                            await accountActive.findOneAndUpdate({ email: data.email, type_for: 'register' },
-                                {
-                                    $inc: {
-                                        count: 1
-                                    },
-                                    create_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                                })
-                        }
-                        else if (isChecked.count > config.get('accountActiveRegister.hmt')) {
+                            await accountActive.findOneAndUpdate({ email: data.email, type_for: 'register' }, {
+                                $inc: {
+                                    count: 1
+                                },
+                                create_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                            })
+                        } else if (isChecked.count > config.get('accountActiveRegister.hmt')) {
                             let date = new Date(isChecked.create_date);
                             let getSeconds = date.getSeconds() + config.get('accountActiveRegister.timeExpiry');
                             let duration = moment.duration(moment().diff(isChecked.create_date));
@@ -58,8 +55,7 @@ class Registration extends Controller {
 
                                     'message': 'Your account has been locked due to multiple registration attempts. Please try again after 2 hours!'
                                 }));
-                            }
-                            else {
+                            } else {
 
                                 await accountActive.findOneAndUpdate({ email: data.email, type_for: 'register' }, { count: 0, create_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                                 let user = await UserTemp.findOneAndUpdate({ email: req.body.data.attributes.email }, {
@@ -71,16 +67,14 @@ class Registration extends Controller {
                                 }, user._id));
                             }
 
-                        }
-                        else {
+                        } else {
                             if (isChecked.count > config.get('accountActiveRegister.limit')) {
-                                await accountActive.findOneAndUpdate({ email: data.email, type_for: 'register' },
-                                    {
-                                        $inc: {
-                                            count: 1
-                                        },
-                                        create_date: moment().format('YYYY-MM-DD HH:mm:ss')
-                                    })
+                                await accountActive.findOneAndUpdate({ email: data.email, type_for: 'register' }, {
+                                    $inc: {
+                                        count: 1
+                                    },
+                                    create_date: moment().format('YYYY-MM-DD HH:mm:ss')
+                                })
                                 let user = await UserTemp.findOneAndUpdate({ email: req.body.data.attributes.email }, {
                                     $set: {
                                         password: data.password
@@ -147,7 +141,7 @@ class Registration extends Controller {
             password: data.password,
             referrer_code: data.referrer_code ? data.referrer_code : null,
             created_date: new Date()
-        }, async (err, user) => {
+        }, async(err, user) => {
             if (err) {
 
                 return res.status(500).json(this.errorMsgFormat({ 'message': err.message }));
@@ -193,18 +187,15 @@ class Registration extends Controller {
                 checked.count = 1
                 checked.created_date = moment().format('YYYY-MM-DD HH:mm:ss');
                 checked.save();
-            }
-            else {
+            } else {
                 await new mangHash({ email: user.email, hash: encryptedHash, type_for: "registration", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
             }
-        }
-        else {
+        } else {
             let checkCount = await mangHash.findOne({ email: user.email, is_active: false, type_for: "registration" });
             if (checkCount) {
                 let count = checkCount.count;
                 await mangHash.findOneAndUpdate({ email: user.email, is_active: false, type_for: "registration" }, { hash: encryptedHash, count: ++count, created_date: moment().format('YYYY-MM-DD HH:mm:ss') })
-            }
-            else {
+            } else {
                 await new mangHash({ email: user.email, hash: encryptedHash, type_for: "registration", created_date: moment().format('YYYY-MM-DD HH:mm:ss') }).save();
             }
         }
@@ -217,7 +208,7 @@ class Registration extends Controller {
         if (req.body.data.id !== undefined) {
             if (requestedData.type === 'registration') {
                 UserTemp.findById(req.body.data.id).exec()
-                    .then(async (user) => {
+                    .then(async(user) => {
                         if (user) {
                             let checkCount = await mangHash.findOne({ email: user.email, is_active: false, type_for: "registration" });
                             if (checkCount) {
@@ -229,8 +220,7 @@ class Registration extends Controller {
                                     return res.status(400).send(this.errorMsgFormat({
                                         'message': `You've exceeded the maximum email resend limit. Please login and verify your email to continue.`
                                     }, 'users', 400));
-                                }
-                                else {
+                                } else {
 
                                     // send activation email
                                     let check = this.sendActivationEmail(user);
@@ -241,9 +231,7 @@ class Registration extends Controller {
                                     }
                                 }
                             }
-                        }
-
-                        else {
+                        } else {
                             return res.status(400).send(this.errorMsgFormat({ 'message': 'Your email has been verified. Please login to continue .' }));
                         }
                     });
