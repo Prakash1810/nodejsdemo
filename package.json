@@ -24,10 +24,10 @@
         "supertest": "^3.4.1"
     },
     "dependencies": {
+        "2fa": "^0.1.2",
         "@blurtfoundation/blurtjs": "^0.1.1",
         "@slack/web-api": "^5.7.0",
         "@slack/webhook": "^5.0.2",
-        "2fa": "^0.1.2",
         "app-root-path": "^2.2.1",
         "authenticator": "^1.1.5",
         "axios": "^0.18.1",
@@ -55,7 +55,7 @@
         "mongoose-type-url": "^1.0.6",
         "node-fetch": "^2.6.1",
         "node-rsa": "^1.0.6",
-        "nodemon": "^1.19.1",
+        "nodemon": "^2.0.6",
         "npm": "^7.1.0",
         "safe-buffer": "^5.2.0",
         "underscore": "^1.9.1",
