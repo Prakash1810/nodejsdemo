@@ -151,7 +151,7 @@ router.post('/order/pending', info, auth, async (req, res) => {
     try {
         req.body.data.attributes.user_id = Number(req.user.user_id);
         if (req.body.data.attributes.market == 'ALL') {
-            let marketList = await markets.find(), pendingOrders = [], i = 0;
+            let marketList = await markets.find({ is_active: true }), pendingOrders = [], i = 0;
             while (i < marketList.length) {
                 Object.assign(req.body.data.attributes, {
                     "user_id": req.user.user_id,
@@ -206,7 +206,7 @@ router.post('/order/finished', info, auth, async (req, res) => {
     try {
         req.body.data.attributes.user_id = Number(req.user.user_id);
         if (req.body.data.attributes.market == 'ALL') {
-            let marketList = await markets.find(), finishedOrders = [], i = 0;
+            let marketList = await markets.find({ is_active: true }), finishedOrders = [], i = 0;
             while (i < marketList.length) {
                 Object.assign(req.body.data.attributes, {
                     "user_id": req.user.user_id,
@@ -228,7 +228,7 @@ router.post('/order/finished', info, auth, async (req, res) => {
                 }
                 i++;
             }
-            let sortedOrder = _.orderBy(finishedOrders,['ftime'],['desc']);
+            let sortedOrder = _.orderBy(finishedOrders, ['ftime'], ['desc']);
             return res.status(200).send(controller.successFormat({ records: sortedOrder }));
         } else {
             await matching.matchingEngineRequest('post', 'order/finished', req.body, res);
