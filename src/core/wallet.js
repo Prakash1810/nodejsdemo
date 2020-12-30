@@ -954,6 +954,9 @@ class Wallet extends controller {
                             if (okexFee.length != 0) {
                                 let putWallet = await this.okexAutoWithdraw(transactionDetails, okexFee[0], result.result)
                                 if (!putWallet.status) {
+                                    transactionDetails.status = "1";
+                                    transactionDetails.updated_date = moment().format('YYYY-MM-DD HH:mm:ss')
+                                    await transactionDetails.save();
                                     return res.status(400).json(this.errorMsgFormat({
                                         "message": putWallet.error
                                     }, 'withdraw'));
