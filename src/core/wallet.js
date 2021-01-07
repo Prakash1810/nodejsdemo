@@ -970,9 +970,9 @@ class Wallet extends controller {
                             transactionDetails.status = "4";
 
                         } else if (transactionDetails.asset.asset_code == 'BLURT') {
-
+                            let getRequestPayload = this
                             blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
-                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetails.address, `${transactionDetails.amount} BLURT`, 'AutomaticWithdrawTest', async function(err, result) {
+                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetails.address, `${transactionDetails.amount.toFixed(3)} BLURT`, 'AutomaticWithdrawTest', async function(err, result) {
                                 // console.log(err, result);
                                 // console.log(result.operations[0][1])
                                 if (err != null) {
@@ -984,7 +984,7 @@ class Wallet extends controller {
                                         "change": `${transactionDetails.amount + transactionDetails.fee}`,
                                         "detial": {}
                                     }
-                                    await apiServices.matchingEngineRequest('patch', 'balance/update', this.requestDataFormat(payloads), res, 'data');
+                                    await apiServices.matchingEngineRequest('patch', 'balance/update', getRequestPayload.requestDataFormat(payloads), res, 'data');
                                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
                                         transactionDetails.status = "3";
                                     }
