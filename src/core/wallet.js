@@ -754,7 +754,7 @@ class Wallet extends controller {
                                 status: "0",
                                 is_deleted: false,
                                 date: moment().format('YYYY-MM-DD HH:mm:ss'),
-                                payment_id: requestData.payment_id ? requestData.payment_id : null
+                                payment_id: requestData.payment_id ? requestData.payment_id :" "
                             });
                             let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount, res);
                             return res.status(200).json(this.successFormat({
@@ -984,7 +984,7 @@ class Wallet extends controller {
                                         "change": `${transactionDetails.amount + transactionDetails.fee}`,
                                         "detial": {}
                                     }
-                                    await apiServices.matchingEngineRequest('patch', 'balance/update', getRequestPayload.requestDataFormat(payloads), res, 'data');
+                                    let response = await apiServices.matchingEngineRequest('patch', 'balance/update', getRequestPayload.requestDataFormat(payloads), res, 'data');
                                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
                                         transactionDetails.status = "3";
                                     }
