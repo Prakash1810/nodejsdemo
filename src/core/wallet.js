@@ -990,7 +990,7 @@ class Wallet extends controller {
                                     }
                                 } else {
                                     transactionDetails.height = result.block_num;
-                                    transactionDetails.tx_hash = `${result.block_num}/${result._id}`
+                                    transactionDetails.tx_hash = `${result.block_num}/${result.id}`
                                     transactionDetails.txtime = new Date().valueOf()
                                     transactionDetails.status = "2";
                                     await transactionDetails.save();
