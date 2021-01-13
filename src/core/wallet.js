@@ -754,7 +754,7 @@ class Wallet extends controller {
                                 status: "0",
                                 is_deleted: false,
                                 date: moment().format('YYYY-MM-DD HH:mm:ss'),
-                                payment_id: requestData.payment_id ? requestData.payment_id :" "
+                                payment_id: requestData.payment_id ? requestData.payment_id :null
                             });
                             let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount, res);
                             return res.status(200).json(this.successFormat({
