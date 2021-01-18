@@ -972,7 +972,7 @@ class Wallet extends controller {
                         } else if (transactionDetails.asset.asset_code == 'BLURT') {
                             let getRequestPayload = this
                             blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
-                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetails.address, `${transactionDetails.amount.toFixed(3)} BLURT`, `Beldex-${new Date()}`, async function(err, result) {
+                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetails.address, `${transactionDetails.amount.toFixed(3)} BLURT`, `BeldexWithdrawal ${new Date()}`, async function(err, result) {
                                 // console.log(err, result);
                                 if (err != null) {
                                     let payloads = {
