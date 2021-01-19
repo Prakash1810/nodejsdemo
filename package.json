@@ -13,7 +13,7 @@
         "type": "git",
         "url": "git+https://sathish-beldex@bitbucket.org/beldex/core-api.git"
     },
-    "author": "Sathish <sathish.kumar@beldex.org>",
+    "author": "Beldex",
     "license": "ISC",
     "homepage": "https://bitbucket.org/beldex/core-api#readme",
     "devDependencies": {

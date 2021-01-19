@@ -1,7 +1,5 @@
 FROM node:10.15.0-alpine
 
-LABEL user = "sathish.kumar@beldex.org"
-
 # Create a working directory 
 RUN mkdir -p /usr/src/app
 
