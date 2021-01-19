@@ -10,7 +10,7 @@ const withdrawAddressSchema = mongoose.Schema({
     created_date: { type: Date, default: Date.now },
     modified_date: Date,
     is_deleted: { type: Boolean, default: false },
-    payment_id: { type: String, default: '' }
+    payment_id: { type: String }
 });
 
 let withdrawAddress = mongoose.model('withdrawal-address', withdrawAddressSchema);
