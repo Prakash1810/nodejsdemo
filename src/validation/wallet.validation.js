@@ -8,7 +8,8 @@ exports.postWithdrawAddressValidation = (req) => {
         coin: Joi.string().required(),
         is_whitelist: Joi.boolean().optional(),
         g2f_code: Joi.string(),
-        otp: Joi.string().optional()
+        otp: Joi.string().optional(),
+        payment_id:Joi.string().allow('').optional()
     });
 
     return schema.validate(req, { abortEarly: false });

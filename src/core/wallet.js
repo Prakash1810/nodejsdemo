@@ -236,6 +236,7 @@ class Wallet extends controller {
                 label: requestData.label,
                 coin: requestData.coin,
                 address: requestData.address,
+                payment_id:requestData.payment_id,
                 is_whitelist: (requestData.is_whitelist !== undefined) ? requestData.is_whitelist : false
             }, (err, address) => {
                 if (err) {
@@ -340,7 +341,7 @@ class Wallet extends controller {
             } else {
                 withdrawAddress
                     .find(payloads)
-                    .select('_id  address label is_whitelist')
+                    .select('_id  address label is_whitelist payment_id')
                     .skip(query.skip)
                     .limit(query.limit)
                     .populate({
@@ -381,7 +382,7 @@ class Wallet extends controller {
                 asset: req.params.asset,
                 is_whitelist: (isWhitelist !== undefined) ? isWhitelist : false
             })
-            .select('-_id  address label is_whitelist');
+            .select('-_id  address label is_whitelist payment_id');
 
         if (!data) {
             return res.status(200).json(this.successFormat({
