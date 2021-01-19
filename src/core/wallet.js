@@ -62,7 +62,7 @@ class Wallet extends controller {
         // Find some documents
         assets.countDocuments({
             is_suspend: false
-        }, async(err, totalCount) => {
+        }, async (err, totalCount) => {
             if (err) {
                 return res.status(200).json(this.successFormat({
                     "data": [],
@@ -72,7 +72,7 @@ class Wallet extends controller {
             } else {
                 assets.find({
                     is_suspend: false
-                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance withdraw_fee_percentage precision', query, async(err, data) => {
+                }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance withdraw_fee_percentage precision', query, async (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
                             "data": [],
@@ -258,12 +258,12 @@ class Wallet extends controller {
 
             // find and update the reccord
             await withdrawAddress.findOneAndUpdate({
-                    _id: req.body.data.id
-                }, {
-                    $set: {
-                        is_whitelist: requestData.is_whitelist
-                    }
-                })
+                _id: req.body.data.id
+            }, {
+                $set: {
+                    is_whitelist: requestData.is_whitelist
+                }
+            })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'The changes you made were saved successfully.'
@@ -287,12 +287,12 @@ class Wallet extends controller {
 
             // find and update the reccord
             await withdrawAddress.findOneAndUpdate({
-                    _id: ID
-                }, {
-                    $set: {
-                        is_deleted: true
-                    }
-                })
+                _id: ID
+            }, {
+                $set: {
+                    is_deleted: true
+                }
+            })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'Your request was successfully completed.'
@@ -430,7 +430,7 @@ class Wallet extends controller {
         } else {
 
             noofAsset = await assets.find({ delist: false });
-            _.map(noofAsset, function(asset) {
+            _.map(noofAsset, function (asset) {
                 collectOfAssetName[asset.asset_code] = asset.asset_name.toLowerCase();
                 assetCode.push(asset.asset_code);
                 assetNames.push(asset.asset_name.toLowerCase());
@@ -457,7 +457,7 @@ class Wallet extends controller {
 
     addPrecision(formatedResponse, asset) {
         for (let i = 0; i < asset.length; i++) {
-            (formatedResponse[asset[i].asset_code]) ? formatedResponse[asset[i].asset_code]['precision'] = asset[i].precision: ''
+            (formatedResponse[asset[i].asset_code]) ? formatedResponse[asset[i].asset_code]['precision'] = asset[i].precision : ''
         }
     }
 
@@ -755,7 +755,7 @@ class Wallet extends controller {
                                 status: "0",
                                 is_deleted: false,
                                 date: moment().format('YYYY-MM-DD HH:mm:ss'),
-                                payment_id: requestData.payment_id ? requestData.payment_id :null
+                                payment_id: requestData.payment_id ? requestData.payment_id : null
                             });
                             let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount, res);
                             return res.status(200).json(this.successFormat({
@@ -971,9 +971,10 @@ class Wallet extends controller {
                             transactionDetails.status = "4";
 
                         } else if (transactionDetails.asset.asset_code == 'BLURT') {
-                            let getRequestPayload = this
+                            let getRequestPayload = this;
+                            let memo = transactionDetails.payment_id == null || "" ? "" : transactionDetails.payment_id
                             blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
-                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetails.address, `${transactionDetails.amount.toFixed(3)} BLURT`, `BeldexWithdrawal ${new Date()}`, async function(err, result) {
+                            blurt.broadcast.transfer(process.env.BLURT_SIGNATURE, process.env.BLURT_USERNAME, transactionDetails.address, `${transactionDetails.amount.toFixed(3)} BLURT`, memo, async function (err, result) {
                                 // console.log(err, result);
                                 if (err != null) {
                                     let payloads = {
@@ -1075,13 +1076,13 @@ class Wallet extends controller {
         if (ID !== undefined) {
             // find and update the reccord
             await transactions.findOneAndUpdate({
-                    _id: ID,
-                    status: 4
-                }, {
-                    $set: {
-                        is_deleted: true
-                    }
-                })
+                _id: ID,
+                status: 4
+            }, {
+                $set: {
+                    is_deleted: true
+                }
+            })
                 .then(result => {
                     return res.status(202).send(this.successFormat({
                         'message': 'Your request was successfully completed.'
@@ -1118,7 +1119,7 @@ class Wallet extends controller {
         const url = process.env.SLACK_WEBHOOK_URL;
         const webhook = new IncomingWebhook(url);
         // Send the notification
-        (async() => {
+        (async () => {
             await webhook.send({
                 text: `*New Withdrawal Request*\n\n Date: \`${new Date()}\`\nemail: \`${checkUser.email}\`\nAsset: \`${transaction.asset.asset_code}\`\nAmount: \`${transaction.final_amount}\`\nAmount to Sent: \`${transaction.amount}\`\nFee: \`${transaction.fee}\``
             });
@@ -1206,10 +1207,10 @@ class Wallet extends controller {
             }
             const subController = this;
             blurt.api.setOptions({ url: process.env.BLURT_URL, useAppbaseApi: true })
-            blurt.api.getAccountHistory("beldex-hot", -1, Number(req.query.limit), async function(err, result) {
+            blurt.api.getAccountHistory("beldex-hot", -1, Number(req.query.limit), async function (err, result) {
                 console.log('Result:', result)
                 const transfers = result.filter(tx => tx[1].op[0] === 'transfer');
-                transfers.forEach(async(tx) => {
+                transfers.forEach(async (tx) => {
 
                     const transfer = tx[1].op[1];
                     const { amount, memo, to } = transfer;

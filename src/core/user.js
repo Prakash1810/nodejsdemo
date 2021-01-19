@@ -50,6 +50,8 @@ const tradeVolume = require('../db/user-trade-volumes');
 const resetRequest = require('../db/g2f-reset-request');
 const redis = helpers.redisConnection();
 const userHelper = require('../helpers/user.helpers');
+const { verifyTOTP } = require('../helpers/verifyG2fKey');
+const { generateG2fSecret } = require('../helpers/generateG2fKey');
 
 class User extends controller {
 
@@ -333,7 +335,7 @@ class User extends controller {
             email: email
         })
 
-        .then(result => {
+            .then(result => {
                 if (result.deletedCount) {
                     return res.status(200).send(this.successFormat({
                         'message': 'account deleted successfully!'
@@ -910,9 +912,9 @@ class User extends controller {
                 let duration = moment.duration(moment().diff(check.created_date));
                 if (getSeconds > duration.asSeconds()) {
                     deviceMangement.findOne({
-                            browser: deviceHash.data.browser,
-                            user: deviceHash.data.user_id
-                        })
+                        browser: deviceHash.data.browser,
+                        user: deviceHash.data.user_id
+                    })
                         .exec()
                         .then((result) => {
                             if (!result) {
@@ -949,7 +951,7 @@ class User extends controller {
             'user': hash.data.user_id,
         }, {
             verified: hash.data.verified
-        }, async(err, device) => {
+        }, async (err, device) => {
             if (err) {
                 return res.status(404).send(this.errorMsgFormat({
                     'message': 'Invalid request.Please login to continue.'
@@ -1121,8 +1123,8 @@ class User extends controller {
                 'message': 'Your 2factor already created.'
             }));
         } else {
-            let formattedKey = authenticators.generateKey().replace(/\W/g, '').substring(0, 16).toLowerCase();
-            let auth = authenticators.generateTotpUri(formattedKey, checkUser.email, process.env.G2F_HOST_NAME, 'SHA1', 6, 30);
+            let formattedKey = await generateG2fSecret();
+            let auth = `otpauth://totp/https://beldex.io (${checkUser.email})?secret=${formattedKey}`;
             return res.status(200).send(this.successFormat({
                 'googleKey': formattedKey,
                 'googleQR': auth,
@@ -1154,7 +1156,8 @@ class User extends controller {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': 'User cannot be found.'
                 }));
-            } else if (requestedData.password !== undefined) {
+            }
+            else if (requestedData.password !== undefined) {
                 let passwordCompare = bcrypt.compareSync(requestedData.password, result.password);
                 if (passwordCompare == false) {
                     return res.status(400).send(this.errorMsgFormat({
@@ -1202,47 +1205,9 @@ class User extends controller {
     async verifyG2F(req, res, type, google_secrete_key, method = "withoutVerify") {
         try {
             let data = req.body.data.attributes;
-            let userG2fLength = 0;;
-            let opts = Object.assign({}, {
-                beforeDrift: 2,
-                afterDrift: 2,
-                drift: 4,
-                step: 30
-            });
-            let counter = Math.floor(Date.now() / 1000 / opts.step);
 
-            let returnStatus, user = null;
-            if (data.google_secrete_key && google_secrete_key) {
-                user = await users.findOneAndUpdate({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } }, { modified_date: new Date() });
-
-            } else {
-                user = await users.findOne({ _id: req.body.data.id, modified_date: { $gte: config.get('g2fDateCheck.start'), $lte: config.get('g2fDateCheck.end') } });
-                if (user) {
-                    userG2fLength = user['google_secrete_key'].length;
-                }
-
-            }
-            if (userG2fLength === config.get('g2fOldLength.length')) {
-                returnStatus = await g2fa.verifyHOTP(google_secrete_key, data.g2f_code, counter, opts);
-            } else {
-                returnStatus = await authenticators.verifyToken(google_secrete_key, data.g2f_code)
-                if (google_secrete_key.length === 20) {
-                    if (returnStatus) {
-                        returnStatus = returnStatus.delta == 1 ? true : false
-                    } else {
-                        returnStatus = false;
-                    }
-                } else {
-                    if (returnStatus) {
-                        returnStatus = returnStatus.delta == 0 ? true : false
-                    } else {
-                        returnStatus = false;
-                    }
-
-                }
-
-            }
-
+            let returnStatus
+            returnStatus = await verifyTOTP(parseInt(data.g2f_code), (google_secrete_key).toUpperCase());
             if (returnStatus) {
                 if (method == 'withoutAuth' && type != 'boolean') {
                     let user = await users.findOne({ _id: req.body.data.id });
@@ -1910,12 +1875,12 @@ class User extends controller {
         await users.findOneAndUpdate({ _id: data.user }, { kyc_statistics: "PENDING" });
         await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'PENDING', 'logout': false });
         return res.status(200).send(this.successFormat("Kyc details submitted Successfully", null, 'user', 200))
-            // }
-            // else {
-            //     return res.status(400).send(this.errorMsgFormat({
-            //         'message': response.error
-            //     }, 'user', 400));
-            // }
+        // }
+        // else {
+        //     return res.status(400).send(this.errorMsgFormat({
+        //         'message': response.error
+        //     }, 'user', 400));
+        // }
 
     }
 

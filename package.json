@@ -13,7 +13,7 @@
         "type": "git",
         "url": "git+https://sathish-beldex@bitbucket.org/beldex/core-api.git"
     },
-    "author": "Sathish <sathish.kumar@beldex.org>",
+    "author": "Beldex",
     "license": "ISC",
     "homepage": "https://bitbucket.org/beldex/core-api#readme",
     "devDependencies": {
@@ -42,6 +42,7 @@
         "fs": "0.0.1-security",
         "gt3-sdk": "^2.0.0",
         "helmet": "^3.21.1",
+        "hi-base32": "^0.5.0",
         "i18n-nodejs": "^3.0.0",
         "ioredis": "^4.14.1",
         "joi": "^17.2.1",
