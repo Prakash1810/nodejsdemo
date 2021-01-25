@@ -493,7 +493,7 @@ class User extends controller {
 
     async checkDevice(req, res, user) {
         let data = req.body.data.attributes;
-        let assetCheck = await assets.find({ delist: false }).select('asset_code');
+        let assetCheck = await assets.find({ delist: false, auto_address_generate: true }).select('asset_code');
         let userAddressCheck = await userAddress.find({ user: user._id });
         if (assetCheck.length !== userAddressCheck.length) {
             let nonAddressCreatedUser = [], i = 0;
