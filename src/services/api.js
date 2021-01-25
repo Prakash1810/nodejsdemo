@@ -77,7 +77,7 @@ class Api extends Controller {
     }
 
     axiosAPI(data) {
-       
+
         axios.post(
             `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {
@@ -354,7 +354,6 @@ class Api extends Controller {
 
     //Collect ot market pairs
     async marketPairs(data, result, res) {
-        result.result.result.sort((obj1, obj2) => obj2.priority-  obj1.priority)
         try {
             let j = 0;
             let isCheck = await assets.find({});
@@ -391,6 +390,7 @@ class Api extends Controller {
                     }
                     k++;
                 }
+                markets.sort((obj1, obj2) => obj2.priority - obj1.priority)
                 response.push({ [pairs[i]]: markets });
             }
             return res.status(200).send(controller.successFormat([response, market_name], result.result.id))
