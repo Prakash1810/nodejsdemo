@@ -58,7 +58,8 @@ class Api extends Controller {
     async initAddressCreation(user) {
         try {
             let results = await assets.find({
-                is_default: true
+                is_default: true,
+                auto_address_generate:true
             });
             results.forEach((result) => {
                 let data = {
@@ -76,6 +77,7 @@ class Api extends Controller {
     }
 
     axiosAPI(data) {
+        console.log("data:",data)
         axios.post(
             `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {

@@ -109,7 +109,7 @@ class Wallet extends controller {
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
         }
-        let isChecked = await assets.findOne({ _id: asset });
+        let isChecked = await assets.findOne({ _id: asset ,auto_address_generate:true});
         if (!isChecked.deposit) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Deposits have been disabled for this asset.'
