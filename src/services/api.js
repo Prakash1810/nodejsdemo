@@ -216,7 +216,6 @@ class Api extends Controller {
 
     }
     async matchingEngineRequestForMarketList(path, req, res, type = 'withoutAdd') {
-
         if (req.headers.authorization && req.headers.info) {
             let markets = [];
             let isInfo = await this.authenticationInfo(req);
@@ -305,7 +304,6 @@ class Api extends Controller {
             let axiosResponse = await axios['get'](
                 `${process.env.MATCHINGENGINE}/api/${process.env.MATCHINGENGINE_VERSION}/${path}`);
             let result = axiosResponse.data;
-
             if (result.status) {
                 let response = result.result.result;
                 let data = await this.marketListActiveCheck(getMarket, response);
@@ -571,6 +569,12 @@ class Api extends Controller {
         }
     }
 
+    async tradeFeeSetter(req, checkUser, market, takerFee, makerFee) {
+        req.body.data.attributes.takerFeeRate = (market.fee_discount) ? (market.market_taker_fee).toString() : (checkUser.taker_fee_detection_percentage) ? (takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100)).toString() : (takerFee.value).toString();
+        req.body.data.attributes.makerFeeRate = (market.fee_discount) ? (market.market_maker_fee).toString() : (checkUser.maker_fee_detection_percentage) ? (makerFee.value - (makerFee.value * Number(checkUser.maker_fee_detection_percentage) / 100)).toString() : (makerFee.value).toString();
+        return
+    }
+
     async order(req, res, type) {
         req.body.data.attributes.user_id = Number(req.user.user_id);
         let data = req.body.data.attributes;
@@ -587,18 +591,11 @@ class Api extends Controller {
         if (check.is_active == false || check.disable_trade == true) {
             return res.status(400).send(controller.errorMsgFormat({ message: `The  market-${data.market} is inactive` }));
         }
+        await this.tradeFeeSetter(req, checkUser, check, takerFee, makerFee);
         if (type == 'limit') {
-            if (check.minimum_price >= data.pride) {
-                return res.status(400).send({
-                    message: 'The order you have placed is lesser than the minimum price'
-                }, 'order-matching', 400)
-            }
-            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? (takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100)).toString() : (takerFee.value).toString();
-            req.body.data.attributes.makerFeeRate = (checkUser.maker_fee_detection_percentage) ? (makerFee.value - (makerFee.value * Number(checkUser.maker_fee_detection_percentage) / 100)).toString() : (makerFee.value).toString();
             await this.okexInput(req, res, data, 'limit', check);
         } else {
-            req.body.data.attributes.takerFeeRate = (checkUser.taker_fee_detection_percentage) ? (takerFee.value - (takerFee.value * Number(checkUser.taker_fee_detection_percentage) / 100)).toString() : (takerFee.value).toString();
-            await this.okexInput(req, res, data, 'market', check)
+            await this.okexInput(req, res, data, 'market', check);
         }
 
     }
