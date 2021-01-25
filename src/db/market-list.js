@@ -22,7 +22,8 @@ const schema = new mongoose.Schema({
     min_amount: { type: String, default: "0" },
     fee_discount: { type: Boolean, default: false },
     market_taker_fee: { type: String },
-    market_maker_fee: { type: String }
+    market_maker_fee: { type: String },
+    priority: { type: Number }
 })
 
 let marketList = mongoose.model('market-list', schema);

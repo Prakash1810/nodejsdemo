@@ -77,6 +77,7 @@ class Api extends Controller {
     }
 
     axiosAPI(data) {
+       
         axios.post(
             `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {
@@ -275,6 +276,7 @@ class Api extends Controller {
                             data[k].min_amount = (getMarket[j].min_amount == "0") ? data[k].min_amount : getMarket[j].min_amount;
                             data[k].money_prec = (getMarket[j].money_prec == 0) ? data[k].money_prec : getMarket[j].money_prec;
                             data[k].stock_prec = (getMarket[j].stock_prec == 0) ? data[k].stock_prec : getMarket[j].stock_prec;
+                            data[k].priority = getMarket[j].priority;
                             data[k].q = getMarket[j].q;
                             data[k].disable_trade = getMarket[j].disable_trade;
                             if (getMarket[j].q == true) {
@@ -286,6 +288,8 @@ class Api extends Controller {
                                 }
 
                             }
+                            getMarket[j].min_amount = data[k].min_amount;
+                            getMarket[j].save()
                         }
                     }
                 }
@@ -321,6 +325,7 @@ class Api extends Controller {
                             data[k].money_prec = (getMarket[j].money_prec == 0) ? data[k].money_prec : getMarket[j].money_prec;
                             data[k].stock_prec = (getMarket[j].stock_prec == 0) ? data[k].stock_prec : getMarket[j].stock_prec;
                             data[k].q = getMarket[j].q;
+                            data[k].priority = getMarket[j].priority;
                             data[k].disable_trade = getMarket[j].disable_trade;
                             if (getMarket[j].q == true) {
                                 if (data[k].stock == "ETH") {
@@ -331,6 +336,8 @@ class Api extends Controller {
                                 }
 
                             }
+                            getMarket[j].min_amount = data[k].min_amount;
+                            getMarket[j].save()
                         }
                     }
                 }
@@ -347,6 +354,7 @@ class Api extends Controller {
 
     //Collect ot market pairs
     async marketPairs(data, result, res) {
+        result.result.result.sort((obj1, obj2) => obj2.priority-  obj1.priority)
         try {
             let j = 0;
             let isCheck = await assets.find({});
