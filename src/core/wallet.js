@@ -109,20 +109,19 @@ class Wallet extends controller {
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
         }
-        let isChecked = await assets.findOne({ _id: asset ,auto_address_generate:true});
+        let isChecked = await assets.findOne({ _id: asset });
         if (!isChecked.deposit) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Deposits have been disabled for this asset.'
             }, 'asset-balance', 400));
         }
-
         if (asset !== undefined && asset !== '' && asset !== null) {
             let getAddress = await userAddress.findOne({
                 asset: asset,
                 user: req.user.user
             });
 
-            if (!getAddress) {
+            if (!getAddress && isChecked.auto_address_generate == true) {
                 let data = Object.assign({}, {
                     coin: isChecked.asset_code,
                     user_id: req.user.user_id,
@@ -236,7 +235,7 @@ class Wallet extends controller {
                 label: requestData.label,
                 coin: requestData.coin,
                 address: requestData.address,
-                payment_id:requestData.payment_id,
+                payment_id: requestData.payment_id,
                 is_whitelist: (requestData.is_whitelist !== undefined) ? requestData.is_whitelist : false
             }, (err, address) => {
                 if (err) {
