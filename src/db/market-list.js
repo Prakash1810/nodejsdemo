@@ -19,7 +19,10 @@ const schema = new mongoose.Schema({
     disable_trade: { type: Boolean, default: false },
     stock_prec: { type: Number, default: 0 },
     money_prec: { type: Number, default: 0 },
-    min_amount: { type: String, default: "0" }
+    min_amount: { type: String, default: "0" },
+    fee_discount: { type: Boolean, default: false },
+    market_taker_fee: { type: String },
+    market_maker_fee: { type: String }
 })
 
 let marketList = mongoose.model('market-list', schema);
