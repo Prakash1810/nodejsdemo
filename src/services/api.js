@@ -59,7 +59,7 @@ class Api extends Controller {
         try {
             let results = await assets.find({
                 is_default: true,
-                auto_address_generate:true
+                auto_address_generate: true
             });
             results.forEach((result) => {
                 let data = {
@@ -77,7 +77,6 @@ class Api extends Controller {
     }
 
     axiosAPI(data) {
-        console.log("data:",data)
         axios.post(
             `${process.env.WALLETAPI}/api/${process.env.WALLETAPI_VERSION}/address/generate`, this.requestDataFormat(data)
         ).then(axiosResponse => {
@@ -593,6 +592,11 @@ class Api extends Controller {
         }
         await this.tradeFeeSetter(req, checkUser, check, takerFee, makerFee);
         if (type == 'limit') {
+            if (check.minimum_price >= data.pride) {
+                return res.status(400).send({
+                    message: 'The order you have placed is lesser than the minimum price'
+                }, 'order-matching', 400)
+            }
             await this.okexInput(req, res, data, 'limit', check);
         } else {
             await this.okexInput(req, res, data, 'market', check);
