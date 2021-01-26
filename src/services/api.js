@@ -600,7 +600,7 @@ class Api extends Controller {
         }
         await this.tradeFeeSetter(req, checkUser, check, takerFee, makerFee);
         if (type == 'limit') {
-            if (parseInt(check.minimum_price) >= parseInt(data.pride)) {
+            if (parseInt(check.minimum_amount) >= parseInt(data.amount)) {
                 return res.status(400).send({
                     message: 'The order you have placed is lesser than the minimum price'
                 }, 'order-matching', 400)
