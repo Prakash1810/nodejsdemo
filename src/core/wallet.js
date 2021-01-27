@@ -1198,7 +1198,7 @@ class Wallet extends controller {
     }
     async blurtGetDeposit(req, res) {
         try {
-            console.log("heelo")
+            
             if (!req.query.limit) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': `limit is required`
