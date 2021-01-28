@@ -412,7 +412,6 @@ class Wallet extends controller {
             asset = [];
         let collectOfAssetName = {},
             noofAsset;
-        req.user = { user: '5de610036f439e002d9d22da', user_id: 4900 }
         payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
