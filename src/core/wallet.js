@@ -1185,9 +1185,9 @@ class Wallet extends controller {
                 "currency": filterFee.currency.toLowerCase(),
                 "to_address": process.env[`${pendingDetials.asset.asset_code}_TOADDRESS`]
             })
-            console.log('Payload:', payload)
             let response = await authClient.account().postWithdrawal(payload);
-            if (response.status) {
+            console.log(`Response : ${new Date()} : `, response)
+            if (response.status || response.result) {
                 return { status: true }
             }
             return { status: false, error: "Something went wrong" }
@@ -1198,7 +1198,7 @@ class Wallet extends controller {
     }
     async blurtGetDeposit(req, res) {
         try {
-            console.log("heelo")
+            
             if (!req.query.limit) {
                 return res.status(400).send(this.errorMsgFormat({
                     'message': `limit is required`
