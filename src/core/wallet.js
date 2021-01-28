@@ -412,6 +412,7 @@ class Wallet extends controller {
             asset = [];
         let collectOfAssetName = {},
             noofAsset;
+        req.user = { user: '5de610036f439e002d9d22da', user_id: 4900 }
         payloads.user_id = req.user.user_id;
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
@@ -445,7 +446,7 @@ class Wallet extends controller {
         }
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         // let marketResponse = await apiServices.marketPrice(assetNames);
-        let marketResponse = await apiServices.marketPriceGetting(assetNames, assetCode, res);
+        let marketResponse = await apiServices.getmarketPrice(assetNames, assetCode, res);
         let formatedResponse = await this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
         await this.addPrecision(formatedResponse, noofAsset)
         return res.status(200).json(this.successFormat({
