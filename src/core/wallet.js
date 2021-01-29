@@ -445,7 +445,7 @@ class Wallet extends controller {
         }
         let apiResponse = await apiServices.matchingEngineRequest('post', 'balance/query', this.requestDataFormat(payloads), res, 'data');
         // let marketResponse = await apiServices.marketPrice(assetNames);
-        let marketResponse = await apiServices.marketPriceGetting(assetNames, assetCode, res);
+        let marketResponse = await apiServices.getmarketPrice(assetNames, assetCode, res);
         let formatedResponse = await this.currencyConversion(apiResponse.data.attributes, marketResponse, collectOfAssetName);
         await this.addPrecision(formatedResponse, noofAsset)
         return res.status(200).json(this.successFormat({

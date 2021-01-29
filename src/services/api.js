@@ -23,6 +23,8 @@ const utils = new Utils();
 const redis = helpers.redisConnection();
 const orders = require('../db/orders');
 const fee = require('../db/matching-engine-config');
+const marketLastPrice = require('../db/market-last-price');
+
 class Api extends Controller {
 
     async sendEmailNotification(data, res) {
@@ -474,45 +476,75 @@ class Api extends Controller {
         return await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${assetsName}&vs_currencies=${convertTo}`);
     }
 
-    async marketPriceGetting(assetNames, assetCode, res) {
+    async getmarketPrice(assetNames, assetCode, res) {
         let i = 0, response = {}, value;
-        let assetPrice = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "BTCUSDT" }), res, 'data');
-        let usd = Number(assetPrice.data.attributes);
-        while (i < assetNames.length) {
-            if (assetNames[i] == 'bitcoin' || assetNames[i] == 'tether') {
+        let marketLastPriceAll = await marketLastPrice.find({});
+        // console.log("last:",marketLastPriceAll)
+        // let assetPrice = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "BTCUSDT" }), res, 'data');
+        // let usd = Number(assetPrice.data.attributes);
+        // while (i < assetNames.length) {
+        //     if (assetNames[i] == 'bitcoin' || assetNames[i] == 'tether') {
+        //         value = {
+        //             "btc": (assetNames[i] == 'bitcoin') ? 1 : 1 / usd,
+        //             "usd": (assetNames[i] == 'bitcoin') ? usd : 1
+        //         };
+        //         response[assetNames[i]] = value;
+        //     }
+        //     else {
+        //         if (assetNames[i] == 'prediqt') {
+        //             let PQTMarket = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "PQTUSDT" }), res, 'data');
+        //             let value = {
+        //                 "btc": PQTMarket.data.attributes / usd,
+        //                 "usd": PQTMarket.data.attributes
+        //             };
+        //             response[assetNames[i]] = value;
+        //         } else {
+        //             let coinCode = (assetCode[i] === 'IDRT') ? ('BTC' + assetCode[i]) : (assetCode[i] + 'BTC');
+        //             let marketLast = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": coinCode }), res, 'data');
+        //             let btcValue = marketLast.data.attributes;
+        //             let value = {
+        //                 "btc": btcValue,
+        //                 "usd": btcValue * usd
+        //             };
+        //             response[assetNames[i]] = value;
+        //             if (marketLast.data.attributes.message) {
+        //                 if ((marketLast.data.attributes.message).message == 'invalid argument') {
+        //                     let value = {
+        //                         "btc": 0,
+        //                         "usd": 0
+        //                     };
+        //                     response[assetNames[i]] = value;
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     i++;
+        // }
+        let usdValue;
+        while (i < assetCode.length) {
+            let assetLastPrice = await utils.assetLastPrice(assetCode[i], marketLastPriceAll);
+            if (assetLastPrice.market_name == 'BTCUSDT') {
+                usdValue = Number(assetLastPrice.last_price);
+            }
+            if (assetNames[i] == 'tether') {
                 value = {
-                    "btc": (assetNames[i] == 'bitcoin') ? 1 : 1 / usd,
-                    "usd": (assetNames[i] == 'bitcoin') ? usd : 1
+                    "btc": 1 / usdValue,
+                    "usd": 1
                 };
                 response[assetNames[i]] = value;
             }
-            else {
-                if (assetNames[i] == 'prediqt') {
-                    let PQTMarket = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": "PQTUSDT" }), res, 'data');
-                    let value = {
-                        "btc": PQTMarket.data.attributes / usd,
-                        "usd": PQTMarket.data.attributes
-                    };
-                    response[assetNames[i]] = value;
-                } else {
-                    let coinCode = (assetCode[i] === 'IDRT') ? ('BTC' + assetCode[i]) : (assetCode[i] + 'BTC');
-                    let marketLast = await this.matchingEngineRequest('post', 'market/last', this.requestDataFormat({ "market": coinCode }), res, 'data');
-                    let btcValue = marketLast.data.attributes;
-                    let value = {
-                        "btc": btcValue,
-                        "usd": btcValue * usd
-                    };
-                    response[assetNames[i]] = value;
-                    if (marketLast.data.attributes.message) {
-                        if ((marketLast.data.attributes.message).message == 'invalid argument') {
-                            let value = {
-                                "btc": 0,
-                                "usd": 0
-                            };
-                            response[assetNames[i]] = value;
-                        }
-                    }
-                }
+            if (assetLastPrice.market_pair == 'BTC') {
+                let value = {
+                    "btc": Number(assetLastPrice.last_price),
+                    "usd": Number(assetLastPrice.last_price) * usdValue
+                };
+                response[assetNames[i]] = value;
+            } else if (assetLastPrice.market_pair == 'USDT') {
+                let value = {
+                    "btc": Number(assetLastPrice.last_price) / usdValue,
+                    "usd": Number(assetLastPrice.last_price)
+                };
+                response[assetNames[i]] = value;
             }
             i++;
         }

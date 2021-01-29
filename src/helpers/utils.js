@@ -50,6 +50,24 @@ class Utils extends Controller {
         }
         return data;
     }
+
+    async assetLastPrice(assetCode, marketLastPriceAll) {
+        let responseData = {};
+        marketLastPriceAll.filter(requestData => {
+            if (requestData.asset_name == assetCode) {
+                if (requestData.market_pair == 'BTC') {
+                    responseData = requestData;
+                }
+                else if (requestData.market_pair == 'USDT') {
+                    let checkResponseData = _.isEmpty(responseData);
+                    if (checkResponseData) {
+                        responseData = requestData;
+                    }
+                }
+            };
+        });
+        return responseData;
+    }
 }
 
 module.exports = Utils;
