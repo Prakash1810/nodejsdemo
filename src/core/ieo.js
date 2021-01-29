@@ -19,7 +19,7 @@ class ieo extends Controller {
             }).populate({
                 path: 'available_currency',
                 model: 'assets',
-                select: 'asset_name _id'
+                select: 'asset_code asset_name _id'
             });
 
             return res.send(this.successFormat({ data: checkIeoList }, '', 'ieo-details')).status(200);
@@ -38,6 +38,10 @@ class ieo extends Controller {
             }).populate({
                 path: 'asset_details',
                 select: 'social_contacts video content'
+            }).populate({
+                path: 'available_currency',
+                model: 'assets',
+                select: 'asset_code asset_name _id'
             });
             return res.send(this.successFormat({ data: checkIeoDetails }, '', 'ieo-details')).status(200);
         } catch (error) {
@@ -66,8 +70,11 @@ class ieo extends Controller {
                 }
                 let updateBalance = await this.BalanceUpdate(req, checkUser, asset, data, amount, checkIeoDetails)
                 if (updateBalance.status) {
-                    data['user'] = req.user.user;
-                    data['ieo'] = req.params.ieo_id
+                    Object.assign(data,{
+                        user: req.user.user,
+                        ieo: req.params.ieo_id,
+                        buy_asset: data.asset
+                    });
                     await new ieoTokenSale(data).save();
                     return res.send(this.successFormat({ message: "Your data has been added", supply: checkIeoDetails.session_supply }, '', 'ieo-details')).status(200)
                 }
@@ -166,8 +173,19 @@ class ieo extends Controller {
 
     async ieoHistory(req, res) {
         try {
+            req.user = { user_id: 31204, user: '5df777762be0fe0011cb0135' }
             let user = req.user.user;
-            let history = await tokenSale.find({ user });
+            let history = await tokenSale.find({ user }).populate({
+                path: 'buy_asset',
+                select: 'asset_code asset_name -_id'
+            }).populate({
+                path: 'ieo',
+                select: 'asset -_id',
+                populate: {
+                    path: 'asset',
+                    select: 'asset_name asset_code -_id'
+                }
+            });
             return res.send(this.successFormat({ data: history }, '', 'ieo-details')).status(200);
         } catch (error) {
             return res.status(500).send(this.errorMsgFormat({
