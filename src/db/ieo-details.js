@@ -5,7 +5,7 @@ const ieoSchema = new mongoose.Schema({
     ieo_stage: { type: Number, required: true, index: true },
     ieo_user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', index: true },
     session_supply: { type: Number, required: true },
-    available_currency: { type: mongoose.Schema.Types.Mixed, index: true },
+    available_currency: [{ type: mongoose.Schema.Types.ObjectId, ref: 'assets' , index: true }],
     token_distribution: { type: String, required: true },
     token_protocol:{ type: String, required: true },
     token_price: { type: Number, required: true },

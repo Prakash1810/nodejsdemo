@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
-        }, 'user', 500));
+        }, 'ieo-details', 500));
     }
 })
 router.get('/details/:ieo_id', async (req, res) => {
@@ -24,7 +24,7 @@ router.get('/details/:ieo_id', async (req, res) => {
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
-        }, 'user', 500));
+        }, 'ieo-details', 500));
     }
 })
 router.post('/token-sale/:ieo_id', auth, info, async (req, res) => {
@@ -38,7 +38,17 @@ router.post('/token-sale/:ieo_id', auth, info, async (req, res) => {
     } catch (err) {
         return res.status(500).send(controller.errorMsgFormat({
             'message': err.message
-        }, 'user', 500));
+        }, 'ieo-details', 500));
+    }
+});
+
+router.get('/history', info, auth, async (req, res) => {
+    try {
+        await ieo.ieoHistory(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorMsgFormat({
+            'message': err.message
+        }, 'ieo-details', 500));
     }
 })
 
