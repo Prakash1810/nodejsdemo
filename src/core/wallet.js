@@ -943,26 +943,6 @@ class Wallet extends controller {
                             path: 'asset',
                             select: 'asset_name asset_code automatic_withdrawal token auto_approved'
                         })
-                        if (transactionDetails.asset.automatic_withdrawal) {
-                            const result = await apiServices.okexRequest()
-                            if (!result.status) {
-                                return res.status(400).json(this.errorMsgFormat({
-                                    "message": result.error
-                                }, 'withdraw'))
-                            }
-                            let okexFee = await this.getWithdawalFee(result.result, transactionDetails.asset.asset_code);
-                            if (okexFee.length != 0) {
-                                let putWallet = await this.okexAutoWithdraw(transactionDetails, okexFee[0], result.result)
-                                if (!putWallet.status) {
-                                    transactionDetails.status = "1";
-                                    transactionDetails.updated_date = moment().format('YYYY-MM-DD HH:mm:ss')
-                                    await transactionDetails.save();
-                                    return res.status(400).json(this.errorMsgFormat({
-                                        "message": putWallet.error
-                                    }, 'withdraw'));
-                                }
-                            }
-                        }
                         notify.status = 2;
                         notify.modified_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await notify.save();
