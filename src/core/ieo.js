@@ -22,7 +22,7 @@ class ieo extends Controller {
                 select: 'asset_code asset_name _id'
             });
 
-            return res.send(this.successFormat({ data: checkIeoList }, '', 'ieo-details')).status(200);
+            return res.send(this.successFormat({ data: checkIeoList ? checkIeoList : [] }, '', 'ieo-details')).status(200);
         } catch (error) {
             return res.status(500).send(this.errorMsgFormat({
                 'message': error.message
@@ -43,7 +43,7 @@ class ieo extends Controller {
                 model: 'assets',
                 select: 'asset_code asset_name _id'
             });
-            return res.send(this.successFormat({ data: checkIeoDetails }, '', 'ieo-details')).status(200);
+            return res.send(this.successFormat({ data: checkIeoDetails ? checkIeoDetails : [] }, '', 'ieo-details')).status(200);
         } catch (error) {
             return res.status(500).send(this.errorMsgFormat({
                 'message': error.message
@@ -51,17 +51,32 @@ class ieo extends Controller {
         }
     }
 
+    async getTokenPrice(ieoDetails, asset_code) {
+        return await ieoDetails.token_price.filter((e) => e.asset_code == asset_code)
+    }
+
     async addTokenSale(req, res) {
         try {
             let data = req.body.data.attributes;
             let checkIeoDetails = await ieoList.findOne({ _id: req.params.ieo_id });
             if (!checkIeoDetails) {
-                return res.send(this.errorMsgFormat({ message: 'Ieo id is not be found' }))
+                return res.send(this.errorMsgFormat({ message: 'IEO id not found' }))
             }
             let checkUser = await users.findOne({ _id: checkIeoDetails.ieo_user_id });
             let asset = await assets.findOne({ _id: checkIeoDetails.asset });
             let buyAsset = await assets.findOne({ _id: data.asset });
-            let amount = await this.calculateAmount(data, checkIeoDetails.token_price);
+            if (checkIeoDetails.token_price.length == 0) {
+                return res.status(500).send(this.errorMsgFormat({
+                    'message': 'Price not enter for this supply.'
+                }, 'ieo-details', 500));
+            }
+            let tokenPrice = await this.getTokenPrice(checkIeoDetails, buyAsset.asset_code);
+            if (tokenPrice.length == 0) {
+                return res.status(500).send(this.errorMsgFormat({
+                    'message': 'Selected asset price not found.'
+                }, 'ieo-details', 500));
+            }
+            let amount = await this.calculateAmount(data, Number(tokenPrice[0].price));
             let balanceEnquiry = await this.checkBalance(checkUser.user_id, asset.asset_code, data.amount, 'ieo');
             if (balanceEnquiry.status) {
                 let balanceEnquiry = await this.checkBalance(req.user.user_id, buyAsset.asset_code, amount, 'user');
@@ -70,7 +85,7 @@ class ieo extends Controller {
                 }
                 let updateBalance = await this.BalanceUpdate(req, checkUser, asset, data, amount, checkIeoDetails)
                 if (updateBalance.status) {
-                    Object.assign(data,{
+                    Object.assign(data, {
                         user: req.user.user,
                         ieo: req.params.ieo_id,
                         buy_asset: data.asset

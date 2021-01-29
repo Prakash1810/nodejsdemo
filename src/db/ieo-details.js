@@ -8,7 +8,7 @@ const ieoSchema = new mongoose.Schema({
     available_currency: [{ type: mongoose.Schema.Types.ObjectId, ref: 'assets' , index: true }],
     token_distribution: { type: String, required: true },
     token_protocol:{ type: String, required: true },
-    token_price: { type: Number, required: true },
+    token_price: { type: mongoose.Schema.Types.Mixed, required: true },
     bonus: { type: String, required: true },
     status: { type: String, required: true },
     start_date: { type: Date },
