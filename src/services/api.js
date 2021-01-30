@@ -520,15 +520,13 @@ class Api extends Controller {
         //     }
         //     i++;
         // }
-        let usdValue;
+        let usdValuerequest = await marketLastPrice.findOne({ market_name: 'BTCUSDT' });
+        let usdValue = Number(usdValuerequest.last_price);
         while (i < assetCode.length) {
             let assetLastPrice = await utils.assetLastPrice(assetCode[i], marketLastPriceAll);
-            if (assetLastPrice.market_name == 'BTCUSDT') {
-                usdValue = Number(assetLastPrice.last_price);
-            }
             if (assetNames[i] == 'tether') {
                 value = {
-                    "btc": 1 / usdValue,
+                    "btc": (usdValue) ? 1 / usdValue : 0,
                     "usd": 1
                 };
                 response[assetNames[i]] = value;
@@ -536,12 +534,12 @@ class Api extends Controller {
             if (assetLastPrice.market_pair == 'BTC') {
                 let value = {
                     "btc": Number(assetLastPrice.last_price),
-                    "usd": Number(assetLastPrice.last_price) * usdValue
+                    "usd": (usdValue) ? Number(assetLastPrice.last_price) * usdValue : 0
                 };
                 response[assetNames[i]] = value;
             } else if (assetLastPrice.market_pair == 'USDT') {
                 let value = {
-                    "btc": Number(assetLastPrice.last_price) / usdValue,
+                    "btc": (usdValue) ? Number(assetLastPrice.last_price) / usdValue : 0,
                     "usd": Number(assetLastPrice.last_price)
                 };
                 response[assetNames[i]] = value;
