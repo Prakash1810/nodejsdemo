@@ -520,12 +520,10 @@ class Api extends Controller {
         //     }
         //     i++;
         // }
-        let usdValue;
+        let usdValuerequest = await marketLastPrice.findOne({ market_name: 'BTCUSDT' });
+        let usdValue = Number(usdValuerequest.last_price);
         while (i < assetCode.length) {
             let assetLastPrice = await utils.assetLastPrice(assetCode[i], marketLastPriceAll);
-            if (assetLastPrice.market_name == 'BTCUSDT') {
-                usdValue = Number(assetLastPrice.last_price);
-            }
             if (assetNames[i] == 'tether') {
                 value = {
                     "btc": (usdValue) ? 1 / usdValue : 0,
