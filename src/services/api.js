@@ -528,7 +528,7 @@ class Api extends Controller {
             }
             if (assetNames[i] == 'tether') {
                 value = {
-                    "btc": 1 / usdValue,
+                    "btc": (usdValue) ? 1 / usdValue : 0,
                     "usd": 1
                 };
                 response[assetNames[i]] = value;
@@ -536,12 +536,12 @@ class Api extends Controller {
             if (assetLastPrice.market_pair == 'BTC') {
                 let value = {
                     "btc": Number(assetLastPrice.last_price),
-                    "usd": Number(assetLastPrice.last_price) * usdValue
+                    "usd": (usdValue) ? Number(assetLastPrice.last_price) * usdValue : 0
                 };
                 response[assetNames[i]] = value;
             } else if (assetLastPrice.market_pair == 'USDT') {
                 let value = {
-                    "btc": Number(assetLastPrice.last_price) / usdValue,
+                    "btc": (usdValue) ? Number(assetLastPrice.last_price) / usdValue : 0,
                     "usd": Number(assetLastPrice.last_price)
                 };
                 response[assetNames[i]] = value;
