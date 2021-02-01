@@ -678,6 +678,16 @@ class Wallet extends controller {
                 }, 'user', 400));
             }
 
+            if (checkAsset.asset_code == 'BDX' || checkAsset.asset_code == 'XMR') {
+                if (requestData.hasOwnProperty('payment_id')) {
+                    if (requestData.payment_id.length < 16 || requestData.payment_id.length > 64) {
+                        return res.status(400).send(this.errorMsgFormat({
+                            'message': 'Payment Id must be 16 to 64 character string .'
+                        }, 'user', 400));
+                    }
+                }
+            }
+
             if (checkAsset.asset_code == 'TREEP') {
                 if (!requestData.payment_id) {
                     return res.status(400).send(this.errorMsgFormat({
