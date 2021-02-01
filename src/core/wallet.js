@@ -464,8 +464,13 @@ class Wallet extends controller {
         let formatedAssetBalnce = {};
         for (let result in matchResponse) {
             if (assetsJson[result]) {
-                let btc = marketResponse[assetsJson[result]].btc;
-                let usd = marketResponse[assetsJson[result]].usd;
+                let btc, usd;
+                if (_.isEmpty(marketResponse[assetsJson])) {
+                    btc = 0, usd = 0;
+                } else {
+                    btc = marketResponse[assetsJson[result]].btc;
+                    usd = marketResponse[assetsJson[result]].usd;
+                }
                 Object.assign(formatedAssetBalnce, {
                     [result]: Object.assign({
                         'available': {
