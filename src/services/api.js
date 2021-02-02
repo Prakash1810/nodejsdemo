@@ -24,6 +24,7 @@ const redis = helpers.redisConnection();
 const orders = require('../db/orders');
 const fee = require('../db/matching-engine-config');
 const marketLastPrice = require('../db/market-last-price');
+const matchingEngineConfig = require('../db/matching-engine-config');
 
 class Api extends Controller {
 
@@ -218,6 +219,8 @@ class Api extends Controller {
 
     }
     async matchingEngineRequestForMarketList(path, req, res, type = 'withoutAdd') {
+        let makerFeeRate = await matchingEngineConfig.findOne({ config: 'makerFeeRate' });
+        let takerFeeRate = await matchingEngineConfig.findOne({ config: 'takerFeeRate' });
         if (req.headers.authorization && req.headers.info) {
             let markets = [];
             let isInfo = await this.authenticationInfo(req);
@@ -278,6 +281,8 @@ class Api extends Controller {
                             data[k].min_amount = (getMarket[j].min_amount == "0") ? data[k].min_amount : getMarket[j].min_amount;
                             data[k].money_prec = (getMarket[j].money_prec == 0) ? data[k].money_prec : getMarket[j].money_prec;
                             data[k].stock_prec = (getMarket[j].stock_prec == 0) ? data[k].stock_prec : getMarket[j].stock_prec;
+                            data[k].taker_fee = (getMarket[j].market_taker_fee) ? getMarket[j].market_taker_fee : takerFeeRate.value;
+                            data[k].maker_fee = (getMarket[j].market_maker_fee) ? getMarket[j].market_maker_fee : makerFeeRate.value;
                             data[k].priority = getMarket[j].priority;
                             data[k].q = getMarket[j].q;
                             data[k].disable_trade = getMarket[j].disable_trade;
@@ -326,6 +331,8 @@ class Api extends Controller {
                             data[k].min_amount = (getMarket[j].min_amount == "0") ? data[k].min_amount : getMarket[j].min_amount;
                             data[k].money_prec = (getMarket[j].money_prec == 0) ? data[k].money_prec : getMarket[j].money_prec;
                             data[k].stock_prec = (getMarket[j].stock_prec == 0) ? data[k].stock_prec : getMarket[j].stock_prec;
+                            data[k].taker_fee = (getMarket[j].market_taker_fee) ? getMarket[j].market_taker_fee : takerFeeRate.value;
+                            data[k].maker_fee = (getMarket[j].market_maker_fee) ? getMarket[j].market_maker_fee : makerFeeRate.value;
                             data[k].q = getMarket[j].q;
                             data[k].priority = getMarket[j].priority;
                             data[k].disable_trade = getMarket[j].disable_trade;
