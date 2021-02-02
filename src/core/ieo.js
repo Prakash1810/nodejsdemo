@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const mongoose = require('mongoose');
 const Controller = require('./controller');
 const ieoList = require('../db/ieo-details');
 const ieoTokenSale = require('../db/ieo-token-sale')
@@ -6,11 +7,29 @@ const apiService = require('../services/api');
 const assets = require('../db/assets')
 const users = require('../db/users')
 const tokenSale = require('../db/ieo-token-sale');
+const helperFunctions = require('../helpers/helper.functions');
 class ieo extends Controller {
 
     async ieoList(req, res) {
         try {
-            let checkIeoList = await ieoList.find({}).select('-ieo_user_id').populate({
+            let currentDate = new Date();
+            let checkIeoList = await ieoList.find({});
+            for (let i = 0; i < checkIeoList.length; i++) {
+                let status = '';
+                if (currentDate > new Date(checkIeoList[i].start_date) && currentDate < new Date(checkIeoList[i].end_date)) {
+                    status = 'ongoing';
+                } else if (currentDate > new Date(checkIeoList[i].end_date)) {
+                    status = 'completed';
+                } else if (currentDate < new Date(checkIeoList[i].start_date)) {
+                    status = 'upcoming';
+                } else {
+                    status = ''
+                }
+                checkIeoList[i].status = status;
+                await checkIeoList[i].save();
+            };
+
+            let checkIeoListData = await ieoList.find({}).select('-ieo_user_id').populate({
                 path: 'asset',
                 select: 'asset_name asset_code _id logo_url '
             }).populate({
@@ -21,8 +40,7 @@ class ieo extends Controller {
                 model: 'assets',
                 select: 'asset_code asset_name _id'
             });
-
-            return res.send(this.successFormat({ data: checkIeoList ? checkIeoList : [] }, '', 'ieo-details')).status(200);
+            return res.send(this.successFormat({ data: checkIeoListData ? checkIeoListData : [] }, '', 'ieo-details')).status(200);
         } catch (error) {
             return res.status(500).send(this.errorMsgFormat({
                 'message': error.message
@@ -77,8 +95,8 @@ class ieo extends Controller {
                 }, 'ieo-details', 500));
             }
             let amount = await this.calculateAmount(data, Number(tokenPrice[0].price));
-            let balanceEnquiry = await this.checkBalance(checkUser.user_id, asset.asset_code, data.amount, 'ieo');
-            if (balanceEnquiry.status) {
+            let balanceEnquiryIeo = await this.checkBalance(checkUser.user_id, asset.asset_code, data.amount, 'ieo');
+            if (balanceEnquiryIeo.status) {
                 let balanceEnquiry = await this.checkBalance(req.user.user_id, buyAsset.asset_code, amount, 'user');
                 if (!balanceEnquiry.status) {
                     return res.status(400).send(balanceEnquiry.error)
@@ -88,9 +106,11 @@ class ieo extends Controller {
                     Object.assign(data, {
                         user: req.user.user,
                         ieo: req.params.ieo_id,
-                        buy_asset: data.asset
+                        buy_asset: data.asset,
+                        price: `${Number(tokenPrice[0].price)}`
                     });
                     await new ieoTokenSale(data).save();
+                    await helperFunctions.publishAndStoreData(balanceEnquiryIeo.data, req.user.user_id, 'publish')
                     return res.send(this.successFormat({ message: "Your data has been added", supply: checkIeoDetails.session_supply }, '', 'ieo-details')).status(200)
                 }
                 return res.status(400).send(updateBalance.error)
@@ -152,7 +172,7 @@ class ieo extends Controller {
             if (balanceQuery.code == 200) {
 
                 if (amount < Number(balanceQuery.data.attributes[asset].available)) {
-                    return { status: true }
+                    return { status: true, data: { [asset]: Number(balanceQuery.data.attributes[asset].available) } }
                 }
                 let msg = who == 'ieo' ? `Insufficient IEO supply, Available balance is ${balanceQuery.data.attributes[asset].available}` : `Insufficient balance, Available balance is ${balanceQuery.data.attributes[asset].available}`
                 return { status: false, error: this.errorMsgFormat({ 'message': msg }) }
@@ -188,19 +208,37 @@ class ieo extends Controller {
 
     async ieoHistory(req, res) {
         try {
-            req.user = { user_id: 31204, user: '5df777762be0fe0011cb0135' }
+            let filterAsset = req.query.asset ? mongoose.Types.ObjectId(req.query.asset) : { $exists: true };
             let user = req.user.user;
-            let history = await tokenSale.find({ user }).populate({
-                path: 'buy_asset',
-                select: 'asset_code asset_name -_id'
-            }).populate({
-                path: 'ieo',
-                select: 'asset -_id',
-                populate: {
-                    path: 'asset',
-                    select: 'asset_name asset_code -_id'
-                }
-            });
+            let history = await tokenSale.aggregate([
+                { $match: { user: mongoose.Types.ObjectId(user) } },
+                {
+                    $lookup: {
+                        from: 'assets',
+                        localField: 'buy_asset',
+                        foreignField: '_id',
+                        as: 'buy_asset',
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'ieo-details',
+                        localField: 'ieo',
+                        foreignField: '_id',
+                        as: 'ieo_details'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'assets',
+                        localField: 'ieo_details.asset',
+                        foreignField: '_id',
+                        as: 'ieo_asset'
+                    }
+                },
+                { $match: { 'ieo_details.asset': filterAsset } },
+                { $project: { '_id': 1, 'user': 1, 'price': 1, 'amount': 1, 'total': 1, 'buy_asset._id': 1, 'buy_asset.asset_code': 1, 'buy_asset.asset_name': 1, 'ieo_asset._id': 1, 'ieo_asset.asset_code': 1, 'ieo_asset.asset_name': 1 } },
+            ]);
             return res.send(this.successFormat({ data: history }, '', 'ieo-details')).status(200);
         } catch (error) {
             return res.status(500).send(this.errorMsgFormat({

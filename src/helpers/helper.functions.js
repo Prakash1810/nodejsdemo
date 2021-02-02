@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const crypto = require('crypto');
 const config = require('config');
 const http = require('http');
@@ -6,6 +7,7 @@ const Redis = require('ioredis');
 const buttervalue = Buffer.from("uyewdbnyjsyedord");
 const iv = Buffer.from(config.get('encryption.key'));
 const Controller = require('../core/controller');
+// const userTimeline = require('../db/user-timeline');
 
 class Helpers extends Controller {
 
@@ -62,6 +64,30 @@ class Helpers extends Controller {
         //     port: process.env.REDIS_PORT,
         //     host: process.env.REDIS_HOST
         // });
+    }
+
+    async publishAndStoreData(data, user, type) {
+        try {
+            if (type == 'publish') {
+                let redis = await this.redisConnection();
+                return await redis.publish(`IEO-SUPPLY`, JSON.stringify(data));
+            } 
+            // else if (type == 'store') {
+            //     let existsData = await userTimeline.findOne({ user }).lean();
+            //     if (_.isEmpty(existsData)) {
+            //         let payload = Object.assign({
+            //             activity: [data],
+            //             user
+            //         });
+            //         await new userTimeline(payload).save();
+            //     } else {
+            //         existsData.activity.push(data)
+            //         await userTimeline.findOneAndUpdate({ user }, existsData);
+            //     }
+            // }
+        } catch (error) {
+            console.log(error.message, error.stack)
+        }
     }
 
 }
