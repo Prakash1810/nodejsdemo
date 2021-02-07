@@ -1,8 +1,9 @@
 const Controller = require('./controller');
 const { ancmtCategories, ancmtSubCategories, ancmtTitle, ancmtContent } = require('../db/announcements');
 const _ = require('lodash');
-const utils = require('../helpers/utils');
-const Utils = new utils();
+const Utils = require('../helpers/utils');
+const utils = new Utils();
+
 
 class announcement extends Controller {
 
@@ -12,7 +13,7 @@ class announcement extends Controller {
                 {
                     $group: {
                         _id: '$category_id',
-                        subCategory: { $push: { name: '$name', _id: "$_id" } }
+                        subCategory: { $push: { name: '$name', _id: "$_id", id: "$id" } }
                     },
                 },
                 {
@@ -26,7 +27,7 @@ class announcement extends Controller {
                 { $unwind: '$category' },
                 {
                     $project: {
-                        'subCategory': 1, 'category._id': 1, 'category.name': 1
+                        'subCategory': 1, 'category._id': 1, 'category.name': 1, 'category.id': 1
                     }
                 }
             ]);
@@ -56,8 +57,8 @@ class announcement extends Controller {
             //     { $unwind: '$titleName' },
             //     { $project: { 'content': 1, 'titleName._id': 1, 'titleName.name': 1 } }
             // ]);
-            // let titleDataFormate = await Utils.titleResponseFromat(getAllTitle, getAllContent);
-            let response = await Utils.subCategoryFormat(getSubCntDetails);
+            // let titleDataFormate = await utils.titleResponseFromat(getAllTitle, getAllContent);
+            let response = await utils.subCategoryFormat(getSubCntDetails, res);
             return res.status(200).json(this.successFormat({
                 "data": { category: response }
             }));
@@ -70,13 +71,13 @@ class announcement extends Controller {
 
     async getAnnouncementDetails(req, res) {
         try {
-            let categoryDetails = await ancmtCategories.findOne({ _id: req.params.category_id, is_active: true });
+            let categoryDetails = await ancmtCategories.findOne({ id: req.params.category_id, is_active: true });
             if (!categoryDetails) {
                 return res.status(400).json(this.errorMsgFormat({
                     "message": "This announcement category not exits."
                 }, 'Announcement'));
             }
-            let subCategoryDetaile = await ancmtSubCategories.find({ category_id: categoryDetails._id, is_active: true }).select('name');
+            let subCategoryDetaile = await ancmtSubCategories.find({ category_id: categoryDetails._id, is_active: true }).select('name id');
             return res.status(200).json(this.successFormat({
                 "data": subCategoryDetaile
             }));
@@ -89,21 +90,22 @@ class announcement extends Controller {
 
     async getAncmtSubCategoryDetails(req, res) {
         try {
-            let subCategoryDetails = await ancmtSubCategories.findOne({ _id: req.params.sub_category_id, is_active: true });
+            let subCategoryDetails = await ancmtSubCategories.findOne({ id: req.params.sub_category_id, is_active: true });
             if (!subCategoryDetails) {
                 return res.status(400).json(this.errorMsgFormat({
                     "message": "This announcement sub-category not exits."
                 }, 'Announcement'));
             }
-            let titleDetails = await ancmtTitle.find({ sub_category_id: subCategoryDetails._id, is_active: true }).select('name');
+            let titleDetails = await ancmtTitle.find({ sub_category_id: subCategoryDetails._id, is_active: true }).select('name id');
             let i = 0, responseData = [];
             while (i < titleDetails.length) {
-                let contentDetails = await ancmtContent.find({ title_id: titleDetails[i]._id, is_active: true, approve: true, draft: false }).select('content_title');
+                let contentDetails = await ancmtContent.find({ title_id: titleDetails[i]._id, is_active: true, approve: true, draft: false }).select('content_title id');
                 responseData.push({
                     title_id: titleDetails[i]._id,
                     name: titleDetails[i].name,
+                    id: titleDetails[i].id,
                     announcement_content: contentDetails
-                })
+                });
                 i++;
             }
             return res.status(200).json(this.successFormat({
@@ -118,13 +120,13 @@ class announcement extends Controller {
 
     async getAncmtTitleDetails(req, res) {
         try {
-            let titleDetails = await ancmtTitle.findOne({ _id: req.params.title_id, is_active: true });
+            let titleDetails = await ancmtTitle.findOne({ id: req.params.title_id, is_active: true });
             if (!titleDetails) {
                 return res.status(400).json(this.errorMsgFormat({
                     "message": "This announcement title not exits."
                 }, 'Announcement'));
             }
-            let contentDetails = await ancmtContent.find({ title_id: titleDetails._id, is_active: true }).select('content_title draft approve');
+            let contentDetails = await ancmtContent.find({ title_id: titleDetails._id, is_active: true }).select('content_title draft approve id');
             return res.status(200).json(this.successFormat({
                 "data": contentDetails
             }));
@@ -137,7 +139,7 @@ class announcement extends Controller {
 
     async getAncmtContentDetails(req, res) {
         try {
-            let contentDetails = await ancmtContent.find({ _id: req.params.content_id, is_active: true, approve: true, draft: false }).select('content');
+            let contentDetails = await ancmtContent.find({ id: req.params.content_id, is_active: true, approve: true, draft: false }).select('content id');
             if (!contentDetails) {
                 return res.status(400).json(this.errorMsgFormat({
                     "message": "This announcement content not exits."

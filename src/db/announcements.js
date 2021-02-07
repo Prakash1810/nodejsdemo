@@ -23,6 +23,7 @@ exports.ancmtSubCategories = ancmtSubCategories;
 const titleSchema = new mongoose.Schema({
     sub_category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'announcement-sub-categories', required: true, index: true },
     name: { type: String, index: true },
+    id: { type: String, index: true },
     is_active: { type: Boolean, default: true },
 }, { timestamps: { createdAt: 'created_date', updatedAt: 'modified_date' } });
 let ancmtTitle = mongoose.model('announcement-title', titleSchema);
@@ -30,6 +31,7 @@ ancmtTitle.createIndexes();
 exports.ancmtTitle = ancmtTitle;
 
 const contentSchema = new mongoose.Schema({
+    id: { type: String, index: true },
     title_id: { type: mongoose.Schema.Types.ObjectId, ref: 'announcement-title', required: true, index: true },
     content_title: { type: String, required: true, index: true },
     content: { type: String, required: true, index: true },
