@@ -47,7 +47,9 @@ const assetsSchema = new mongoose.Schema({
     validate_address: { type: Boolean },  //if it true validate address in coin validator
     auto_approved: { type: Boolean },    // automatic withdraw auto change stauts 1 to 4 
     precision: { type: Number },
-    auto_address_generate: { type: Boolean, default: true }
+    auto_address_generate: { type: Boolean, default: true },
+    can_trade: { type: Boolean, default: false },
+    is_active: { type: Boolean, default: true }
 
 });
 
