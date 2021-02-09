@@ -1,5 +1,5 @@
 const Controller = require('./controller');
-const { ancmtCategories, ancmtSubCategories, ancmtTitle, ancmtContent } = require('../db/announcements');
+const { ancmtCategories, ancmtSubCategories, ancmtTitle, ancmtContent, ancmtNotification } = require('../db/announcements');
 const _ = require('lodash');
 const Utils = require('../helpers/utils');
 const utils = new Utils();
@@ -148,6 +148,37 @@ class announcement extends Controller {
             return res.status(200).json(this.successFormat({
                 "data": contentDetails
             }));
+        } catch (error) {
+            return res.status(500).send(this.errorMsgFormat({
+                "message": error.message
+            }, 'asset', 500));
+        }
+    }
+
+    async notification(req, res) {
+        try {
+            let data = req.body.data.attributes;
+            let ancmtNotificationCheck = await ancmtNotification.findOne({ is_active: true, content_id: data.content_id, user: { $in: [req.user.user] } });
+            if (ancmtNotificationCheck) {
+                return res.status(400).json(this.errorMsgFormat({
+                    "message": "This user already viewed notification."
+                }));
+            }
+            let addUserId = await ancmtNotification.findOne({ content_id: data.content_id, is_active: true });
+            addUserId.user.push(req.user.user);
+            addUserId.save();
+            return res.status(200).json(this.successFormat({ message: 'User successfully viewed notification' }));
+        } catch (error) {
+            return res.status(500).send(this.errorMsgFormat({
+                "message": error.message
+            }, 'asset', 500));
+        }
+    }
+
+    async getNotificationList(req, res) {
+        try {
+            let ancmtNotificationCheck = await ancmtNotification.find({ is_active: true, user: { $nin: [req.user.user] } }).select('id type content_title');
+            return res.status(200).json(this.successFormat({ message: ancmtNotificationCheck }));
         } catch (error) {
             return res.status(500).send(this.errorMsgFormat({
                 "message": error.message

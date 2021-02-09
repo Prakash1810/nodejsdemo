@@ -38,7 +38,18 @@ const contentSchema = new mongoose.Schema({
     is_active: { type: Boolean, default: true },
     approve: { type: Boolean, default: false },
     draft: { type: Boolean, default: false },
+    notify: { type: Boolean, default: false },
 }, { timestamps: { createdAt: 'created_date', updatedAt: 'modified_date' } });
 let ancmtContent = mongoose.model('announcement-content', contentSchema);
 ancmtContent.createIndexes();
 exports.ancmtContent = ancmtContent;
+
+const notificationSchema = new mongoose.Schema({
+    content_id: { type: mongoose.Schema.Types.ObjectId, ref: 'announcement-contents', required: true, index: true },
+    type: { type: String },
+    content_title: { type: String, required: true, index: true },
+    user: { type: Array, index: true },
+}, { timestamps: { createdAt: 'created_date', updatedAt: 'modified_date' } });
+let ancmtNotification = mongoose.model('announcement-notifications', notificationSchema);
+ancmtNotification.createIndexes();
+exports.ancmtNotification = ancmtNotification;
