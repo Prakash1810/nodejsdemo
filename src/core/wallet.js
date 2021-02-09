@@ -465,7 +465,7 @@ class Wallet extends controller {
         for (let result in matchResponse) {
             if (assetsJson[result]) {
                 let btc, usd;
-                if (_.isEmpty(marketResponse[assetsJson])) {
+                if (_.isEmpty(marketResponse[assetsJson[result]])) {
                     btc = 0, usd = 0;
                 } else {
                     btc = marketResponse[assetsJson[result]].btc;
