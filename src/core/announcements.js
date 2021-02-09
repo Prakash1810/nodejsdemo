@@ -11,6 +11,11 @@ class announcement extends Controller {
         try {
             let getSubCntDetails = await ancmtSubCategories.aggregate([
                 {
+                    $match: {
+                        is_active: true
+                    }
+                },
+                {
                     $group: {
                         _id: '$category_id',
                         subCategory: { $push: { name: '$name', _id: "$_id", id: "$id" } }
@@ -22,6 +27,11 @@ class announcement extends Controller {
                         localField: '_id',
                         foreignField: '_id',
                         as: 'category'
+                    }
+                },
+                {
+                    $match: {
+                        "category.is_active": true
                     }
                 },
                 { $unwind: '$category' },
