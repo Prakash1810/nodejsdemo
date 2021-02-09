@@ -49,7 +49,9 @@ const assetsSchema = new mongoose.Schema({
     precision: { type: Number },
     auto_address_generate: { type: Boolean, default: true },
     can_trade: { type: Boolean, default: false },
-    is_active: { type: Boolean, default: true }
+    is_active: { type: Boolean, default: true },
+    internal_transfer: { type: Boolean, default: false }
+
 
 });
 
