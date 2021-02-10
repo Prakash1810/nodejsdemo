@@ -25,6 +25,7 @@ const orders = require('../db/orders');
 const fee = require('../db/matching-engine-config');
 const marketLastPrice = require('../db/market-last-price');
 const matchingEngineConfig = require('../db/matching-engine-config');
+const assetHelper = require('../helpers/asset.helpers');
 
 class Api extends Controller {
 
@@ -626,6 +627,10 @@ class Api extends Controller {
         let makerFee = await fee.findOne({ config: 'makerFeeRate' });
         let check = await market.findOne({ market_name: data.market });
         let checkUser = await users.findOne({ _id: req.user.user });
+        let checktrade = await assetHelper.assetTradeChecker(data.market);
+        if (!checktrade) {
+            return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this asset' }));
+        }
         if (!checkUser.trade) {
             return res.status(400).send(controller.errorMsgFormat({ message: 'Trade is disabled for this account' }));
         }

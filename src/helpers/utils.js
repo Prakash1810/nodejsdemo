@@ -68,6 +68,26 @@ class Utils extends Controller {
         });
         return responseData;
     }
+
+    async subCategoryFormat(subCataData,res) {
+        try {
+            let result = []
+            for (let i = 0; i < subCataData.length; i++) {
+                let res = {
+                    _id: subCataData[i].category._id,
+                    name: subCataData[i].category.name,
+                    id: subCataData[i].category.id,
+                    value: subCataData[i].subCategory
+                }
+                result.push(res);
+            }
+            return result;
+        } catch (error) {
+            return res.status(500).send(this.errorMsgFormat({
+                "message": error.message
+            }, 'utils', 500));
+        }
+    }
 }
 
 module.exports = Utils;
