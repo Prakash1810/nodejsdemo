@@ -661,7 +661,7 @@ class User extends controller {
 
     async storeAndPublish(user, type, successOrFailure, message) {
         console.log('user', user)
-        await helpers.publishAndStoreData({ publish: { type: 'System Message', title: `${type} ${successOrFailure}`, content: `${type} ${successOrFailure}${message}`, isStore: false }, store: { activity: `${type} ${successOrFailure}${message}`, at: new Date } }, user._id, 'both', `NOTIFICATIONS:${user.user_id}`);
+        await helpers.publishAndStoreData({ store: { activity: `${type} ${successOrFailure}${message}`, at: new Date } }, user._id, 'both', `NOTIFICATIONS:${user.user_id}`);
     }
 
     async resendOtpForEmail(req, res, typeFor) {
@@ -1951,7 +1951,7 @@ class User extends controller {
                 await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
                 await apiServices.publishNotification(req.user.user_id, { 'apiKey': null, 'logout': false });
-                await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'API Key', content: `API Key deleted`, isStore: true }, store: { activity: `API Key Deleted`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
+                await helpers.publishAndStoreData({ store: { activity: `API Key Deleted`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
                 return res.status(200).send(this.successFormat({ message: 'API key deleted.' }, 'user', 200));
 
             case 'create':
@@ -1976,7 +1976,7 @@ class User extends controller {
                 });
                 await new apikey(addApiKey).save();
                 await apiServices.publishNotification(req.user.user_id, { 'apiKey': apiKey, 'logout': false });
-                await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'API Key', content: `API Key created`, isStore: true }, store: { activity: `API Key Created`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
+                await helpers.publishAndStoreData({ store: { activity: `API Key Created`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
                 return res.status(200).send(this.successFormat({ 'apiKey': apiKey, 'secretKey': apiSecret, message: 'Your API key was created successfully.', }, 'user', 200));
 
             case 'view':

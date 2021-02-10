@@ -216,6 +216,7 @@ class Password extends Controller {
                             await apiServices.sendEmailNotification(serviceData, res);
                             await Users.findOneAndUpdate({ _id: req.body.data.id }, { withdraw: false, password_reset_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                             await apiServices.publishNotification(user.user_id, { 'change_password': true, 'logout': true });
+                            await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'Password Changed', content: `Password Changed Successfully.`, isStore: true }, store: { activity: `Password Changed`, at: new Date } }, req.body.data.id, 'both', `NOTIFICATIONS:${user.user_id}`);
                             return res.status(202).send(this.successFormat({
                                 'message': 'Your password has been changed successfully.'
                             }, user._id, 'users', 202));
@@ -231,6 +232,7 @@ class Password extends Controller {
                         }
                         await apiServices.sendEmailNotification(serviceData, res);
                         await apiServices.publishNotification(user.user_id, { 'reset_password': true, 'logout': true });
+                        await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'Reset Password', content: `Password Reset Successfully.`, isStore: true }, store: { activity: `Password Reset Success`, at: new Date } }, user._id, 'both', `NOTIFICATIONS:${user.user_id}`);
                         return res.status(202).send(this.successFormat({
                             'message': 'Your password has been reset successfully.'
                         }, user._id, 'users', 202));
