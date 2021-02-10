@@ -7,7 +7,8 @@ const Redis = require('ioredis');
 const buttervalue = Buffer.from("uyewdbnyjsyedord");
 const iv = Buffer.from(config.get('encryption.key'));
 const Controller = require('../core/controller');
-// const userTimeline = require('../db/user-timeline');
+const userTimeline = require('../db/user-timeline');
+const userNotification = require('../db/user-notifications')
 
 class Helpers extends Controller {
 
@@ -66,27 +67,47 @@ class Helpers extends Controller {
         // });
     }
 
-    async publishAndStoreData(data, user, type) {
+    async publishAndStoreData(data, user, type, topic) {
         try {
-            if (type == 'publish') {
-                let redis = await this.redisConnection();
-                return await redis.publish(`IEO-SUPPLY`, JSON.stringify(data));
-            } 
-            // else if (type == 'store') {
-            //     let existsData = await userTimeline.findOne({ user }).lean();
-            //     if (_.isEmpty(existsData)) {
-            //         let payload = Object.assign({
-            //             activity: [data],
-            //             user
-            //         });
-            //         await new userTimeline(payload).save();
-            //     } else {
-            //         existsData.activity.push(data)
-            //         await userTimeline.findOneAndUpdate({ user }, existsData);
-            //     }
-            // }
+            let id = new Date().valueOf();
+            switch (type) {
+                case 'publish':
+                    await this.publish(topic, data.publish, id, user);
+                    break;
+                case 'store':
+                    await this.storeData(user, data.store);
+                    break;
+                case 'both':
+                    await this.publish(topic, data.publish, id, user);
+                    await this.storeData(user, data.store);
+                    break;
+                default:
+                    break;
+            }
         } catch (error) {
-            console.log(error.message, error.stack)
+            return false;
+        }
+    }
+
+    async publish(topic, data, id, user) {
+        let redis = await this.redisConnection();
+        data.id = id
+        data.user = user;
+        data.isStore == true ? await new userNotification(data).save() : '';
+        return await redis.publish(`${topic}`, JSON.stringify(data));
+    }
+
+    async storeData(user, data) {
+        let existsData = await userTimeline.findOne({ user }).lean();
+        if (_.isEmpty(existsData)) {
+            let payload = Object.assign({
+                activity: [data],
+                user
+            });
+            await new userTimeline(payload).save();
+        } else {
+            existsData.activity.push(data);
+            await userTimeline.findOneAndUpdate({ user }, existsData);
         }
     }
 

@@ -110,7 +110,7 @@ class ieo extends Controller {
                         price: `${Number(tokenPrice[0].price)}`
                     });
                     await new ieoTokenSale(data).save();
-                    await helperFunctions.publishAndStoreData(balanceEnquiryIeo.data, req.user.user_id, 'publish')
+                    await helperFunctions.publishAndStoreData({ publish: balanceEnquiryIeo.data, isStore: false }, req.user.user_id, 'publish', 'IEO-SUPPLY')
                     return res.send(this.successFormat({ message: "Your data has been added", supply: checkIeoDetails.session_supply }, '', 'ieo-details')).status(200)
                 }
                 return res.status(400).send(updateBalance.error)

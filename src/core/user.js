@@ -588,16 +588,18 @@ class User extends controller {
                     return res.status(400).send(this.errorMsgFormat({
                         'message': 'Device_id must be provided.'
                     }));
-
                 }
-
             }
-            const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor });
+            const isChecked = await otpHistory.findOne({ user_id: id, otp: data.otp, is_active: false, type_for: typeFor }).populate({
+                path: 'user_id',
+                select: 'user_id'
+            });
             if (isChecked) {
                 let date = new Date(isChecked.create_date_time);
                 let getSeconds = date.getSeconds() + config.get('otpForEmail.timeExpiry');
                 let duration = moment.duration(moment().diff(isChecked.create_date_time));
                 if (getSeconds > duration.asSeconds()) {
+                    await this.storeAndPublish(isChecked.user_id, typeFor, 'success')
                     if (typeFor == "login") {
                         let checkUser = await users.findById({ _id: id });
                         await otpHistory.findOneAndUpdate({ _id: isChecked._id, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss') });
@@ -609,6 +611,7 @@ class User extends controller {
                         return { status: true }
                     }
                 } else {
+                    await this.storeAndPublish(isChecked.user_id, typeFor, 'failure', ' - OTP has expired.')
                     await otpHistory.findOneAndUpdate({ user_id: id, is_active: false, type_for: typeFor }, { is_active: true, create_date_time: moment().format('YYYY-MM-DD HH:mm:ss'), time_expiry: 'Yes' })
                     if (typeFor !== 'login') {
                         return { status: false, err: 'OTP has expired.' }
@@ -619,8 +622,12 @@ class User extends controller {
 
                 }
             } else {
-                const lastOtpHistory = await otpHistory.findOne({ user_id: id }).sort({ _id: -1 });
+                const lastOtpHistory = await otpHistory.findOne({ user_id: id }).sort({ _id: -1 }).populate({
+                    path: 'user_id',
+                    select: 'user_id'
+                });
                 if (lastOtpHistory.count == 4) {
+                    await this.storeAndPublish(lastOtpHistory.user_id, typeFor, 'failure ', ' - Too many incorrect entries. Your account is blocked for 6 hours.')
                     await redis.set(`BLOCKED_USER:${id}`, true);
                     await redis.expire(`BLOCKED_USER:${id}`, 21600);
 
@@ -634,6 +641,7 @@ class User extends controller {
                         'message': 'Too many incorrect entries. Your account is blocked for 6 hours. Try again later or contact support.'
                     }));
                 }
+                await this.storeAndPublish(lastOtpHistory.user_id, typeFor, 'failure', ' - OTP entered is invalid')
                 if (typeFor !== 'login') {
                     return { status: false, err: 'OTP entered is invalid' }
                 }
@@ -649,8 +657,11 @@ class User extends controller {
                 'message': err.message
             }, 'users', 500));
         }
+    }
 
-
+    async storeAndPublish(user, type, successOrFailure, message) {
+        console.log('user', user)
+        await helpers.publishAndStoreData({ publish: { type: 'System Message', title: `${type} ${successOrFailure}`, content: `${type} ${successOrFailure}${message}`, isStore: false }, store: { activity: `${type} ${successOrFailure}${message}`, at: new Date } }, user._id, 'both', `NOTIFICATIONS:${user.user_id}`);
     }
 
     async resendOtpForEmail(req, res, typeFor) {
@@ -958,7 +969,9 @@ class User extends controller {
                 }));
             } else {
                 await mangHash.findOneAndUpdate({ email: hash.data.email, hash: req.params.hash, type_for: 'new_authorize_device', }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
-                await deviceWhitelist.findOneAndUpdate({ user: hash.data.user_id, verified: false }, { verified: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') })
+                await deviceWhitelist.findOneAndUpdate({ user: hash.data.user_id, verified: false }, { verified: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
+                await helpers.publishAndStoreData({ store: { activity: 'New Devive Authorized', at: new Date, } }, hash.data.user_id, 'store', '');
+                // https://join.slack.com/t/appleproitsolutions/shared_invite/zt-l8vrt75e-A1k~oa0c4y93KgJpSzHJdw
                 return res.status(202).send(this.successFormat({
                     'message': 'Your device has been authorized. Please login to continue.'
                 }, device.user, 'users', 202));
@@ -1046,6 +1059,7 @@ class User extends controller {
                     }
                     if (requestData.hasOwnProperty('anti_spoofing')) {
                         await apiServices.publishNotification(update.user_id, { 'anti_spoofing': requestData.anti_spoofing, 'anti_spoofing_code': requestData.anti_spoofing_code ? requestData.anti_spoofing_code : null, 'logout': false });
+                        await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'Anit Spoofing Changed', content: `Anti Spoofing Changed.`, isStore: true }, store: { activity: `Anti Spoofing Changed`, at: new Date, ip: req.info.ip }, notification: {} }, req.body.data.id, 'both', `NOTIFICATIONS:${update.user_id}`);
                     }
                     return res.status(202).send(this.successFormat({
                         'message': 'The changes you made were saved successfully.'
@@ -1169,6 +1183,8 @@ class User extends controller {
             let checked = await this.updateG2F(req, res);
             if (checked.status) {
                 await apiServices.publishNotification(result.user_id, { 'g2fEnabled': requestedData.google_auth, 'logout': false });
+                let contentMessage = `${requestedData.google_auth}` ? 'G2f Enabled Successfully' : 'G2F Disabled Successfully';
+                await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'G2F Enabled', content: contentMessage, isStore: true }, store: { activity: contentMessage, at: new Date, ip: req.info.ip } }, req.body.data.id, 'both', `NOTIFICATIONS:${result.user_id}`);
                 return res.status(202).send(this.successFormat({
                     'message': `${(requestedData.google_auth) ? 'You have successfully enable google two factor authentication.' : 'You have successfully disable google two factor authentication.'}`
                 }, null, 'users', 202));
@@ -1213,10 +1229,13 @@ class User extends controller {
                     let user = await users.findOne({ _id: req.body.data.id });
                     delete data.g2f_code;
                     delete data.google_secrete_key;
+                    this.timeLineData(req, 'G2F Attempt Success');
                     await this.returnToken(req, res, user, 2, req.headers.device)
                 } else if (method == 'setting' || type == 'boolean') {
+                    this.timeLineData(req, 'G2F Attempt Success');
                     return { status: true };
                 } else {
+                    this.timeLineData(req, 'G2F Attempt Failed');
                     return res.status(202).send(this.successFormat({
                         'status': returnStatus
                     }, null, '2factor', 202));
@@ -1224,9 +1243,10 @@ class User extends controller {
 
             } else {
                 if (method == 'setting' || type == 'boolean') {
+                    this.timeLineData(req, 'G2F Attempt Failed');
                     return { status: false };
                 } else {
-
+                    this.timeLineData(req, 'G2F Attempt Failed');
                     return res.status(400).send(this.errorMsgFormat({
                         'status': returnStatus,
                         'message': 'Incorrect code'
@@ -1239,6 +1259,10 @@ class User extends controller {
                 'message': err.message
             }, '2factor', 400));
         }
+    }
+
+    async timeLineData(req, message) {
+        await helpers.publishAndStoreData({ store: { activity: message, at: new Date } }, req.body.data.id, 'store', '');
     }
 
     async postVerifyG2F(req, res, type = 'json') {
@@ -1367,6 +1391,7 @@ class User extends controller {
                 await users.findOneAndUpdate({ _id: user.user }, { last_logout_time: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await token.findOneAndUpdate({ user: user.user, access_token: tokens.authorization, is_deleted: false }, { is_deleted: true });
                 await token.findOneAndUpdate({ user: user.user, info_token: tokens.info, is_deleted: false }, { is_deleted: true });
+                await helpers.publishAndStoreData({ store: { activity: 'Logout Success', at: new Date } }, user.user, 'store', `NOTIFICATIONS:${user.user_id}`);
                 return res.status(200).send(this.successFormat({
                     'message': 'You have successfully logged out.',
                 }))
@@ -1405,6 +1430,7 @@ class User extends controller {
 
             if (deleteWhiteLists.nModified != 0) {
                 await apiServices.publishNotification(data.user_id, { 'current_device': `${data.os}-${data.browser}-${data.browser_version}`, 'logout': false });
+                await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'Device Whitelisted', content: `Device Whitelisted, Your Deivce is ${data.os}-${data.browser}-${data.browser_version}`, isStore: true }, store: { activity: `Device Whitelisted, Your Deivce is ${data.os}-${data.browser}-${data.browser_version}`, at: new Date, ip: req.info.ip } }, data.user, 'both', `NOTIFICATIONS:${data.user_id}`);
                 return res.status(200).send(this.successFormat({
                     'message': 'The device has been successfully deleted.',
                 }));
@@ -1610,6 +1636,7 @@ class User extends controller {
             }
             let updateUser = await users.findOneAndUpdate({ _id: check.user }, { kyc_verified: true, kyc_statistics: "APPROVE", kyc_verified_date: new Date() })
             await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'APPROVE', 'logout': false });
+            await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'KYC Verification', content: `KYC Verification Approved`, isStore: true }, store: { activity: `KYC Verification Approved`, at: new Date } }, check.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
             //await this.updateBalance(updateUser.user_id, updateUser._id, res, 'kyc verification');
             if (updateUser) {
                 let serviceData = Object.assign({}, {
@@ -1925,6 +1952,7 @@ class User extends controller {
                 await apikey.findOneAndUpdate({ _id: checkApiKeyRemove.id }, { is_deleted: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await users.findOneAndUpdate({ _id: req.user.user }, { api_key: null });
                 await apiServices.publishNotification(req.user.user_id, { 'apiKey': null, 'logout': false });
+                await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'API Key', content: `API Key deleted`, isStore: true }, store: { activity: `API Key Deleted`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
                 return res.status(200).send(this.successFormat({ message: 'API key deleted.' }, 'user', 200));
 
             case 'create':
@@ -1949,6 +1977,7 @@ class User extends controller {
                 });
                 await new apikey(addApiKey).save();
                 await apiServices.publishNotification(req.user.user_id, { 'apiKey': apiKey, 'logout': false });
+                await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'API Key', content: `API Key created`, isStore: true }, store: { activity: `API Key Created`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
                 return res.status(200).send(this.successFormat({ 'apiKey': apiKey, 'secretKey': apiSecret, message: 'Your API key was created successfully.', }, 'user', 200));
 
             case 'view':
@@ -2152,6 +2181,7 @@ class User extends controller {
         if (user.email.toLowerCase() != checkUserMe.emails[0].address.toLowerCase()) {
             await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "REJECT" });
             await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'REJECT', logout: false });
+            await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'KYC Rejected', content: `KYC Rejected`, isStore: true }, store: { activity: `KYC Rejected`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
             return res.status(400).send(this.errorMsgFormat({
                 message: 'KYC verification failed since the email address you provided did not match your Beldex registered email address'
             }));
@@ -2169,6 +2199,7 @@ class User extends controller {
                 await apiServices.sendEmailNotification(serviceData, res);
                 await users.findOneAndUpdate({ _id: req.user.user }, { kyc_statistics: "REJECT" });
                 await apiServices.publishNotification(req.user.user_id, { 'kyc_statistics': 'REJECT', logout: false });
+                await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'KYC Rejected', content: `KYC Rejected`, isStore: true }, store: { activity: `KYC Rejected`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
                 return res.status(400).send(this.errorMsgFormat({
                     message: 'Your KYC verification has been failed due to duplicate KYC entry, please check your email for more details.'
                 }));
