@@ -971,7 +971,6 @@ class User extends controller {
                 await mangHash.findOneAndUpdate({ email: hash.data.email, hash: req.params.hash, type_for: 'new_authorize_device', }, { is_active: true, created_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await deviceWhitelist.findOneAndUpdate({ user: hash.data.user_id, verified: false }, { verified: true, modified_date: moment().format('YYYY-MM-DD HH:mm:ss') });
                 await helpers.publishAndStoreData({ store: { activity: 'New Devive Authorized', at: new Date, } }, hash.data.user_id, 'store', '');
-                // https://join.slack.com/t/appleproitsolutions/shared_invite/zt-l8vrt75e-A1k~oa0c4y93KgJpSzHJdw
                 return res.status(202).send(this.successFormat({
                     'message': 'Your device has been authorized. Please login to continue.'
                 }, device.user, 'users', 202));
