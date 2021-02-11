@@ -1,5 +1,7 @@
+const moment = require('moment');
 const Controller = require('./controller');
 const { ancmtCategories, ancmtSubCategories, ancmtTitle, ancmtContent, ancmtNotification } = require('../db/announcements');
+const userNotificationSchema = require('../db/user-notifications');
 const _ = require('lodash');
 const Utils = require('../helpers/utils');
 const utils = new Utils();
@@ -168,6 +170,26 @@ class announcement extends Controller {
     async notification(req, res) {
         try {
             let data = req.body.data.attributes;
+            switch (data.type) {
+                case 'system-message':
+                    await this.userNotificationUpdate(data);
+                    break;
+                case 'activities':
+                    await this.ancmtNotificationUpdate(req, data);
+                    break;
+                default:
+                    break;
+            }
+            return res.status(200).json(this.successFormat({ message: 'User successfully viewed notification' }));
+        } catch (error) {
+            return res.status(500).send(this.errorMsgFormat({
+                "message": error.message
+            }, 'asset', 500));
+        }
+    }
+
+    async ancmtNotificationUpdate(req, data) {
+        try {
             let ancmtNotificationCheck = await ancmtNotification.findOne({ is_active: true, content_id: data.content_id, user: { $in: [req.user.user] } });
             if (ancmtNotificationCheck) {
                 return res.status(400).json(this.errorMsgFormat({
@@ -177,18 +199,27 @@ class announcement extends Controller {
             let addUserId = await ancmtNotification.findOne({ content_id: data.content_id, is_active: true });
             addUserId.user.push(req.user.user);
             addUserId.save();
-            return res.status(200).json(this.successFormat({ message: 'User successfully viewed notification' }));
+            return
         } catch (error) {
-            return res.status(500).send(this.errorMsgFormat({
-                "message": error.message
-            }, 'asset', 500));
+            return
+        }
+    }
+
+    async userNotificationUpdate(data) {
+        try {
+            return await userNotificationSchema.findOneAndUpdate({ _id: data.content_id }, { is_active: false });
+        } catch (error) {
+            return
         }
     }
 
     async getNotificationList(req, res) {
         try {
-            let ancmtNotificationCheck = await ancmtNotification.find({ is_active: true, user: { $nin: [req.user.user] } }).select('id type content_title');
-            return res.status(200).json(this.successFormat({ message: ancmtNotificationCheck }));
+            let lastSixDays = moment().subtract(6, 'd').format();
+            let ancmtNotificationCheck = await ancmtNotification.find({ is_active: true, created_date: { $gt: lastSixDays }, user: { $nin: [req.user.user] } }).select('id type content_title');
+            let userNotification = await userNotificationSchema.find({ user: req.user.user, created_date: { $gt: lastSixDays }, is_active: true });
+            let merge = ancmtNotificationCheck.concat(userNotification);
+            return res.status(200).json(this.successFormat({ message: merge }));
         } catch (error) {
             return res.status(500).send(this.errorMsgFormat({
                 "message": error.message

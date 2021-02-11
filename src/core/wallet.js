@@ -237,12 +237,13 @@ class Wallet extends controller {
                 address: requestData.address,
                 payment_id: requestData.payment_id,
                 is_whitelist: (requestData.is_whitelist !== undefined) ? requestData.is_whitelist : false
-            }, (err, address) => {
+            }, async (err, address) => {
                 if (err) {
                     return res.status(500).json(this.errorMsgFormat({
                         'message': err.message
                     }, 'withdrawAddress', 500));
                 } else {
+                    await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'Address Whitelist', content: `Address for ${address.coin} has been added successfully`, isStore: true }, store: { activity: `Address for ${address.coin} has been added successfully`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
                     return res.status(200).json(this.successFormat({
                         'message': 'Address for the chosen asset has been added successfully.',
                     }, address._id));

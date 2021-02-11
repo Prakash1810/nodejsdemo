@@ -5,7 +5,7 @@ const notificationSchema = mongoose.Schema({
     type: { type: String },
     title: { type: String },
     content: { type: String },
-    is_active: { type: Boolean }
+    is_active: { type: Boolean, default: true }
 }, { timestamps: { createdAt: 'created_date', updatedAt: 'modified_date' } });
 let userNotification = mongoose.model('user-notifications', notificationSchema);
 userNotification.createIndexes();
