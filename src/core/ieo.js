@@ -237,7 +237,7 @@ class ieo extends Controller {
                     }
                 },
                 { $match: { 'ieo_details.asset': filterAsset } },
-                { $project: { '_id': 1, 'user': 1, 'price': 1, 'amount': 1, 'total': 1, 'buy_asset._id': 1, 'buy_asset.asset_code': 1, 'buy_asset.asset_name': 1, 'ieo_asset._id': 1, 'ieo_asset.asset_code': 1, 'ieo_asset.asset_name': 1 } },
+                { $project: { '_id': 1, 'user': 1, 'price': 1, 'amount': 1, 'total': 1, 'buy_asset._id': 1, 'buy_asset.asset_code': 1, 'buy_asset.asset_name': 1, 'ieo_asset._id': 1, 'ieo_asset.asset_code': 1, 'ieo_asset.asset_name': 1, 'created_date': 1 } },
             ]);
             return res.send(this.successFormat({ data: history }, '', 'ieo-details')).status(200);
         } catch (error) {
