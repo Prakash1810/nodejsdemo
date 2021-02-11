@@ -219,7 +219,7 @@ class announcement extends Controller {
             let ancmtNotificationCheck = await ancmtNotification.find({ is_active: true, created_date: { $gt: lastSixDays }, user: { $nin: [req.user.user] } }).select('id type content_title');
             let userNotification = await userNotificationSchema.find({ user: req.user.user, created_date: { $gt: lastSixDays }, is_active: true });
             let merge = ancmtNotificationCheck.concat(userNotification);
-            return res.status(200).json(this.successFormat({ message: merge }));
+            return res.status(200).json(this.successFormat({ data: merge }));
         } catch (error) {
             return res.status(500).send(this.errorMsgFormat({
                 "message": error.message
