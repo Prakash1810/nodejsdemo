@@ -80,14 +80,6 @@ class Wallet extends controller {
                             "totalCount": 0
                         }, null, 'assets', 200));
                     } else {
-                        if (req.query.get_all == 'false' || req.query.get_all == null || req.query.get_all == undefined) {
-                            for (var i = 0; i < data.length; i++) {
-                                let isCheckDelist = await this.assetDelist(data[i]._id);
-                                if (isCheckDelist.status == false) {
-                                    data.splice(i, 1);
-                                }
-                            }
-                        }
                         // await this.discountCalculation(req.user.user, data)
                         var totalPages = Math.ceil(totalCount / size);
                         return res.status(200).json(this.successFormat({
@@ -417,7 +409,7 @@ class Wallet extends controller {
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
             payloads.asset = asset;
-            noofAsset = await assets.findOne({ asset_code: req.query.asset_code, delist: false });
+            noofAsset = await assets.findOne({ asset_code: req.query.asset_code, is_suspend: false });
             if (noofAsset) {
                 collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
                 assetCode.push(noofAsset.asset_code);
@@ -429,7 +421,7 @@ class Wallet extends controller {
             }
         } else {
 
-            noofAsset = await assets.find({ delist: false });
+            noofAsset = await assets.find({ is_suspend: false });
             _.map(noofAsset, function (asset) {
                 collectOfAssetName[asset.asset_code] = asset.asset_name.toLowerCase();
                 assetCode.push(asset.asset_code);
