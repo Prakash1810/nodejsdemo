@@ -61,7 +61,7 @@ class Wallet extends controller {
 
         // Find some documents
         assets.countDocuments({
-            is_suspend: false
+            is_active: true
         }, async (err, totalCount) => {
             if (err) {
                 return res.status(200).json(this.successFormat({
@@ -71,7 +71,7 @@ class Wallet extends controller {
                 }, null, 'assets', 200));
             } else {
                 assets.find({
-                    is_suspend: false
+                    is_active: true
                 }, '_id asset_name asset_code logo_url exchange_confirmations block_url token  withdrawal_fee minimum_withdrawal deposit withdraw delist minimum_deposit payment_id type maintenance withdraw_fee_percentage precision', query, async (err, data) => {
                     if (err || !data.length) {
                         return res.status(200).json(this.successFormat({
@@ -101,7 +101,7 @@ class Wallet extends controller {
                 'message': isCheckDelist.err
             }, 'asset-balance', 400));
         }
-        let isChecked = await assets.findOne({ _id: asset });
+        let isChecked = await assets.findOne({ _id: asset, is_active: true });
         if (!isChecked.deposit) {
             return res.status(400).send(this.errorMsgFormat({
                 'message': 'Deposits have been disabled for this asset.'
@@ -409,7 +409,7 @@ class Wallet extends controller {
         if (req.query.asset_code !== undefined) {
             asset.push(req.query.asset_code.toUpperCase());
             payloads.asset = asset;
-            noofAsset = await assets.findOne({ asset_code: req.query.asset_code, is_suspend: false });
+            noofAsset = await assets.findOne({ asset_code: req.query.asset_code, is_active: true });
             if (noofAsset) {
                 collectOfAssetName[noofAsset.asset_code] = noofAsset.asset_name.toLowerCase();
                 assetCode.push(noofAsset.asset_code);
@@ -421,7 +421,7 @@ class Wallet extends controller {
             }
         } else {
 
-            noofAsset = await assets.find({ is_suspend: false });
+            noofAsset = await assets.find({ is_active: true });
             _.map(noofAsset, function (asset) {
                 collectOfAssetName[asset.asset_code] = asset.asset_name.toLowerCase();
                 assetCode.push(asset.asset_code);
@@ -657,7 +657,7 @@ class Wallet extends controller {
             }
         }
 
-        let checkAsset = await assets.findOne({ _id: requestData.asset, withdraw: true });
+        let checkAsset = await assets.findOne({ _id: requestData.asset, withdraw: true, is_active: true });
         if (checkAsset) {
             if (checkAsset.minimum_withdrawal > requestData.amount) {
                 return res.status(400).send(this.errorMsgFormat({
