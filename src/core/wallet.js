@@ -237,12 +237,13 @@ class Wallet extends controller {
                 address: requestData.address,
                 payment_id: requestData.payment_id,
                 is_whitelist: (requestData.is_whitelist !== undefined) ? requestData.is_whitelist : false
-            }, (err, address) => {
+            }, async (err, address) => {
                 if (err) {
                     return res.status(500).json(this.errorMsgFormat({
                         'message': err.message
                     }, 'withdrawAddress', 500));
                 } else {
+                    await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'Address Whitelist', content: `Address for ${address.coin} has been added successfully`, isStore: true }, store: { activity: `Address for ${address.coin} has been added successfully`, at: new Date, ip: req.info.ip } }, req.user.user, 'both', `NOTIFICATIONS:${req.user.user_id}`);
                     return res.status(200).json(this.successFormat({
                         'message': 'Address for the chosen asset has been added successfully.',
                     }, address._id));
@@ -772,6 +773,7 @@ class Wallet extends controller {
                                 payment_id: requestData.payment_id ? requestData.payment_id : null
                             });
                             let returnId = await this.insertNotification(data, validateWithdraw.matchingApiAmount, res);
+                            await helpers.publishAndStoreData({ store: { activity: `Withdraw Attempt for ${data.final_amount} ${checkAsset.asset_code}`, at: new Date, ip: req.info.ip } }, req.user.user, 'store', `NOTIFICATIONS::${req.user.user_id}`);
                             return res.status(200).json(this.successFormat({
                                 'message': 'Your request for withdrawal has been received. A confirmation email has been sent to your registered email address. Please confirm your request.'
                             }, returnId, 'withdraw', 200));
@@ -948,7 +950,6 @@ class Wallet extends controller {
                     // update the details to matching engine and transactions
                     // change the withdraw notificaiton status;
                     let response = await this.updateWithdrawRequest(notify, req, res);
-
                     if (response.data.attributes.status !== undefined && response.data.attributes.status === 'success') {
                         let transactionDetails = await transactions.findOne({
                             _id: notify.notify_data.transactions,
@@ -1005,9 +1006,9 @@ class Wallet extends controller {
                         } else {
                             transactionDetails.status = "1";
                         }
-
                         transactionDetails.updated_date = moment().format('YYYY-MM-DD HH:mm:ss')
                         await transactionDetails.save();
+                        transactionDetails.status == '2' ? await helpers.publishAndStoreData({ publish: { type: 'System Message', title: 'Withdrawal Successful', content: `Withdrawal Success for ${transactionDetails.amount} ${transactionDetails.asset.asset_code}`, at: transactionDetails.updated_date, isStore: true }, store: { activity: `Withdrawal Success for ${transactionDetails.amount} ${transactionDetails.asset.asset_code}`, at: new Date } }, code.user, 'both', `NOTIFICATIONS:${code.user_id}`) : ''
                         await this.sendMessage(transactionDetails)
                         return res.status(200).json(this.successFormat({
                             "message": "Your withdrawal request has been confirmed."
