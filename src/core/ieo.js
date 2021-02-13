@@ -81,8 +81,8 @@ class ieo extends Controller {
                 return res.send(this.errorMsgFormat({ message: 'IEO id not found' }))
             }
             let checkUser = await users.findOne({ _id: checkIeoDetails.ieo_user_id });
-            let asset = await assets.findOne({ _id: checkIeoDetails.asset });
-            let buyAsset = await assets.findOne({ _id: data.asset });
+            let asset = await assets.findOne({ _id: checkIeoDetails.asset, is_active: true });
+            let buyAsset = await assets.findOne({ _id: data.asset, is_active: true });
             if (checkIeoDetails.token_price.length == 0) {
                 return res.status(500).send(this.errorMsgFormat({
                     'message': 'Price not enter for this supply.'
