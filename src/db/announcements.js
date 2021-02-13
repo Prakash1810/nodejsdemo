@@ -15,6 +15,7 @@ const subCategoryschema = new mongoose.Schema({
     category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'announcement-categories', required: true, index: true },
     name: { type: String, required: true, index: true },
     is_active: { type: Boolean, default: true },
+    image_url: { type: mongoose.SchemaTypes.Url, required: true },
 }, { timestamps: { createdAt: 'created_date', updatedAt: 'modified_date' } });
 let ancmtSubCategories = mongoose.model('announcement-sub-categories', subCategoryschema);
 ancmtSubCategories.createIndexes();
@@ -39,6 +40,7 @@ const contentSchema = new mongoose.Schema({
     approve: { type: Boolean, default: false },
     draft: { type: Boolean, default: false },
     notify: { type: Boolean, default: false },
+    flags: { type: Array },
 }, { timestamps: { createdAt: 'created_date', updatedAt: 'modified_date' } });
 let ancmtContent = mongoose.model('announcement-content', contentSchema);
 ancmtContent.createIndexes();

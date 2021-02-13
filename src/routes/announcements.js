@@ -81,4 +81,14 @@ router.get('/notification/all', auth, info, async (req, res) => {
     }
 });
 
+router.get('/search/:search_id', async (req, res) => {
+    try {
+        await announcements.searchContent(req, res);
+    } catch (err) {
+        return res.status(500).send(controller.errorFormat({
+            "message:": err.message
+        }, 500));
+    }
+});
+
 module.exports = router;

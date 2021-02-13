@@ -20,7 +20,7 @@ class announcement extends Controller {
                 {
                     $group: {
                         _id: '$category_id',
-                        subCategory: { $push: { name: '$name', _id: "$_id", id: "$id" } }
+                        subCategory: { $push: { name: '$name', _id: "$_id", id: "$id", image_url: "$image_url" } }
                     },
                 },
                 {
@@ -89,7 +89,7 @@ class announcement extends Controller {
                     "message": "This announcement category not exits."
                 }, 'Announcement'));
             }
-            let subCategoryDetaile = await ancmtSubCategories.find({ category_id: categoryDetails._id, is_active: true }).select('name id');
+            let subCategoryDetaile = await ancmtSubCategories.find({ category_id: categoryDetails._id, is_active: true }).select('name id image_url');
             return res.status(200).json(this.successFormat({
                 "data": subCategoryDetaile
             }));
@@ -151,12 +151,14 @@ class announcement extends Controller {
 
     async getAncmtContentDetails(req, res) {
         try {
-            let contentDetails = await ancmtContent.find({ id: req.params.content_id, is_active: true, approve: true, draft: false }).select('content id');
+            let contentDetails = await ancmtContent.findOne({ id: req.params.content_id, is_active: true, approve: true, draft: false }).select('content id flags created_date').lean();
             if (!contentDetails) {
                 return res.status(400).json(this.errorMsgFormat({
                     "message": "This announcement content not exits."
                 }, 'Announcement'));
             }
+            let relatedArticles = await ancmtContent.find({ is_active: true, id: { $in: contentDetails.flags } }).select('id content_title created_date');
+            Object.assign(contentDetails, { 'related_article': relatedArticles });
             return res.status(200).json(this.successFormat({
                 "data": contentDetails
             }));
@@ -220,6 +222,17 @@ class announcement extends Controller {
             let userNotification = await userNotificationSchema.find({ user: req.user.user, created_date: { $gt: lastSixDays }, is_active: true });
             let merge = ancmtNotificationCheck.concat(userNotification);
             return res.status(200).json(this.successFormat({ data: merge }));
+        } catch (error) {
+            return res.status(500).send(this.errorMsgFormat({
+                "message": error.message
+            }, 'asset', 500));
+        }
+    }
+
+    async searchContent(req, res) {
+        try {
+            let searchContent = await ancmtContent.find({ content: new RegExp(req.params.search_id,'i') }).select('id content_title content created_date');
+            return res.status(200).json(this.successFormat({ data: searchContent }));
         } catch (error) {
             return res.status(500).send(this.errorMsgFormat({
                 "message": error.message
