@@ -8,11 +8,11 @@ services:
 before_install:
 
         - docker pull node:latest
-        - docker build -t probot-hello .
+        - docker build -t coreapitest .
 
 script:
 
-        - docker run probot-hello npm run test        
+        - docker run coreapitest npm run test        
         
 
 
