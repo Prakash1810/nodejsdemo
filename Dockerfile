@@ -16,7 +16,8 @@ COPY . .
 RUN apk --no-cache add --virtual builds-deps build-base python
 RUN npm cache clean --force
 RUN npm config set python /usr/bin/python
-
+# To handle 'not get uid/gid' 
+RUN npm config set unsafe-perm true
 # Install nodemon globally
 RUN npm install -g nodemon
 

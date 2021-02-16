@@ -1,0 +1,18 @@
+
+
+sudo: required
+
+services: 
+  -docker
+
+before_install:
+
+        - docker pull node8:-onbuild
+        - docker build -t probot-hello .
+
+script:
+
+        - docker run --rm probot-hello npm run test        
+        
+
+
