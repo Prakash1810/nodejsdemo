@@ -7,7 +7,7 @@ services:
 
 before_install:
 
-        - docker pull node8:-onbuild
+        - docker pull node:latest
         - docker build -t probot-hello .
 
 script:
